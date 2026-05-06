@@ -1,0 +1,1 @@
+import{c as a,l as i,d as r,e as c}from"./leaflet-F-xSWMSQ.js";const p=a(function({positions:t,...o},n){const e=new i.Polygon(t,o);return r(e,c(n,{overlayContainer:e}))},function(t,o,n){o.positions!==n.positions&&t.setLatLngs(o.positions)});export{p as P};
