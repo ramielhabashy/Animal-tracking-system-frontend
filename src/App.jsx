@@ -127,10 +127,12 @@ const router = createBrowserRouter([
   {
     path: '*',
     element: <NotFound />,
+
   },
 ], {
+  basename: '/react.oasis/',
   future: {
-    basename: '/react.oasis/',
+
     v7_startTransition: true,
   },
 });
