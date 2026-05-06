@@ -130,6 +130,7 @@ const router = createBrowserRouter([
   },
 ], {
   future: {
+    basename: '/react.oasis/',
     v7_startTransition: true,
   },
 });
