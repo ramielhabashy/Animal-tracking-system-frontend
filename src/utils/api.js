@@ -32,7 +32,7 @@ export const getAuthHeaders = () => {
   return headers;
 };
 
-const API_BASE = ''; // Use Vite proxy
+const API_BASE = import.meta.env.VITE_API_URL; // Use Vite proxy
 
 export const getApiBase = () => API_BASE;
 

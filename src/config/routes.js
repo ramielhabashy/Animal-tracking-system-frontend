@@ -1,5 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
+import NotFound from '../pages/NotFound';
+import Forbidden from '../pages/Forbidden';
 
 const Login = lazy(() => import('../pages/Login'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
@@ -34,8 +36,6 @@ const VaccinationSchedulePage = lazy(() => import('../pages/VaccinationScheduleP
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const LanguageSettingsPage = lazy(() => import('../pages/LanguageSettingsPage'));
 const RolesPage = lazy(() => import('../pages/RolesPage'));
-const NotFound = lazy(() => import('../pages/NotFound'));
-const Forbidden = lazy(() => import('../pages/Forbidden'));
 
 export const routeConfig = {
   public: [
