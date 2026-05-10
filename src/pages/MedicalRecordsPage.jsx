@@ -609,6 +609,7 @@ export default function MedicalRecordsPage() {
             <thead>
               <tr className="bg-[#F4F4EF]">
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.date')}</th>
+                <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">ID</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('nav.animals')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.type')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('medicalRecords.title') || 'Title'}</th>
@@ -620,7 +621,7 @@ export default function MedicalRecordsPage() {
             <tbody className="divide-y divide-[#E3E3DE]">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-[#717973]">
+                  <td colSpan="8" className="px-6 py-12 text-center text-[#717973]">
                     <MaterialSymbol icon="medical_services" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('medicalRecords.noRecords')}</p>
                     <button
@@ -636,6 +637,9 @@ export default function MedicalRecordsPage() {
                   <tr key={record.id} className="hover:bg-[#F4F4EF]/50 transition-colors">
                     <td className="px-6 py-5 font-medium text-[#002819]">
                       {new Date(record.record_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-5 font-mono text-xs font-bold text-[#002819]">
+                      {record.record_id || `#${record.id}`}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">

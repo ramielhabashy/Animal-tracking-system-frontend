@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getLocale, setLocale as setStoredLocale } from '../utils/cookies';
+import { apiFetch } from '../utils/api';
 import en from './en';
 import ar from './ar';
 import ur from './ur';
@@ -72,9 +73,11 @@ export function I18nProvider({ children }) {
     const loadTranslations = async () => {
       try {
         const res = await apiFetch('/api/translations');
-        const data = await res.json();
-        const nested = transformFlatTranslations(data);
-        setApiTranslations(nested);
+        if (res.ok) {
+          const data = await res.json();
+          const nested = transformFlatTranslations(data);
+          setApiTranslations(nested);
+        }
       } catch (e) {
         console.warn('Failed to load translations:', e.message);
       }
@@ -133,6 +136,7 @@ export function I18nProvider({ children }) {
 
     // Try full key in API translations (e.g., common.edit)
     let value = getNestedValue(apiTranslations[locale], key);
+    if (value && typeof value === 'string') value = value.normalize();
     if (isCorrupted(value)) value = null;
     // Try short key in API translations (e.g., edit)
     if (!value) value = getNestedValue(apiTranslations[locale], shortKey);

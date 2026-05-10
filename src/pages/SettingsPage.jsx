@@ -929,7 +929,7 @@ const tabs = [
                   <tr key={lang.code} className="border-t border-[#F4F4EF]">
                     <td className="px-4 py-3 font-mono font-bold text-[#002819]">{lang.code}</td>
                     <td className="px-4 py-3 text-[#002819]">{lang.name}</td>
-                    <td className="px-4 py-3 text-[#002819]">{lang.native_name}</td>
+                    <td className="px-4 py-3 text-[#002819]" dir={lang.direction || 'ltr'}>{lang.native_name}</td>
                     <td className="px-4 py-3 uppercase text-xs text-[#404943]">{lang.direction}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-lg text-xs font-bold ${lang.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -1051,6 +1051,7 @@ const tabs = [
                           type="text"
                           defaultValue={trans.value}
                           onBlur={(e) => handleSaveTranslation(trans.id, e.target.value)}
+                          dir={selectedLanguageForTranslation === 'ar' || selectedLanguageForTranslation === 'ur' ? 'rtl' : 'ltr'}
                           className="w-full border-none rounded-lg px-3 py-2 bg-[#F4F4EF] focus:ring-2 focus:ring-[#06402B]/20"
                         />
                       </td>

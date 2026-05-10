@@ -102,7 +102,7 @@ useEffect(() => {
       const subscriptionData = dashboardData.subscription;
       const animalsList = animalsData.data || [];
       const totalAnimals = animalsData.meta?.total || animalsData.total || animalsList.length;
-      const devicesList = devicesData.data || [];
+      const devicesList = Array.isArray(devicesData.data) ? devicesData.data : (devicesData.data?.data || []);
       const geofenceAlerts = Array.isArray(alertsData) ? alertsData : (alertsData.data || []);
       const vaccinationsList = vaccData.data || [];
 

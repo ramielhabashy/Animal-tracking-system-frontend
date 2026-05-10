@@ -260,6 +260,7 @@ const handleSaveLanguage = async () => {
                           type="text"
                           defaultValue={trans.value}
                           onBlur={(e) => handleSaveTranslation(trans.id, e.target.value)}
+                          dir={selectedLanguageForTranslation === 'ar' || selectedLanguageForTranslation === 'ur' ? 'rtl' : 'ltr'}
                           className="w-full border rounded px-3 py-1.5 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         />
                       </td>
@@ -374,7 +375,7 @@ const handleSaveLanguage = async () => {
                         </td>
                         <td className="px-4 py-3">
                           <div>{lang.name}</div>
-                          <div className="text-xs text-gray-500">{lang.native_name}</div>
+                          <div className="text-xs text-gray-500" dir={lang.direction || 'ltr'}>{lang.native_name}</div>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${lang.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

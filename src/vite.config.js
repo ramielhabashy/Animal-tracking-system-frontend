@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  base: "/react.oasis/",
   plugins: [react()],
   root: '.',
   publicDir: 'public',
@@ -22,7 +23,7 @@ export default defineConfig({
     host: 'localhost',
     proxy: {
       '/api': {
-        target: 'http://localhost:8050',
+        target: 'https://360.era-solutions.com/api.animals/public/',
         changeOrigin: true,
         secure: false,
       },

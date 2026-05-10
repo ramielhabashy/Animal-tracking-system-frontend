@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
@@ -25,6 +25,15 @@ export default function AnimalList() {
   const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [speciesFilter, setSpeciesFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [deviceFilter, setDeviceFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(100);
+  const [totalAnimals, setTotalAnimals] = useState(0);
+  const [stats, setStats] = useState({ assigned: 0, unassigned: 0, healthy: 0, warning: 0, critical: 0 });
   
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -35,18 +44,10 @@ export default function AnimalList() {
     setCurrentPage(1);
   }, [debouncedSearch]);
   
-  const [speciesFilter, setSpeciesFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [deviceFilter, setDeviceFilter] = useState('all');
-  const [ownerFilter, setOwnerFilter] = useState('all');
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(100);
-  const [totalAnimals, setTotalAnimals] = useState(0);
-  const [stats, setStats] = useState({ assigned: 0, unassigned: 0 });
-  
   const canModify = user?.role !== 'Shepherd';
   const isAdmin = user?.role === 'Admin';
+
+  const extractList = (res) => Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
   const getDeviceStatus = (deviceId) => {
     if (!deviceId) return 'unknown';
@@ -80,20 +81,20 @@ export default function AnimalList() {
       let animals = [];
       if (animalsRes.ok) {
         const animalsData = await animalsRes.json();
-        animals = animalsData.data || [];
-        setTotalAnimals(animalsData.meta?.total || animalsData.total || 0);
+        animals = extractList(animalsData);
+        setTotalAnimals(animalsData.meta?.total || animalsData.total || animalsData.data?.meta?.total || 0);
       }
       
       let devices = [];
       if (devicesRes.ok) {
         const devicesData = await devicesRes.json();
-        devices = devicesData.data || [];
+        devices = extractList(devicesData);
       }
       
       let users = [];
       if (usersRes.ok) {
         const usersData = await usersRes.json();
-        users = usersData.data || [];
+        users = extractList(usersData);
       }
       
       setAnimals(animals);
@@ -115,14 +116,24 @@ export default function AnimalList() {
       
       if (animalsRes.ok && devicesRes.ok) {
         const animalsData = await animalsRes.json();
-        const devicesData = await devicesRes.json();
-        const allAnimals = animalsData.data || [];
+        const allAnimals = extractList(animalsData);
         
-        const assigned = allAnimals.filter(a => a.device?.device_id || a.device_id).length;
+        let assigned = 0, healthy = 0, warning = 0, critical = 0;
+        for (const a of allAnimals) {
+          const hasDevice = a.device?.device_id || a.device_id;
+          if (hasDevice) assigned++;
+          const temp = parseFloat(a.baseline_temperature) || 38.5;
+          if (temp > 39.5) critical++;
+          else if (temp > 39) warning++;
+          else healthy++;
+        }
         
         setStats({
           assigned,
           unassigned: allAnimals.length - assigned,
+          healthy,
+          warning,
+          critical,
         });
       }
     } catch (error) {
@@ -315,6 +326,7 @@ export default function AnimalList() {
           <option value="healthy">{t('animals.healthy')}</option>
           <option value="warning">{t('alertsPage.warning')}</option>
           <option value="critical">{t('dashboard.critical')}</option>
+          <option value="device_issue">{t('devices.deviceIssue') || 'Device Issue'}</option>
         </select>
 
         <select
@@ -325,6 +337,18 @@ export default function AnimalList() {
           <option value="all">{t('animals.allDevices')}</option>
           <option value="assigned">{t('devices.assigned')}</option>
           <option value="unassigned">{t('animals.noDeviceAssigned')}</option>
+          <option value="offline">{t('devices.offline')}</option>
+        </select>
+
+        <select
+          value={ownerFilter}
+          onChange={(e) => setOwnerFilter(e.target.value)}
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+        >
+          <option value="all">{t('animals.allOwners') || 'All Owners'}</option>
+          {ownerOptions.map(owner => (
+            <option key={owner.id} value={owner.id}>{owner.name}</option>
+          ))}
         </select>
       </div>
 
@@ -343,7 +367,10 @@ export default function AnimalList() {
         </div>
         <div className="bg-[#D4AF37]/10 p-5 rounded-2xl">
           <p className="text-xs font-bold text-[#735C00] uppercase">{t('animals.health')}</p>
-          <p className="text-3xl font-black text-[#735C00] mt-1">{assignedCount}</p>
+          <p className="text-3xl font-black text-[#735C00] mt-1">{stats.healthy ?? 0}</p>
+          <p className="text-xs text-[#735C00]/60 mt-1">
+            {stats.warning ?? 0} {t('alertsPage.warning')} &middot; {stats.critical ?? 0} {t('dashboard.critical')}
+          </p>
         </div>
       </div>
 

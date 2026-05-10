@@ -507,9 +507,14 @@ export default function TasksPage() {
                   <div className="flex-1">
                     <div className={`flex items-start justify-between ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                       <div>
-                        <h3 className={`font-bold text-lg text-[#002819] ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>
-                          {task.title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-[#717973] bg-[#F4F4EF] px-2 py-0.5 rounded">
+                            {task.task_id || `#${task.id}`}
+                          </span>
+                          <h3 className={`font-bold text-lg text-[#002819] ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>
+                            {task.title}
+                          </h3>
+                        </div>
                         {task.description && (
                           <p className="text-sm text-[#717973] mt-1">{task.description}</p>
                         )}

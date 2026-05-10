@@ -22,12 +22,14 @@ export default function UserEdit() {
     is_active: true,
     subscription_tier_id: '',
     password: '',
+    managed_by: '',
   });
-const [tiers, setTiers] = useState([]);
+  const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [availableRoles, setAvailableRoles] = useState([]);
+  const [owners, setOwners] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -35,11 +37,12 @@ const [tiers, setTiers] = useState([]);
 
 const fetchData = async () => {
     try {
-      const [userRes, tiersRes, rolesRes, availableRolesRes] = await Promise.all([
+      const [userRes, tiersRes, rolesRes, availableRolesRes, usersRes] = await Promise.all([
         apiFetch(`/api/users/${id}`),
         apiFetch('/api/subscription/tiers'),
         apiFetch(`/api/admin/users/${id}/roles`),
         apiFetch('/api/admin/roles'),
+        isAdmin ? apiFetch('/api/users?per_page=100') : Promise.resolve(null),
       ]);
       
       if (userRes.ok) {
@@ -61,7 +64,14 @@ const fetchData = async () => {
           is_active: user.is_active !== false,
           subscription_tier_id: user.subscription_tier_id || '',
           password: '',
+          managed_by: user.managed_by || '',
         });
+      }
+      
+      if (usersRes && usersRes.ok) {
+        const usersData = await usersRes.json();
+        const allUsers = Array.isArray(usersData.data) ? usersData.data : (usersData.data?.data || []);
+        setOwners(allUsers.filter(u => u.role === 'Owner'));
       }
       
       if (tiersRes.ok) {
@@ -78,6 +88,8 @@ const fetchData = async () => {
         }
         
         setAvailableRoles(roles);
+      } else if (!isAdmin) {
+        setAvailableRoles([{ name: 'Manager' }, { name: 'Doctor' }, { name: 'Shepherd' }]);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -92,12 +104,19 @@ const fetchData = async () => {
       if (value === 'Manager' || value === 'Shepherd') {
         newForm.subscription_tier_id = '';
       }
+      if (value === 'Admin' || value === 'Owner') {
+        newForm.managed_by = '';
+      }
     }
     setForm(newForm);
   };
 
   const canHaveSubscription = (role) => {
     return role === 'Owner' || role === 'Admin';
+  };
+
+  const needsOwner = (role) => {
+    return role && role !== 'Admin' && role !== 'Owner';
   };
 
   const [errors, setErrors] = useState({});
@@ -119,6 +138,9 @@ const fetchData = async () => {
     if (form.password) data.password = form.password;
     if (canHaveSubscription(form.role) && form.subscription_tier_id) {
       data.subscription_tier_id = parseInt(form.subscription_tier_id);
+    }
+    if (needsOwner(form.role)) {
+      data.managed_by = form.managed_by ? parseInt(form.managed_by) : null;
     }
 
     try {
@@ -217,7 +239,7 @@ const fetchData = async () => {
               <div>
                 <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>{t('users.role')}</label>
                 <div className="relative">
-                  {isAdmin ? (
+                  {isAdmin || currentUser?.role === 'Owner' ? (
                     <select
                       value={form.role}
                       onChange={e => set('role', e.target.value)}
@@ -232,6 +254,7 @@ const fetchData = async () => {
                       ) : (
                         <>
                           <option value="Shepherd">{t('users.shepherd')}</option>
+                          <option value="Doctor">{t('users.doctor') || 'Doctor'}</option>
                           <option value="Manager">{t('users.manager')}</option>
                           <option value="Owner">{t('users.owner')}</option>
                           <option value="Admin">{t('users.admin')}</option>
@@ -245,7 +268,7 @@ const fetchData = async () => {
                       className="input-field bg-[#e8e8e3] cursor-not-allowed"
                     />
                   )}
-                  {isAdmin && (
+                  {(isAdmin || currentUser?.role === 'Owner') && (
                     <MaterialSymbol icon="expand_more" className={`absolute top-1/2 -translate-y-1/2 text-[#002819]/40 pointer-events-none ${isRtl ? 'left-4 right-auto' : 'right-4'}`} />
                   )}
                 </div>
@@ -305,6 +328,22 @@ const fetchData = async () => {
                 <div className="w-14 h-7 bg-[#E3E3DE] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#D4AF37]"></div>
               </label>
             </div>
+
+              {isAdmin && needsOwner(form.role) && (
+                <div className="mb-6">
+                  <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>{t('users.assignToOwner') || 'Assigned to Owner'}</label>
+                  <select
+                    value={form.managed_by}
+                    onChange={e => set('managed_by', e.target.value)}
+                    className="input-field appearance-none pr-12"
+                  >
+                    <option value="">{t('teamPage.selectOwner') || 'Not assigned to any owner'}</option>
+                    {owners.map(owner => (
+                      <option key={owner.id} value={owner.id}>{owner.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>New Password (optional)</label>

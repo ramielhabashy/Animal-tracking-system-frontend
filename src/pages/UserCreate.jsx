@@ -19,15 +19,20 @@ export default function UserCreate() {
     role: 'Shepherd',
     password: '',
     password_confirmation: '',
+    managed_by: '',
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [errors, setErrors] = useState({});
   const [availableRoles, setAvailableRoles] = useState([]);
+  const [owners, setOwners] = useState([]);
 
   useEffect(() => {
     loadRoles();
+    if (isAdmin) loadOwners();
   }, []);
+
+  const extractList = (res) => Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
   const loadRoles = async () => {
     try {
@@ -39,14 +44,36 @@ export default function UserCreate() {
           roles = roles.filter(r => r.name !== 'Admin' && r.name !== 'Owner');
         }
         setAvailableRoles(roles.map(r => r.name));
+      } else if (!isAdmin) {
+        setAvailableRoles(['Manager', 'Doctor', 'Shepherd']);
       }
     } catch (err) {
       console.error('Failed to load roles:', err);
+      if (!isAdmin) {
+        setAvailableRoles(['Manager', 'Doctor', 'Shepherd']);
+      }
+    }
+  };
+
+  const loadOwners = async () => {
+    try {
+      const res = await apiFetch('/api/users?per_page=100');
+      if (res.ok) {
+        const data = await res.json();
+        const users = extractList(data);
+        setOwners(users.filter(u => u.role === 'Owner'));
+      }
+    } catch (err) {
+      console.error('Failed to load owners:', err);
     }
   };
 
   const set = (field, value) => {
-    setForm(f => ({ ...f, [field]: value }));
+    const updates = { [field]: value };
+    if (field === 'role' && (value === 'Admin' || value === 'Owner')) {
+      updates.managed_by = '';
+    }
+    setForm(f => ({ ...f, ...updates }));
     if (errors[field]) {
       setErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
     }
@@ -86,6 +113,7 @@ export default function UserCreate() {
           role: form.role,
           password: form.password,
           password_confirmation: form.password_confirmation,
+          ...(isAdmin && form.managed_by ? { managed_by: parseInt(form.managed_by) } : {}),
         }),
       });
       const data = await res.json();
@@ -178,18 +206,38 @@ export default function UserCreate() {
                   availableRoles.map(roleName => (
                     <option key={roleName} value={roleName}>{t(`users.${roleName.toLowerCase()}`) || roleName}</option>
                   ))
-                ) : (
-                  <>
-                    {isAdmin && <option value="Admin">{t('users.admin')}</option>}
-                    {isAdmin && <option value="Owner">{t('users.owner')}</option>}
-                    <option value="Manager">{t('users.manager')}</option>
-                    <option value="Shepherd">{t('users.shepherd')}</option>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      {isAdmin && <option value="Admin">{t('users.admin')}</option>}
+                      {isAdmin && <option value="Owner">{t('users.owner')}</option>}
+                      <option value="Manager">{t('users.manager')}</option>
+                      <option value="Doctor">{t('users.doctor') || 'Doctor'}</option>
+                      <option value="Shepherd">{t('users.shepherd')}</option>
+                    </>
+                  )}
               </select>
               <MaterialSymbol icon="expand_more" className={`absolute top-1/2 -translate-y-1/2 text-[#002819]/40 pointer-events-none ${isRtl ? 'left-4 right-auto' : 'right-4'}`} />
             </div>
           </div>
+
+          {isAdmin && form.role && form.role !== 'Admin' && form.role !== 'Owner' && (
+            <div className="md:col-span-2">
+              <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.assignToOwner') || 'Assign to Owner'}</label>
+              <select
+                value={form.managed_by}
+                onChange={e => set('managed_by', e.target.value)}
+                className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 transition outline-none appearance-none ${isRtl ? 'pl-10 pr-4 text-right' : 'pr-10 pl-4'}`}
+              >
+                <option value="">{t('teamPage.selectOwner') || 'Not assigned to any owner'}</option>
+                {owners.map(owner => (
+                  <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
+                ))}
+              </select>
+              <p className={`text-xs text-[#717973] mt-1 ${isRtl ? 'text-right' : ''}`}>
+                {t('users.ownerAssignHint') || 'The user will be managed by this owner'}
+              </p>
+            </div>
+          )}
 
           <div>
             <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('auth.password')} *</label>

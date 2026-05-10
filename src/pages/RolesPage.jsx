@@ -6,13 +6,13 @@ import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 
-const ROLES = [
-  { name: 'Admin', description: 'Full system access and user management', permissions: ['all'] },
-  { name: 'Owner', description: 'Manage own farm and team', permissions: ['manage_team', 'manage_animals', 'reports'] },
-  { name: 'Manager', description: 'Manage shepherds and daily operations', permissions: ['manage_shepherds', 'tasks'] },
-  { name: 'Shepherd', description: 'Care for animals and record data', permissions: ['record_data', 'view_animals'] },
-  { name: 'Doctor', description: 'Medical care and health records', permissions: ['medical_records', 'view_animals'] },
-];
+const ROLE_DESCRIPTIONS = {
+  Admin: 'Full system access and user management',
+  Owner: 'Manage own farm and team',
+  Manager: 'Manage shepherds and daily operations',
+  Shepherd: 'Care for animals and record data',
+  Doctor: 'Medical care and health records',
+};
 
 export default function RolesPage() {
   const { t, dir } = useI18n();
@@ -44,17 +44,6 @@ export default function RolesPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getRoleData = (roleName) => {
-    return rolesData.find(r => r.name === roleName) || { user_count: 0, permissions: [] };
-  };
-
-  const getPermissionsDisplay = (roleName) => {
-    const role = ROLES.find(r => r.name === roleName);
-    if (!role) return [];
-    if (role.permissions.includes('all')) return ['All Permissions'];
-    return role.permissions;
   };
 
   const getRoleColor = (roleName) => {
@@ -113,9 +102,9 @@ export default function RolesPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ROLES.map((role) => {
-          const roleData = getRoleData(role.name);
-          const permissions = getPermissionsDisplay(role.name);
+        {rolesData.map((role) => {
+          const permissions = role.permissions || [];
+          const displayPermissions = permissions.includes('all') ? ['All Permissions'] : permissions;
 
           return (
             <div
@@ -133,18 +122,18 @@ export default function RolesPage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-[#002819] mb-2">{role.name}</h3>
-                <p className="text-sm text-[#717973] mb-4">{role.description}</p>
+                <p className="text-sm text-[#717973] mb-4">{ROLE_DESCRIPTIONS[role.name] || ''}</p>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-t border-gray-100">
                     <span className="text-sm text-[#717973]">{t('roles.users') || 'Users'}</span>
-                    <span className="font-bold text-[#002819]">{roleData.user_count || 0}</span>
+                    <span className="font-bold text-[#002819]">{role.user_count || 0}</span>
                   </div>
 
                   <div className="border-t border-gray-100 pt-3">
                     <span className="text-sm text-[#717973] block mb-2">{t('roles.permissions') || 'Permissions'}</span>
                     <div className="flex flex-wrap gap-2">
-                      {permissions.map((perm) => (
+                      {displayPermissions.map((perm) => (
                         <span
                           key={perm}
                           className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"

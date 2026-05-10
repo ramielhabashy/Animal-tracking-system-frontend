@@ -151,10 +151,12 @@ const fetchData = async () => {
               {exporting ? t('common.exporting') : t('common.export')}
             </button>
           )}
-          <Link to="/users/add" className="btn-primary flex items-center gap-2 w-fit">
-            <MaterialSymbol icon="person_add" size={18} />
-            {t('users.addUser')}
-          </Link>
+          {(isAdmin || isOwner) && (
+            <Link to="/users/add" className="btn-primary flex items-center gap-2 w-fit">
+              <MaterialSymbol icon="person_add" size={18} />
+              {t('users.addUser')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -233,7 +235,7 @@ const fetchData = async () => {
                   </td>
                   <td className={`px-6 py-5 ${isRtl ? 'text-left' : 'text-right'}`}>
                     <div className={`flex items-center gap-1 ${isRtl ? 'justify-start' : 'justify-end'}`}>
-                      {!isOwner || (isOwner && user.role !== 'Admin') ? (
+                      {isAdmin || (isOwner && user.role !== 'Admin') ? (
                         <>
                           <Link to={`/users/${user.id}/edit`} className="p-3 text-[#717973] hover:text-[#002819] hover:bg-[#F4F4EF] rounded-xl transition-all">
                             <MaterialSymbol icon="edit" size={20} />

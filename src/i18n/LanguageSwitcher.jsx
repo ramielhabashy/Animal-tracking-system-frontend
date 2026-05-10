@@ -39,7 +39,7 @@ export default function LanguageSwitcher() {
         title={locale === 'en' ? 'Switch language' : 'تغيير اللغة'}
       >
         {languages.map(lang => (
-          <option key={lang.code} value={lang.code}>
+          <option key={lang.code} value={lang.code} dir={lang.direction || 'ltr'}>
             {getDisplayName(lang)}
           </option>
         ))}
