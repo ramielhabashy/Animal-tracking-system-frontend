@@ -55,6 +55,12 @@ export default function AIAssistant() {
   }, [messages]);
 
   useEffect(() => {
+    const handler = () => setIsOpen(prev => !prev);
+    window.addEventListener('toggle-ai-assistant', handler);
+    return () => window.removeEventListener('toggle-ai-assistant', handler);
+  }, []);
+
+  useEffect(() => {
     if (isOpen && user && hasApiKey) {
       fetchUserContext();
     }

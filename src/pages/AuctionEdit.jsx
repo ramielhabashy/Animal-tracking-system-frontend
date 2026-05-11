@@ -1,9 +1,10 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n';
 
 export default function AuctionEdit() {
   const { id } = useParams();
@@ -87,7 +88,7 @@ export default function AuctionEdit() {
     }
   };
 
-  const canEdit = user?.role === 'Admin' || user?.id === auction?.owner?.id;
+  const canEdit = user?.role === 'Admin' || user?.id === auction?.owner?.id || user?.role === 'Manager';
 
   if (loading) {
     return (
@@ -102,6 +103,18 @@ export default function AuctionEdit() {
       <div className="text-center py-16">
         <MaterialSymbol icon="error" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
         <p className="text-[#404943] text-lg">Auction not found</p>
+      </div>
+    );
+  }
+
+  if (!canEdit) {
+    return (
+      <div className="text-center py-16">
+        <MaterialSymbol icon="lock" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
+        <p className="text-[#404943] text-lg font-semibold">You don't have permission to edit this auction</p>
+        <Link to={`/auctions/${id}`} className="text-[#002819] font-bold hover:underline mt-4 inline-block">
+          Back to Auction
+        </Link>
       </div>
     );
   }

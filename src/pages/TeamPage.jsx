@@ -32,7 +32,7 @@ const [expandedOwners, setExpandedOwners] = useState({});
 
   const isAdmin = user?.role === 'Admin';
 
-  if (!isAdmin) {
+  if (!isAdmin && user?.role !== 'Owner') {
     return (
       <div className="p-8 text-center">
         <MaterialSymbol icon="lock" size={48} className="text-gray-400 mx-auto mb-4" />
@@ -49,12 +49,12 @@ const [expandedOwners, setExpandedOwners] = useState({});
 const fetchData = async () => {
     try {
       const [usersRes, rolesRes] = await Promise.all([
-        apiFetch('/api/users'),
+        apiFetch('/api/users?per_page=500'),
         apiFetch('/api/admin/roles'),
       ]);
       if (usersRes.ok) {
         const data = await usersRes.json();
-        const usersArray = data.data || data.value || data || [];
+        const usersArray = Array.isArray(data.data) ? data.data : (data.data?.data || data.value || data || []);
         setAllUsers(usersArray);
       }
       if (rolesRes.ok) {
@@ -96,7 +96,7 @@ const fetchData = async () => {
         fetchData();
       } else {
         const data = await response.json();
-        setMessage({ type: 'error', text: data.message || t('teamPage.failedAdd') });
+        setMessage({ type: 'error', text: t(`errors.${data.error}`) || data.message || t('teamPage.failedAdd') });
       }
     } catch (error) {
       setMessage({ type: 'error', text: t('teamPage.failedAdd') });
@@ -123,7 +123,7 @@ const fetchData = async () => {
         fetchData();
       } else {
         const data = await response.json();
-        setMessage({ type: 'error', text: data.message || t('teamPage.failedAssign') });
+        setMessage({ type: 'error', text: t(`errors.${data.error}`) || data.message || t('teamPage.failedAssign') });
       }
     } catch (error) {
       setMessage({ type: 'error', text: t('teamPage.failedAssign') });
@@ -159,7 +159,7 @@ const handleRemoveMember = async (memberId) => {
       const response = await apiFetch(`/api/admin/users/${userId}/roles`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
+        body: JSON.stringify({ roles: [newRole] }),
       });
 
       if (response.ok) {
@@ -167,7 +167,7 @@ const handleRemoveMember = async (memberId) => {
         fetchData();
       } else {
         const data = await response.json();
-        setMessage({ type: 'error', text: data.message || t('teamPage.failedRoleChange') });
+        setMessage({ type: 'error', text: t(`errors.${data.error}`) || data.message || t('teamPage.failedRoleChange') });
       }
     } catch (error) {
       setMessage({ type: 'error', text: t('teamPage.failedRoleChange') });
@@ -193,7 +193,7 @@ const handleRemoveMember = async (memberId) => {
   const availableUsers = allUsers.filter(u => !u.managed_by && u.role !== 'Owner' && u.role !== 'Admin' && u.id !== user?.id);
 
   const getMembersForOwner = (ownerId) => {
-    return allUsers.filter(u => u.managed_by === ownerId);
+    return allUsers.filter(u => u.managed_by == ownerId);
   };
 
   const getRoleBadge = (role) => {
@@ -447,6 +447,7 @@ const handleRemoveMember = async (memberId) => {
                     <>
                       <option value="Shepherd">{t('users.shepherd')}</option>
                       <option value="Manager">{t('users.manager')}</option>
+                      <option value="Doctor">{t('users.doctor')}</option>
                     </>
                   )}
                 </select>
@@ -537,6 +538,7 @@ const handleRemoveMember = async (memberId) => {
                     <>
                       <option value="Shepherd">{t('users.shepherd')}</option>
                       <option value="Manager">{t('users.manager')}</option>
+                      <option value="Doctor">{t('users.doctor')}</option>
                       {isAdmin && (
                         <>
                           <option value="Owner">{t('users.owner')}</option>

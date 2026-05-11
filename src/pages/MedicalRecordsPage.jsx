@@ -9,10 +9,15 @@ export default function MedicalRecordsPage() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
   const { user } = useAuth();
+  const role = user?.role;
+  const canAdd = ['Admin', 'Owner', 'Doctor'].includes(role);
+  const canEdit = ['Admin', 'Owner', 'Doctor'].includes(role);
 
   const [records, setRecords] = useState([]);
   const [vaccinations, setVaccinations] = useState([]);
   const [animals, setAnimals] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [showVetDropdown, setShowVetDropdown] = useState(false);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -58,11 +63,12 @@ export default function MedicalRecordsPage() {
 
   const fetchData = async () => {
     try {
-      const [recordsRes, animalsRes, statsRes, vaccRes] = await Promise.all([
+      const [recordsRes, animalsRes, statsRes, vaccRes, doctorsRes] = await Promise.all([
         apiFetch('/api/medical-records'),
         apiFetch('/api/animals?per_page=100'),
         apiFetch('/api/medical-records/stats'),
         apiFetch('/api/vaccination-schedules?per_page=100'),
+        apiFetch('/api/users/doctors/list'),
       ]);
 
       if (recordsRes.ok) {
@@ -83,6 +89,11 @@ export default function MedicalRecordsPage() {
       if (vaccRes.ok) {
         const data = await vaccRes.json();
         setVaccinations(data.data || []);
+      }
+
+      if (doctorsRes.ok) {
+        const data = await doctorsRes.json();
+        setDoctors(data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -359,13 +370,15 @@ export default function MedicalRecordsPage() {
               {t('vaccination.title')}
             </button>
           </div>
-          <button
-            onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
-            className="px-6 py-3 bg-[#002819] text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#06402b] transition shadow-lg"
-          >
-            <MaterialSymbol icon="add" size={20} />
-            {activeTab === 'vaccinations' ? t('vaccination.add') : t('medicalRecords.addRecord')}
-          </button>
+          {canAdd && (
+            <button
+              onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
+              className="px-6 py-3 bg-[#002819] text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#06402b] transition shadow-lg"
+            >
+              <MaterialSymbol icon="add" size={20} />
+              {activeTab === 'vaccinations' ? t('vaccination.add') : t('medicalRecords.addRecord')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -624,12 +637,14 @@ export default function MedicalRecordsPage() {
                   <td colSpan="8" className="px-6 py-12 text-center text-[#717973]">
                     <MaterialSymbol icon="medical_services" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('medicalRecords.noRecords')}</p>
-                    <button
-                      onClick={() => { resetForm(); setShowModal(true); }}
-                      className="mt-4 text-[#002819] font-bold hover:underline"
-                    >
-                      {t('medicalRecords.addFirst')}
-                    </button>
+                    {canAdd && (
+                      <button
+                        onClick={() => { resetForm(); setShowModal(true); }}
+                        className="mt-4 text-[#002819] font-bold hover:underline"
+                      >
+                        {t('medicalRecords.addFirst')}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -664,18 +679,22 @@ export default function MedicalRecordsPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(record)}
-                          className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
-                        >
-                          <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(record.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <MaterialSymbol icon="delete" size={18} className="text-red-600" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => openEditModal(record)}
+                            className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
+                          >
+                            <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
+                          </button>
+                        )}
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDelete(record.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <MaterialSymbol icon="delete" size={18} className="text-red-600" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -748,18 +767,22 @@ export default function MedicalRecordsPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(vacc)}
-                          className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
-                        >
-                          <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vacc.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <MaterialSymbol icon="delete" size={18} className="text-red-600" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => openEditModal(vacc)}
+                            className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
+                          >
+                            <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
+                          </button>
+                        )}
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDelete(vacc.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <MaterialSymbol icon="delete" size={18} className="text-red-600" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -888,15 +911,53 @@ export default function MedicalRecordsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.veterinarian')}</label>
-                  <input
-                    type="text"
-                    value={formData.veterinarian}
-                    onChange={(e) => setFormData({ ...formData, veterinarian: e.target.value })}
-                    className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
-                    placeholder="Dr. Name"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.veterinarian}
+                      onChange={(e) => {
+                        setFormData({ ...formData, veterinarian: e.target.value });
+                        setShowVetDropdown(true);
+                      }}
+                      onFocus={() => setShowVetDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowVetDropdown(false), 200)}
+                      className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                      placeholder="Dr. Name"
+                    />
+                    {doctors.length > 0 && showVetDropdown && (
+                      <div className="absolute z-20 top-full mt-1 w-full bg-white rounded-xl shadow-xl border border-stone-100 max-h-48 overflow-y-auto">
+                        <div className="p-2 border-b border-stone-50">
+                          <span className="text-[10px] font-bold text-[#717973] uppercase tracking-wider px-2">Internal Doctors</span>
+                        </div>
+                        {doctors
+                          .filter(d => !formData.veterinarian || d.name.toLowerCase().includes(formData.veterinarian.toLowerCase()))
+                          .map(d => (
+                            <button
+                              key={d.id}
+                              type="button"
+                              onMouseDown={() => {
+                                setFormData({ ...formData, veterinarian: d.name });
+                                setShowVetDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 text-sm text-[#002819] hover:bg-[#F4F4EF] transition-colors flex items-center gap-2"
+                            >
+                              <span className="w-6 h-6 rounded-full bg-[#06402B]/10 flex items-center justify-center text-[10px] font-bold text-[#06402B]">
+                                {d.name.charAt(0)}
+                              </span>
+                              {d.name}
+                            </button>
+                          ))}
+                        {formData.veterinarian && !doctors.some(d => d.name.toLowerCase() === formData.veterinarian.toLowerCase()) && (
+                          <div className="px-4 py-2 border-t border-stone-50">
+                            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">External</span>
+                            <p className="text-xs text-[#717973] mt-0.5">Using external veterinarian: <strong>{formData.veterinarian}</strong></p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.medication')}</label>

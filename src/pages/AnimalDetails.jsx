@@ -6,6 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 
 const createMarkerIcon = (status) => {
@@ -33,8 +34,10 @@ function MapUpdater({ center, zoom }) {
 export default function AnimalDetails() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const canModify = user?.role !== 'Shepherd' && user?.role !== 'Doctor';
   const [animal, setAnimal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [device, setDevice] = useState(null);
@@ -81,7 +84,7 @@ export default function AnimalDetails() {
       const res = await apiFetch(`/api/animals/${id}/transfer-ownership`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: selectedUser }),
+        body: JSON.stringify({ new_owner_id: selectedUser }),
       });
       
       if (res.ok) {
@@ -215,14 +218,18 @@ const fetchAnimal = async () => {
                 </div>
               </div>
               <div className={`flex gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <Link to={`/animals/${id}/edit`} className={`bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-xl font-bold transition-all border border-white/10 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                  <MaterialSymbol icon="edit" />
-                  {t('animals.editProfile')}
-                </Link>
-                <Link to={`/auctions/new?animal=${id}`} className={`bg-amber-400 hover:bg-amber-500 text-emerald-950 px-8 py-3 rounded-xl font-bold transition-all shadow-xl shadow-amber-900/20 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                  <MaterialSymbol icon="gavel" />
-                  {t('animalDetailsPage.sellAnimal')}
-                </Link>
+                {canModify && (
+                  <Link to={`/animals/${id}/edit`} className={`bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-xl font-bold transition-all border border-white/10 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <MaterialSymbol icon="edit" />
+                    {t('animals.editProfile')}
+                  </Link>
+                )}
+                {canModify && (
+                  <Link to={`/auctions/new?animal=${id}`} className={`bg-amber-400 hover:bg-amber-500 text-emerald-950 px-8 py-3 rounded-xl font-bold transition-all shadow-xl shadow-amber-900/20 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <MaterialSymbol icon="gavel" />
+                    {t('animalDetailsPage.sellAnimal')}
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -241,10 +248,12 @@ const fetchAnimal = async () => {
                   {owner ? t('animalDetailsPage.legalCustody', { name: owner.name }) : t('animalDetailsPage.noOwner')}
                 </p>
               </div>
-              <button onClick={handleTransferClick} className={`w-full bg-emerald-800 hover:bg-emerald-700 text-amber-400 py-4 rounded-2xl font-bold transition-all mt-6 flex items-center justify-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="swap_horiz" />
-                {t('animalDetailsPage.transferOwnership')}
-              </button>
+              {canModify && (
+                <button onClick={handleTransferClick} className={`w-full bg-emerald-800 hover:bg-emerald-700 text-amber-400 py-4 rounded-2xl font-bold transition-all mt-6 flex items-center justify-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <MaterialSymbol icon="swap_horiz" />
+                  {t('animalDetailsPage.transferOwnership')}
+                </button>
+              )}
               <div className={`absolute w-40 h-40 bg-emerald-800/30 rounded-full blur-3xl ${isRtl ? '-left-8 -top-8 right-auto' : '-right-8 -top-8'}`}></div>
             </div>
 

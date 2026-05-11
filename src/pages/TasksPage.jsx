@@ -55,7 +55,9 @@ export default function TasksPage() {
   const [message, setMessage] = useState(null);
   
   const isShepherd = user?.role === 'Shepherd';
-  const canModify = !isShepherd;
+  const isDoctor = user?.role === 'Doctor';
+  const canModify = !isShepherd && !isDoctor;
+  const canUpdateStatus = !isShepherd;
 
   useEffect(() => {
     fetchTasks();
@@ -71,7 +73,7 @@ export default function TasksPage() {
       const response = await apiFetch(url);
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.data || []);
+        setTasks(data.data?.data || data.data || data || []);
       }
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
@@ -85,7 +87,7 @@ export default function TasksPage() {
       const response = await apiFetch('/api/tasks/stats');
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        setStats(data.data || data || {});
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -568,7 +570,7 @@ export default function TasksPage() {
                         <MaterialSymbol icon="add_circle" size={20} />
                       </button>
                     )}
-                    {task.status === 'pending' && !isShepherd && (
+                    {task.status === 'pending' && canUpdateStatus && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatusChange(task.id, 'in_progress'); }}
                         className="p-3 bg-[#3B82F6]/10 text-[#2563EB] hover:bg-[#3B82F6]/20 rounded-xl transition-colors"
@@ -577,7 +579,7 @@ export default function TasksPage() {
                         <MaterialSymbol icon="play_arrow" size={20} />
                       </button>
                     )}
-                    {task.status === 'in_progress' && (
+                    {task.status === 'in_progress' && canUpdateStatus && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleStatusChange(task.id, 'completed'); }}
                         className="p-3 bg-[#10B981]/10 text-[#059669] hover:bg-[#10B981]/20 rounded-xl transition-colors"

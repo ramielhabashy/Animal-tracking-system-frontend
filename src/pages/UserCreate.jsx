@@ -125,7 +125,7 @@ export default function UserCreate() {
         if (data.errors) {
           setErrors(data.errors);
         }
-        setMsg({ ok: false, text: data.message || t('users.userCreateFailed') });
+        setMsg({ ok: false, text: t(`errors.${data.error}`) || data.message || t('users.userCreateFailed') });
       }
     } catch (err) {
       setMsg({ ok: false, text: t('errors.networkError') });

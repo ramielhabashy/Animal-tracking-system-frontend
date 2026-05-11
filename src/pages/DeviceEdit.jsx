@@ -12,6 +12,7 @@ export default function DeviceEdit() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
   const { isOwner, isAdmin } = useRole();
+  const canManageDevices = isOwner || isAdmin;
   const canEditAdvanced = isOwner || isAdmin;
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -358,15 +359,17 @@ export default function DeviceEdit() {
           )}
 
           <div className="flex flex-col sm:flex-row items-center justify-between pt-8 gap-4">
-            <button 
-              type="button" 
-              onClick={handleDelete}
-              disabled={deleting}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#ba1a1a] font-bold px-6 py-3 rounded-xl hover:bg-[#ffdad6] transition-colors disabled:opacity-50"
-            >
-              <MaterialSymbol icon="delete" size={20} />
-              {deleting ? 'Deleting...' : 'Delete Device'}
-            </button>
+            {canManageDevices && (
+              <button 
+                type="button" 
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#ba1a1a] font-bold px-6 py-3 rounded-xl hover:bg-[#ffdad6] transition-colors disabled:opacity-50"
+              >
+                <MaterialSymbol icon="delete" size={20} />
+                {deleting ? 'Deleting...' : 'Delete Device'}
+              </button>
+            )}
             <div className="flex gap-4 w-full sm:w-auto">
               <button
                 type="button"
@@ -375,9 +378,11 @@ export default function DeviceEdit() {
               >
                 Cancel
               </button>
-              <button type="submit" className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold bg-[#002819] text-white shadow-xl shadow-[#002819]/20 hover:scale-[1.02] active:scale-95 transition-all">
-                Save Changes
-              </button>
+              {canManageDevices && (
+                <button type="submit" className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold bg-[#002819] text-white shadow-xl shadow-[#002819]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                  Save Changes
+                </button>
+              )}
             </div>
           </div>
         </form>

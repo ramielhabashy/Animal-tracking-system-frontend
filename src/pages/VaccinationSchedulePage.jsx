@@ -9,6 +9,9 @@ export default function VaccinationSchedulePage() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
   const { user } = useAuth();
+  const role = user?.role;
+  const canAdd = ['Admin', 'Owner', 'Doctor'].includes(role);
+  const canEdit = ['Admin', 'Owner', 'Doctor'].includes(role);
 
   const [vaccinations, setVaccinations] = useState([]);
   const [animals, setAnimals] = useState([]);
@@ -499,13 +502,15 @@ export default function VaccinationSchedulePage() {
       </div>
 
       <div className="flex-1 flex flex-col gap-8 min-w-[320px]">
-        <button
-          onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
-          className="w-full py-4 bg-gradient-to-br from-[#002819] to-[#06402b] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#002819]/20 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
-        >
-          <MaterialSymbol icon="add_circle" size={22} />
-          {t('vaccination.add')}
-        </button>
+        {canAdd && (
+          <button
+            onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
+            className="w-full py-4 bg-gradient-to-br from-[#002819] to-[#06402b] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#002819]/20 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
+          >
+            <MaterialSymbol icon="add_circle" size={22} />
+            {t('vaccination.add')}
+          </button>
+        )}
 
         <div className="bg-[#e3e3de] rounded-2xl p-6 flex-1 flex flex-col">
           <h3 className={`text-lg font-bold font-['Manrope'] mb-6 flex items-center justify-between ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
@@ -537,18 +542,22 @@ export default function VaccinationSchedulePage() {
                       <span className="text-[10px] text-[#404943]">{animal?.name || t('nav.animals')}</span>
                     </div>
                     <div className={`flex gap-2 mt-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <button
-                        onClick={() => handleAdminister(vacc.id)}
-                        className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold hover:bg-emerald-200"
-                      >
-                        {t('vaccination.done')}
-                      </button>
-                      <button
-                        onClick={() => openEditModal(vacc)}
-                        className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold hover:bg-blue-200"
-                      >
-                        {t('common.edit')}
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => handleAdminister(vacc.id)}
+                          className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold hover:bg-emerald-200"
+                        >
+                          {t('vaccination.done')}
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button
+                          onClick={() => openEditModal(vacc)}
+                          className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold hover:bg-blue-200"
+                        >
+                          {t('common.edit')}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

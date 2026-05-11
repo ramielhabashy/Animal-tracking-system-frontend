@@ -10,7 +10,7 @@ import { setAuthToken, setAuthUser, setUserRole, setPendingSubscription } from '
 
 export default function Login() {
   const { t, dir } = useI18n();
-  const { platformName } = usePlatform();
+  const { platformName, logoUrl, copyrightText } = usePlatform();
   const isRtl = dir === 'rtl';
 
   const [isLogin, setIsLogin] = useState(true);
@@ -33,12 +33,13 @@ const handleSubmit = async (e) => {
     
     if (isLogin) {
       console.log('Attempting login with:', email);
-      const success = await login(email, password);
-      console.log('Login result:', success);
-      if (success) {
+      const result = await login(email, password);
+      console.log('Login result:', result);
+      if (result === true) {
         navigate('/dashboard');
       } else {
-        setError(t('errors.unauthorized'));
+        const errorCode = result?.error || 'unauthorized';
+        setError(t(`errors.${errorCode}`) || result?.message || t('errors.unauthorized'));
       }
     } else {
       try {
@@ -67,7 +68,7 @@ const handleSubmit = async (e) => {
           navigate('/subscription/select');
         } else {
           const data = await response.json();
-          setError(data.message || data.errors?.email?.[0] || t('errors.serverError'));
+          setError(t(`errors.${data.error}`) || data.message || data.errors?.email?.[0] || t('errors.serverError'));
         }
       } catch (err) {
         setError(t('errors.networkError'));
@@ -92,9 +93,13 @@ const handleSubmit = async (e) => {
         <div className="relative z-10 w-full max-w-md">
           <div className="bg-white/95 backdrop-blur-xl p-10 md:p-12 rounded-3xl shadow-[0_24px_64px_rgba(6,64,43,0.15)]">
           <div className="flex flex-col items-center mb-10">
-            <div className="w-18 h-18 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-[#002819]/30">
-              <MaterialSymbol icon="track_changes" size={36} className="text-[#D4AF37]" weight="fill" />
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={platformName} className="h-18 mb-5 object-contain" />
+            ) : (
+              <div className="w-18 h-18 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-[#002819]/30">
+                <MaterialSymbol icon="track_changes" size={36} className="text-[#D4AF37]" weight="fill" />
+              </div>
+            )}
             <h1 className="text-4xl font-black text-[#002819] font-['Manrope'] tracking-tight mb-2">
               {isLogin ? t('auth.login') : t('auth.register')}
             </h1>
@@ -297,7 +302,7 @@ const handleSubmit = async (e) => {
       <footer className={`mt-auto w-full py-8 px-12 z-20 ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className={`flex justify-between items-center max-w-screen-2xl mx-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
             <p className="text-white/80 font-medium text-sm">
-            © 2024 {platformName}. Digital Majlis.
+            © {new Date().getFullYear()} {platformName}. {copyrightText}
           </p>
         </div>
       </footer>

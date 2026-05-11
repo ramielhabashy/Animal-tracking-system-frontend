@@ -8,8 +8,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
-import { useAuth } from '../hooks/useAuth';
-import { getAuthUser } from '../utils/cookies';
+import { useAuth } from '../context/AuthContext';
 
 const createCustomIcon = () => {
   return L.divIcon({
@@ -54,8 +53,16 @@ const pathColors = [
 
 export default function Dashboard() {
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
-  const [user, setUser] = useState(null);
+  const userRole = user?.role;
+  const isAdmin = userRole === 'Admin';
+  const isOwner = userRole === 'Owner';
+  const isManager = userRole === 'Manager';
+  const isAdminOrOwner = isAdmin || isOwner;
+  const isOwnerOrManager = isOwner || isManager;
+  const canViewMedical = isAdmin || isOwner || isManager || userRole === 'Doctor';
+  const canManageUsers = isAdmin || isOwner;
 
   const [stats, setStats] = useState({
     totalAnimals: 0,
@@ -72,11 +79,7 @@ export default function Dashboard() {
   const [vaccinations, setVaccinations] = useState([]);
   const [vaccStats, setVaccStats] = useState({});
 
-useEffect(() => {
-    const storedUser = getAuthUser();
-    if (storedUser) {
-      setUser(storedUser);
-    }
+  useEffect(() => {
     fetchDashboardData();
   }, []);
 
@@ -311,7 +314,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {stats.subscription?.is_admin ? (
+        {isAdmin && stats.subscription?.is_admin ? (
           <Link to="/users" className="stat-card bg-gradient-to-br from-[#002819] to-[#06402B] text-white group hover:shadow-[0_16px_48px_rgba(6,64,43,0.1)] transition-shadow duration-300">
             <div className="flex justify-between items-start mb-6">
               <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
@@ -326,8 +329,8 @@ useEffect(() => {
               </div>
             </div>
           </Link>
-        ) : stats.subscription ? (
-          <div className="stat-card bg-gradient-to-br from-[#002819] to-[#06402B] text-white group">
+        ) : isAdminOrOwner && stats.subscription ? (
+          <Link to="/subscription" className="stat-card bg-gradient-to-br from-[#002819] to-[#06402B] text-white group hover:shadow-[0_16px_48px_rgba(6,64,43,0.1)] transition-shadow duration-300">
             <div className="flex justify-between items-start mb-6">
               <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
                 <MaterialSymbol icon="stars" size={24} className="text-[#D4AF37]" weight="fill" />
@@ -344,8 +347,8 @@ useEffect(() => {
                 </p>
               )}
             </div>
-          </div>
-        ) : (
+          </Link>
+        ) : isAdminOrOwner && !stats.subscription ? (
           <Link to="/subscription" className="stat-card bg-gradient-to-br from-[#002819] to-[#06402B] text-white group hover:shadow-[0_16px_48px_rgba(6,64,43,0.1)] transition-shadow duration-300">
             <div className="flex justify-between items-start mb-6">
               <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
@@ -357,6 +360,18 @@ useEffect(() => {
               <h3 className="text-2xl font-black text-[#D4AF37]">{t('subscription.selectPlan')}</h3>
             </div>
           </Link>
+        ) : (
+          <div className="stat-card bg-gradient-to-br from-[#002819] to-[#06402B] text-white/80 group">
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+                <MaterialSymbol icon="stars" size={24} className="text-[#D4AF37]/60" weight="fill" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white/60 mb-1">{t('subscription.title')}</p>
+              <h3 className="text-2xl font-black text-white/40">{t('subscription.selectPlan')}</h3>
+            </div>
+          </div>
         )}
       </section>
 
@@ -483,80 +498,82 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="card p-8">
-        <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <MaterialSymbol icon="vaccines" size={24} className="text-emerald-700" weight="fill" />
-            </div>
-            <div className={isRtl ? 'text-right' : ''}>
-              <h4 className="font-black text-xl text-[#002819]">{t('vaccination.title')}</h4>
-              <div className="flex gap-3 mt-1">
-                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">{vaccStats.scheduled || 0} {t('vaccination.scheduled')}</span>
-                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">{vaccStats.overdue || 0} {t('vaccination.overdue')}</span>
+      {canViewMedical && (
+        <div className="card p-8">
+          <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <MaterialSymbol icon="vaccines" size={24} className="text-emerald-700" weight="fill" />
+              </div>
+              <div className={isRtl ? 'text-right' : ''}>
+                <h4 className="font-black text-xl text-[#002819]">{t('vaccination.title')}</h4>
+                <div className="flex gap-3 mt-1">
+                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">{vaccStats.scheduled || 0} {t('vaccination.scheduled')}</span>
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">{vaccStats.overdue || 0} {t('vaccination.overdue')}</span>
+                </div>
               </div>
             </div>
+            <Link to="/medical-records" className="flex items-center gap-2 px-4 py-2 bg-[#002819] text-white rounded-xl font-semibold text-sm hover:bg-[#06402b] transition-colors">
+              {t('vaccination.add')}
+              <MaterialSymbol icon="arrow_forward" size={16} />
+            </Link>
           </div>
-          <Link to="/medical-records" className="flex items-center gap-2 px-4 py-2 bg-[#002819] text-white rounded-xl font-semibold text-sm hover:bg-[#06402b] transition-colors">
-            {t('vaccination.add')}
-            <MaterialSymbol icon="arrow_forward" size={16} />
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-7 gap-1">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-            <div key={i} className="text-center text-xs font-bold text-[#717973] py-2">{day}</div>
-          ))}
-          {(() => {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const currentMonth = today.getMonth();
-            const firstDay = new Date(today.getFullYear(), currentMonth, 1).getDay();
-            const daysInMonth = new Date(today.getFullYear(), currentMonth + 1, 0).getDate();
-            const cells = [];
-            
-            for (let i = 0; i < firstDay; i++) cells.push(null);
-            for (let i = 1; i <= daysInMonth; i++) cells.push(i);
-            
-            return cells.map((day, idx) => {
-              if (!day) return <div key={idx} className="aspect-square" />;
+          
+          <div className="grid grid-cols-7 gap-1">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <div key={i} className="text-center text-xs font-bold text-[#717973] py-2">{day}</div>
+            ))}
+            {(() => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const currentMonth = today.getMonth();
+              const firstDay = new Date(today.getFullYear(), currentMonth, 1).getDay();
+              const daysInMonth = new Date(today.getFullYear(), currentMonth + 1, 0).getDate();
+              const cells = [];
               
-              const dateStr = `${today.getFullYear()}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const dayVaccs = vaccinations.filter(v => v.scheduled_date === dateStr);
-              const isToday = day === today.getDate();
-              const hasOverdue = dayVaccs.some(v => v.status === 'overdue');
-              const hasScheduled = dayVaccs.some(v => v.status === 'scheduled');
+              for (let i = 0; i < firstDay; i++) cells.push(null);
+              for (let i = 1; i <= daysInMonth; i++) cells.push(i);
               
-              return (
-                <div key={idx} className={`aspect-square rounded-lg flex flex-col items-center justify-center relative ${isToday ? 'bg-[#D4AF37] text-white' : 'bg-[#F4F4EF] hover:bg-[#E3E3DE]'} transition-colors cursor-pointer`}>
-                  <span className="text-sm font-semibold">{day}</span>
-                  {hasOverdue && <div className="absolute bottom-1 w-2 h-2 bg-red-500 rounded-full" />}
-                  {hasScheduled && !hasOverdue && <div className="absolute bottom-1 w-2 h-2 bg-emerald-500 rounded-full" />}
-                </div>
-              );
-            });
-          })()}
-        </div>
-        
-        <div className="mt-4 flex items-center justify-center gap-6">
-          <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-            <span className="text-xs text-[#717973]">{t('vaccination.scheduled')}</span>
+              return cells.map((day, idx) => {
+                if (!day) return <div key={idx} className="aspect-square" />;
+                
+                const dateStr = `${today.getFullYear()}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayVaccs = vaccinations.filter(v => v.scheduled_date === dateStr);
+                const isToday = day === today.getDate();
+                const hasOverdue = dayVaccs.some(v => v.status === 'overdue');
+                const hasScheduled = dayVaccs.some(v => v.status === 'scheduled');
+                
+                return (
+                  <div key={idx} className={`aspect-square rounded-lg flex flex-col items-center justify-center relative ${isToday ? 'bg-[#D4AF37] text-white' : 'bg-[#F4F4EF] hover:bg-[#E3E3DE]'} transition-colors cursor-pointer`}>
+                    <span className="text-sm font-semibold">{day}</span>
+                    {hasOverdue && <div className="absolute bottom-1 w-2 h-2 bg-red-500 rounded-full" />}
+                    {hasScheduled && !hasOverdue && <div className="absolute bottom-1 w-2 h-2 bg-emerald-500 rounded-full" />}
+                  </div>
+                );
+              });
+            })()}
           </div>
-          <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-3 h-3 bg-red-500 rounded-full" />
-            <span className="text-xs text-[#717973]">{t('vaccination.overdue')}</span>
+          
+          <div className="mt-4 flex items-center justify-center gap-6">
+            <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+              <div className="w-3 h-3 bg-emerald-500 rounded-full" />
+              <span className="text-xs text-[#717973]">{t('vaccination.scheduled')}</span>
+            </div>
+            <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+              <div className="w-3 h-3 bg-red-500 rounded-full" />
+              <span className="text-xs text-[#717973]">{t('vaccination.overdue')}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { to: '/animals', icon: 'pets', title: t('dashboard.manageAnimals'), subtitle: `${stats.totalAnimals} total`, color: 'from-[#002819] to-[#06402B]' },
-          { to: '/devices', icon: 'sensors', title: t('nav.devices'), subtitle: `${stats.activeDevices} active`, color: 'from-[#06402B] to-[#002819]' },
-          { to: '/map', icon: 'map', title: t('nav.mapView'), subtitle: t('dashboard.fullTracker'), color: 'from-[#735C00] to-[#D4AF37]' },
-          { to: '/users', icon: 'groups', title: t('nav.team'), subtitle: t('team.teamMembers'), color: 'from-[#D4AF37] to-[#735C00]' },
-        ].map((item, idx) => (
+          { to: '/animals', icon: 'pets', title: t('dashboard.manageAnimals'), subtitle: `${stats.totalAnimals} total`, color: 'from-[#002819] to-[#06402B]', roles: true },
+          { to: '/devices', icon: 'sensors', title: t('nav.devices'), subtitle: `${stats.activeDevices} active`, color: 'from-[#06402B] to-[#002819]', roles: isAdmin || isOwner || isManager },
+          { to: '/map', icon: 'map', title: t('nav.mapView'), subtitle: t('dashboard.fullTracker'), color: 'from-[#735C00] to-[#D4AF37]', roles: isAdmin || isOwner || isManager },
+          { to: '/users', icon: 'groups', title: t('nav.team'), subtitle: t('team.teamMembers'), color: 'from-[#D4AF37] to-[#735C00]', roles: canManageUsers },
+        ].filter(item => item.roles).map((item, idx) => (
           <Link 
             key={idx} 
             to={item.to} 

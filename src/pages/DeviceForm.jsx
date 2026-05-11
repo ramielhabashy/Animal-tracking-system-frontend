@@ -4,11 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 
 export default function DeviceForm() {
   const navigate = useNavigate();
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
+  const canCreate = user?.role === 'Admin' || user?.role === 'Owner';
+
+  useEffect(() => {
+    if (!canCreate) {
+      navigate('/devices', { replace: true });
+    }
+  }, [canCreate, navigate]);
   const [formData, setFormData] = useState({
     name: '',
     type: 'collar',

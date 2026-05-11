@@ -156,7 +156,8 @@ export default function GeofenceList() {
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState(null);
   
-  const canModify = user?.role !== 'Shepherd';
+  const canModify = ['Admin', 'Owner', 'Manager'].includes(user?.role);
+  const canDelete = ['Admin', 'Owner'].includes(user?.role);
   const isAdmin = user?.role === 'Admin';
 
   useEffect(() => {
@@ -172,11 +173,11 @@ export default function GeofenceList() {
       ]);
       if (animalsRes.ok) {
         const data = await animalsRes.json();
-        setAnimals(data.data || []);
+        setAnimals(data.data?.data || data.data || data || []);
       }
       if (devicesRes.ok) {
         const data = await devicesRes.json();
-        setDevices(data.data || []);
+        setDevices(data.data?.data || data.data || data || []);
       }
     } catch (error) {
       console.error('Failed to fetch animals:', error);
@@ -475,12 +476,14 @@ export default function GeofenceList() {
                     {geofence.animals.slice(0, 2).map((animal) => (
                       <span key={animal.id} className="text-xs px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1">
                         {animal.animal_id}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRemoveAnimal(geofence, animal.id); }}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <MaterialSymbol icon="close" size={12} />
-                        </button>
+                        {canModify && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemoveAnimal(geofence, animal.id); }}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <MaterialSymbol icon="close" size={12} />
+                          </button>
+                        )}
                       </span>
                     ))}
                     {geofence.animals.length > 2 && (
@@ -499,12 +502,14 @@ export default function GeofenceList() {
                     {geofence.groups.map((group) => (
                       <span key={group.id} className="text-xs px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: group.color + '30' }}>
                         {group.name}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRemoveGroup(geofence, group.id); }}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <MaterialSymbol icon="close" size={12} />
-                        </button>
+                        {canModify && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemoveGroup(geofence, group.id); }}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <MaterialSymbol icon="close" size={12} />
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -512,18 +517,22 @@ export default function GeofenceList() {
               )}
 
               <div className={`flex gap-1 mt-4 pt-4 border-t border-gray-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <button
-                  onClick={() => openAssignModal(geofence)}
-                  className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                >
-                  <MaterialSymbol icon="pets" size={14} />
-                </button>
-                <button
-                  onClick={() => openGroupAssignModal(geofence)}
-                  className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                >
-                  <MaterialSymbol icon="folder" size={14} />
-                </button>
+                {canModify && (
+                  <button
+                    onClick={() => openAssignModal(geofence)}
+                    className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                  >
+                    <MaterialSymbol icon="pets" size={14} />
+                  </button>
+                )}
+                {canModify && (
+                  <button
+                    onClick={() => openGroupAssignModal(geofence)}
+                    className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                  >
+                    <MaterialSymbol icon="folder" size={14} />
+                  </button>
+                )}
                 {canModify && (
                   <>
                     <button
@@ -538,13 +547,15 @@ export default function GeofenceList() {
                     >
                       <MaterialSymbol icon="edit" size={14} />
                     </button>
-                    <button
-                      onClick={() => deleteGeofence(geofence)}
-                      className={`flex items-center justify-center px-2 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                    >
-                      <MaterialSymbol icon="delete" size={14} />
-                    </button>
                   </>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={() => deleteGeofence(geofence)}
+                    className={`flex items-center justify-center px-2 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                  >
+                    <MaterialSymbol icon="delete" size={14} />
+                  </button>
                 )}
               </div>
             </div>

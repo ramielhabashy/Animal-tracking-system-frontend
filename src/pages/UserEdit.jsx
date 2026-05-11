@@ -42,12 +42,13 @@ const fetchData = async () => {
         apiFetch('/api/subscription/tiers'),
         apiFetch(`/api/admin/users/${id}/roles`),
         apiFetch('/api/admin/roles'),
-        isAdmin ? apiFetch('/api/users?per_page=100') : Promise.resolve(null),
+        (isAdmin || currentUser?.role === 'Owner') ? apiFetch('/api/users?per_page=500') : Promise.resolve(null),
       ]);
       
       if (userRes.ok) {
-        const user = await userRes.json();
-        let userRole = 'Shepherd';
+        const res = await userRes.json();
+        const user = res.data || res;
+        let userRole = user.role || 'Shepherd';
         
         if (rolesRes.ok) {
           const rolesData = await rolesRes.json();
@@ -108,6 +109,9 @@ const fetchData = async () => {
         newForm.managed_by = '';
       }
     }
+    if (field === 'password') {
+      validatePassword(value);
+    }
     setForm(newForm);
   };
 
@@ -120,9 +124,23 @@ const fetchData = async () => {
   };
 
   const [errors, setErrors] = useState({});
+  const [passwordError, setPasswordError] = useState('');
+  const [notifyUser, setNotifyUser] = useState(false);
+
+  const validatePassword = (password) => {
+    if (password && password.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
 
   const submit = async (e) => {
     e.preventDefault();
+    
+    if (!validatePassword(form.password)) return;
+    
     setSaving(true);
     setMsg(null);
     setErrors({});
@@ -136,6 +154,7 @@ const fetchData = async () => {
     
     if (form.phone) data.phone = form.phone;
     if (form.password) data.password = form.password;
+    if (notifyUser) data.notify_user = true;
     if (canHaveSubscription(form.role) && form.subscription_tier_id) {
       data.subscription_tier_id = parseInt(form.subscription_tier_id);
     }
@@ -351,10 +370,20 @@ const fetchData = async () => {
                   type="password"
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
-                  className={`input-field ${errors.password ? 'ring-2 ring-red-500' : ''}`}
+                  className={`input-field ${passwordError || errors.password ? 'ring-2 ring-red-500' : ''}`}
                   placeholder="Leave blank to keep current (min 8 chars if changing)"
                 />
-                {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
+                {passwordError && <p className="text-red-600 text-xs mt-1">{passwordError}</p>}
+                {errors.password && !passwordError && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
+                <label className="flex items-center gap-3 mt-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifyUser}
+                    onChange={e => setNotifyUser(e.target.checked)}
+                    className="w-4 h-4 rounded border-[#E3E3DE] text-[#002819] focus:ring-[#002819]"
+                  />
+                  <span className="text-sm text-[#404943]">Notify user about password change</span>
+                </label>
               </div>
           </section>
 

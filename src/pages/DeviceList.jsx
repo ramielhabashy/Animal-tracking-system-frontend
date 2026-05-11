@@ -43,6 +43,8 @@ export default function DeviceList() {
   const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0, maintenance: 0 });
   
   const isAdmin = user?.role === 'Admin';
+  const isOwner = user?.role === 'Owner';
+  const canManageDevices = isAdmin || isOwner;
 
   useEffect(() => {
     fetchData();
@@ -63,8 +65,9 @@ export default function DeviceList() {
       if (devicesRes.ok && animalsRes.ok) {
         const devicesData = await devicesRes.json();
         const animalsData = await animalsRes.json();
-        setDevices(devicesData.data || []);
-        setTotalDevices(devicesData.total || 0);
+        const devicesArray = devicesData.data?.data || devicesData.data || devicesData || [];
+        setDevices(devicesArray);
+        setTotalDevices(devicesData.data?.meta?.total || devicesData.data?.total || devicesData.total || 0);
         setAnimals(animalsData.data || []);
       }
     } catch (error) {
@@ -83,7 +86,7 @@ export default function DeviceList() {
       if (devicesRes.ok && animalsRes.ok) {
         const devicesData = await devicesRes.json();
         const animalsData = await animalsRes.json();
-        const allDevices = devicesData.data || [];
+        const allDevices = devicesData.data?.data || devicesData.data || devicesData || [];
         const allAnimals = animalsData.data || [];
         
         const assignedDeviceIds = allAnimals
@@ -162,7 +165,7 @@ export default function DeviceList() {
           </p>
         </div>
         <div className="flex gap-3">
-          {isAdmin && (
+          {canManageDevices && (
             <button
               onClick={handleExport}
               disabled={exporting}
@@ -172,13 +175,15 @@ export default function DeviceList() {
               {exporting ? t('common.exporting') : t('common.export')}
             </button>
           )}
-          <button
-            onClick={() => navigate('/devices/new')}
-            className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
-          >
-            <MaterialSymbol icon="add_circle" size={20} />
-            {t('devicesPage.registerNew')}
-          </button>
+          {canManageDevices && (
+            <button
+              onClick={() => navigate('/devices/new')}
+              className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
+            >
+              <MaterialSymbol icon="add_circle" size={20} />
+              {t('devicesPage.registerNew')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -335,33 +340,37 @@ export default function DeviceList() {
                        {device.updated_at ? new Date(device.updated_at).toLocaleString() : t('devicesPage.na')}
                      </td>
                  <td className="px-8 py-5">
-                   <div className={`flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
-                    <Link
-                      to={`/devices/${device.id}/edit`}
-                      className="p-2 hover:bg-[#e8e8e3] rounded-lg text-[#404943] transition-all"
-                    >
-                      <MaterialSymbol icon="edit" size={20} />
-                    </Link>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm(`Are you sure you want to delete device ${device.device_id}?`)) return;
-                        try {
-                          const res = await apiFetch(`/api/devices/${device.id}`, { method: 'DELETE' });
-                          if (res.ok) {
-                            setMessage({ type: 'success', text: 'Device deleted successfully' });
-                            fetchData();
-                            setTimeout(() => setMessage(null), 3000);
-                          }
-                        } catch (err) { 
-                          setMessage({ type: 'error', text: 'Failed to delete device' }); 
-                        }
-                      }}
-                      className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-all"
-                    >
-                      <MaterialSymbol icon="delete" size={20} />
-                    </button>
-                  </div>
-                </td>
+                    <div className={`flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
+                     {canManageDevices && (
+                       <Link
+                         to={`/devices/${device.id}/edit`}
+                         className="p-2 hover:bg-[#e8e8e3] rounded-lg text-[#404943] transition-all"
+                       >
+                         <MaterialSymbol icon="edit" size={20} />
+                       </Link>
+                     )}
+                     {canManageDevices && (
+                       <button
+                         onClick={async () => {
+                           if (!window.confirm(`Are you sure you want to delete device ${device.device_id}?`)) return;
+                           try {
+                             const res = await apiFetch(`/api/devices/${device.id}`, { method: 'DELETE' });
+                             if (res.ok) {
+                               setMessage({ type: 'success', text: 'Device deleted successfully' });
+                               fetchData();
+                               setTimeout(() => setMessage(null), 3000);
+                             }
+                           } catch (err) { 
+                             setMessage({ type: 'error', text: 'Failed to delete device' }); 
+                           }
+                         }}
+                         className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-all"
+                       >
+                         <MaterialSymbol icon="delete" size={20} />
+                       </button>
+                     )}
+                   </div>
+                 </td>
                   </tr>
                 );
               })}

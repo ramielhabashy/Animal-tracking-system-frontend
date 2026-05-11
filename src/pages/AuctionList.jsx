@@ -184,7 +184,7 @@ export default function AuctionList() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {myAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} />
+                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
                 ))}
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function AuctionList() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {enrolledAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} />
+                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
                 ))}
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function AuctionList() {
           {filter !== 'all' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {auctions.map((auction) => (
-                <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} />
+                <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
               ))}
             </div>
           )}
@@ -295,7 +295,7 @@ export default function AuctionList() {
   );
 }
 
-function AuctionCard({ auction, onBid }) {
+function AuctionCard({ auction, onBid, isRtl }) {
   const getTimeRemaining = (auction) => {
     if (!auction.ends_at) return 'No limit';
     const end = new Date(auction.ends_at);

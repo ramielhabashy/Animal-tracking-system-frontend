@@ -7,6 +7,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 
 function MapUpdater({ bounds, zoomPosition, center }) {
   const map = useMap();
@@ -111,7 +112,10 @@ const createAnimalIcon = (color, isSelected = false) => {
 
 export default function MapView() {
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
+  const canCreateGeofence = ['Admin', 'Owner', 'Manager'].includes(user?.role);
+  const canDeleteGeofence = ['Admin', 'Owner'].includes(user?.role);
   const [animals, setAnimals] = useState([]);
   const [devices, setDevices] = useState([]);
   const [locationHistories, setLocationHistories] = useState({});
@@ -170,7 +174,7 @@ export default function MapView() {
         const usersData = usersRes.ok ? await usersRes.json() : { data: [] };
         
         setAnimals(animalsData.data || []);
-        setDevices(devicesData.data || []);
+        setDevices(devicesData.data?.data || devicesData.data || devicesData || []);
         setGeofences(geofencesData.data || []);
         setAlerts(alertsData.data || []);
         setGroups(groupsData.data || []);
@@ -605,7 +609,14 @@ export default function MapView() {
     setSelectedAnimal(null);
   };
 
-  const unacknowledgedAlerts = alerts.filter(a => !a.is_acknowledged);
+  const filteredAlerts = alerts.filter(a => {
+    if (alertTypeFilter === 'all') return true;
+    if (alertTypeFilter === 'entry' || alertTypeFilter === 'exit') {
+      return a.type === alertTypeFilter;
+    }
+    return true;
+  });
+  const unacknowledgedAlerts = filteredAlerts.filter(a => !a.is_acknowledged);
   const statusCounts = {
     healthy: filteredAnimals.filter(a => getAnimalStatus(a) === 'healthy').length,
     warning: filteredAnimals.filter(a => getAnimalStatus(a) === 'warning').length,
@@ -846,12 +857,14 @@ export default function MapView() {
                       <Link to={`/geofences`} className="flex-1 text-center text-xs bg-amber-100 text-amber-700 py-1.5 rounded font-bold hover:bg-amber-200">
                         Manage
                       </Link>
-                      <button 
-                        onClick={() => deleteGeofence(geofence.id)} 
-                        className="flex-1 text-center text-xs bg-red-100 text-red-600 py-1.5 rounded font-bold hover:bg-red-200"
-                      >
-                        Delete
-                      </button>
+                      {canDeleteGeofence && (
+                        <button 
+                          onClick={() => deleteGeofence(geofence.id)} 
+                          className="flex-1 text-center text-xs bg-red-100 text-red-600 py-1.5 rounded font-bold hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 </Popup>
@@ -983,13 +996,15 @@ export default function MapView() {
 
       {/* Geofence Controls */}
       <div className={`absolute top-24 z-[1000] flex flex-col gap-2 ${isRtl ? 'right-4' : 'left-4'}`}>
-        <button
-          onClick={() => setIsDrawingGeofence(!isDrawingGeofence)}
-          className={`p-3 rounded-full shadow-lg transition-all ${isDrawingGeofence ? 'bg-[#D4AF37] text-[#002819] ring-4 ring-[#D4AF37]/30' : 'bg-white text-[#002819] hover:shadow-xl'}`}
-          title={isDrawingGeofence ? 'Click to finish drawing' : 'Draw new geofence'}
-        >
-          <MaterialSymbol icon={isDrawingGeofence ? 'check' : 'hexagon'} size={24} />
-        </button>
+        {canCreateGeofence && (
+          <button
+            onClick={() => setIsDrawingGeofence(!isDrawingGeofence)}
+            className={`p-3 rounded-full shadow-lg transition-all ${isDrawingGeofence ? 'bg-[#D4AF37] text-[#002819] ring-4 ring-[#D4AF37]/30' : 'bg-white text-[#002819] hover:shadow-xl'}`}
+            title={isDrawingGeofence ? 'Click to finish drawing' : 'Draw new geofence'}
+          >
+            <MaterialSymbol icon={isDrawingGeofence ? 'check' : 'hexagon'} size={24} />
+          </button>
+        )}
         <button
           onClick={centerOnAllAnimals}
           className="p-3 bg-white text-[#002819] rounded-full shadow-lg hover:shadow-xl transition-all"

@@ -94,7 +94,7 @@ export default function AnimalEdit() {
       setSpeciesList(speciesData.data || []);
       
       const animals = animalsData.data || animalsData || [];
-      const devices = devicesData.data || devicesData || [];
+      const devices = devicesData.data?.data || devicesData.data || devicesData || [];
       // API returns array directly for users (not {data: []} format)
       const users = Array.isArray(usersData) ? usersData : (usersData.data || []);
       
@@ -104,7 +104,7 @@ export default function AnimalEdit() {
       });
       setOwners(ownersList);
 
-      const currentDeviceId = currentAnimal?.device_id;
+      const currentDeviceId = currentAnimal?.device?.device_id;
       const currentDeviceObj = currentDeviceId ? devices.find(d => d.device_id === currentDeviceId) : null;
       
       if (currentDeviceObj) {
@@ -112,8 +112,8 @@ export default function AnimalEdit() {
       }
 
       const assignedDeviceIds = animals
-        .filter(a => a.device_id && a.id !== parseInt(id || 0))
-        .map(a => a.device_id);
+        .filter(a => a.device?.device_id && a.id !== parseInt(id || 0))
+        .map(a => a.device?.device_id);
 
       const available = devices.filter(d => 
         !assignedDeviceIds.includes(d.device_id)
@@ -145,7 +145,7 @@ export default function AnimalEdit() {
           current_weight: currentAnimal.current_weight || '',
           baseline_temperature: currentAnimal.baseline_temperature || '',
           normal_heart_rate: currentAnimal.normal_heart_rate || '',
-          device_id: currentAnimal.device_id || '',
+          device_id: currentAnimal?.device?.device_id || '',
           owner_id: currentAnimal.owner_id || '',
         });
         if (currentAnimal.identification_photo) {
@@ -239,9 +239,11 @@ export default function AnimalEdit() {
 
     try {
       const url = isNewAnimal ? '/api/animals' : `/api/animals/${id}`;
-      const method = isNewAnimal ? 'POST' : 'PUT';
 
       const submitData = new FormData();
+      if (!isNewAnimal) {
+        submitData.append('_method', 'PUT');
+      }
 
       Object.keys(formData).forEach(key => {
         if (key === 'species') {
@@ -250,17 +252,21 @@ export default function AnimalEdit() {
         } else if (key === 'breed') {
           const breedValue = formData.breed === 'Other' ? formData.custom_breed : formData.breed;
           if (breedValue) submitData.append(key, breedValue);
-        } else if (formData[key] !== '' && formData[key] !== null && key !== 'identification_photo' && key !== 'custom_breed' && key !== 'custom_species') {
+        } else if (formData[key] !== '' && formData[key] !== null && key !== 'identification_photo' && key !== 'custom_breed' && key !== 'custom_species' && key !== 'device_id') {
           submitData.append(key, formData[key]);
         }
       });
+
+      if (formData.device_id !== undefined) {
+        submitData.append('device_id', formData.device_id);
+      }
 
       if (formData.identification_photo instanceof File) {
         submitData.append('identification_photo', formData.identification_photo);
       }
 
       const response = await apiFetch(url, {
-        method,
+        method: 'POST',
         body: submitData,
       });
 

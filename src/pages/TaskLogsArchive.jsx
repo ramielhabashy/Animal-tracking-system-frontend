@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,10 @@ export default function TaskLogsArchive() {
   const { user } = useAuth();
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
+
+  if (!user || !['Admin', 'Owner'].includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,7 @@ export default function TaskLogsArchive() {
       const response = await apiFetch(url);
       if (response.ok) {
         const data = await response.json();
-        setLogs(data.data || []);
+        setLogs(data.data?.data || data.data || data || []);
       }
     } catch (error) {
       console.error('Failed to fetch logs:', error);

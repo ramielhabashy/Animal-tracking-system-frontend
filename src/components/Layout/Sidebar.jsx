@@ -22,7 +22,7 @@ export default function Sidebar() {
     { icon: 'gavel', label: t('nav.auctions'), to: '/auctions' },
     { icon: 'notification_important', label: t('nav.alerts'), to: '/alerts' },
     { icon: 'task', label: t('nav.tasks'), to: '/tasks' },
-    ...(isAdminOrOwner ? [{ icon: 'assessment', label: t('nav.reports'), to: '/reports' }] : []),
+    ...(isAdmin || user?.role === 'Owner' || user?.role === 'Manager' || user?.role === 'Doctor' ? [{ icon: 'assessment', label: t('nav.reports'), to: '/reports' }] : []),
     ...(isAdmin ? [{ icon: 'settings', label: t('common.settings'), to: '/profile' }] : []),
     ...(isAdmin ? [{ icon: 'admin_panel_settings', label: t('nav.roles'), to: '/settings/roles' }] : []),
   ];

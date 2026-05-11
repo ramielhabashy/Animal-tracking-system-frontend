@@ -10,7 +10,7 @@ import { getAuthUser } from '../utils/cookies';
 
 export default function SettingsPage() {
   const { t, dir } = useI18n();
-  const { refreshPlatformName } = usePlatform();
+  const { refreshPlatformSettings } = usePlatform();
   const isRtl = dir === 'rtl';
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,14 @@ export default function SettingsPage() {
     timezone: 'Asia/Dubai',
     date_format: 'Y-m-d',
     default_language: 'en',
+    logo: '',
+    favicon: '',
+    copyright_text: 'Digital Majlis.',
   });
+  const [logoFile, setLogoFile] = useState(null);
+  const [faviconFile, setFaviconFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [faviconPreview, setFaviconPreview] = useState('');
 
   const [smtpSettings, setSmtpSettings] = useState({
     host: '',
@@ -196,14 +203,32 @@ const fetchSettings = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await apiFetch('/api/admin/settings/general', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generalSettings),
-      });
+      const fd = new FormData();
+      fd.append('platform_name', generalSettings.platform_name);
+      fd.append('platform_url', generalSettings.platform_url);
+      fd.append('admin_email', generalSettings.admin_email);
+      fd.append('timezone', generalSettings.timezone);
+      fd.append('date_format', generalSettings.date_format);
+      fd.append('default_language', generalSettings.default_language);
+      fd.append('copyright_text', generalSettings.copyright_text);
+      if (logoFile) fd.append('logo', logoFile);
+      else fd.append('logo', generalSettings.logo || '');
+      if (faviconFile) fd.append('favicon', faviconFile);
+      else fd.append('favicon', generalSettings.favicon || '');
+
+      const res = await apiFetch('/api/admin/settings/general', { method: 'POST', body: fd });
       if (res.ok) {
         setMessage({ type: 'success', text: t('settings.saved') });
-        refreshPlatformName();
+        setLogoFile(null);
+        setFaviconFile(null);
+        setLogoPreview('');
+        setFaviconPreview('');
+        refreshPlatformSettings();
+        const generalRes = await apiFetch('/api/admin/settings/general');
+        if (generalRes.ok) {
+          const data = await generalRes.json();
+          setGeneralSettings(data.data);
+        }
       } else {
         const data = await res.json();
         setMessage({ type: 'error', text: data.message || 'Failed to save' });
@@ -682,6 +707,64 @@ const tabs = [
                 <option value="en">English</option>
                 <option value="ar">العربية (Arabic)</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Copyright Text</label>
+              <input
+                type="text"
+                value={generalSettings.copyright_text}
+                onChange={(e) => setGeneralSettings({ ...generalSettings, copyright_text: e.target.value })}
+                className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                placeholder="Digital Majlis."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Logo</label>
+              <div className="flex items-center gap-4">
+                {(logoPreview || generalSettings.logo) && (
+                  <img
+                    src={logoPreview || generalSettings.logo}
+                    alt="Logo"
+                    className="w-16 h-16 object-contain rounded-xl border border-[#e5e7db]"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setLogoFile(file);
+                      setLogoPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-3 text-sm text-[#002819] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#002819] file:text-white file:font-bold file:text-xs hover:file:bg-[#06402b]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Favicon</label>
+              <div className="flex items-center gap-4">
+                {(faviconPreview || generalSettings.favicon) && (
+                  <img
+                    src={faviconPreview || generalSettings.favicon}
+                    alt="Favicon"
+                    className="w-8 h-8 object-contain rounded border border-[#e5e7db]"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/png,image/x-icon,image/svg+xml,image/jpeg"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setFaviconFile(file);
+                      setFaviconPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-3 text-sm text-[#002819] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#002819] file:text-white file:font-bold file:text-xs hover:file:bg-[#06402b]"
+                />
+              </div>
             </div>
           </div>
 

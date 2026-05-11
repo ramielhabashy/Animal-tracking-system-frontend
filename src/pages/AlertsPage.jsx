@@ -18,53 +18,75 @@ export default function AlertsPage() {
   const [perPage, setPerPage] = useState(10);
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [unresolvedCount, setUnresolvedCount] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchAlerts();
-    fetchUnresolvedCount();
-  }, [currentPage, perPage]);
+  }, [currentPage, perPage, typeFilter, statusFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [typeFilter, statusFilter]);
 
+  const buildParams = () => {
+    const params = new URLSearchParams({
+      per_page: perPage,
+      page: currentPage,
+    });
+    if (typeFilter !== 'all') {
+      if (typeFilter === 'geofence') {
+        params.append('type', 'entry,exit');
+      } else {
+        params.append('type', typeFilter);
+      }
+    }
+    if (statusFilter === 'unresolved') {
+      params.append('is_acknowledged', '0');
+    } else if (statusFilter === 'resolved') {
+      params.append('is_acknowledged', '1');
+    }
+    return params;
+  };
+
   const fetchAlerts = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await apiFetch(`/api/geofence-alerts?per_page=${perPage}&page=${currentPage}`);
+      const params = buildParams();
+      const response = await apiFetch(`/api/geofence-alerts?${params}`);
       if (response.ok) {
         const data = await response.json();
         const alertsArray = data.data || [];
         setAlerts(alertsArray);
         setTotalAlerts(data.total || 0);
+        setUnresolvedCount(data.unresolved_count ?? alertsArray.filter(a => !a.is_acknowledged).length);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.message || 'Failed to fetch alerts');
       }
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
+      setError(error.message || 'Failed to fetch alerts');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUnresolvedCount = async () => {
-    try {
-      const response = await apiFetch('/api/geofence-alerts?per_page=1&is_acknowledged=0');
-      if (response.ok) {
-        const data = await response.json();
-        setUnresolvedCount(data.total || 0);
-      }
-    } catch (error) {
-      console.error('Failed to fetch unresolved count:', error);
-    }
-  };
-
   const acknowledgeAlert = async (alertId) => {
     try {
-      await apiFetch(`/api/geofence-alerts/${alertId}/acknowledge`, { method: 'PATCH' });
-      setAlerts(alerts.map(a => 
-        a.id === alertId ? { ...a, is_acknowledged: true } : a
-      ));
+      const response = await apiFetch(`/api/geofence-alerts/${alertId}/acknowledge`, { method: 'PATCH' });
+      if (response.ok) {
+        setAlerts(alerts.map(a => 
+          a.id === alertId ? { ...a, is_acknowledged: true } : a
+        ));
+        setUnresolvedCount(prev => Math.max(0, prev - 1));
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.message || 'Failed to acknowledge alert');
+      }
     } catch (error) {
       console.error('Failed to acknowledge alert:', error);
+      setError(error.message || 'Failed to acknowledge alert');
     }
   };
 
@@ -74,9 +96,13 @@ export default function AlertsPage() {
       const response = await apiFetch(`/api/geofence-alerts/${alertId}`, { method: 'DELETE' });
       if (response.ok) {
         setAlerts(alerts.filter(a => a.id !== alertId));
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.message || 'Failed to delete alert');
       }
     } catch (error) {
       console.error('Failed to delete alert:', error);
+      setError(error.message || 'Failed to delete alert');
     }
   };
 
@@ -85,10 +111,16 @@ export default function AlertsPage() {
     try {
       const response = await apiFetch('/api/geofence-alerts/deactivate-all', { method: 'POST' });
       if (response.ok) {
+        const data = await response.json();
         setAlerts(alerts.map(a => ({ ...a, is_acknowledged: true })));
+        setUnresolvedCount(0);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.message || 'Failed to deactivate alerts');
       }
     } catch (error) {
       console.error('Failed to deactivate alerts:', error);
+      setError(error.message || 'Failed to deactivate alerts');
     }
   };
 
@@ -98,11 +130,12 @@ export default function AlertsPage() {
       if (response.ok) {
         alert(t('alertsPage.notificationSuccess'));
       } else {
-        const data = await response.json();
-        alert(data.message || t('alertsPage.notificationFailed'));
+        const data = await response.json().catch(() => ({}));
+        setError(data.message || t('alertsPage.notificationFailed'));
       }
     } catch (error) {
       console.error('Failed to send notification:', error);
+      setError(error.message || 'Failed to send notification');
     }
   };
 
@@ -139,20 +172,20 @@ export default function AlertsPage() {
     return { label: t('alertsPage.routine'), color: 'text-stone-600', bg: 'bg-stone-50' };
   };
 
-  const filteredAlerts = alerts.filter(alert => {
-    if (typeFilter !== 'all') {
-      if (typeFilter === 'geofence' && !['entry', 'exit'].includes(alert.type)) return false;
-      if (typeFilter !== 'geofence' && alert.type !== typeFilter) return false;
-    }
-    if (statusFilter === 'unresolved' && alert.is_acknowledged) return false;
-    if (statusFilter === 'resolved' && !alert.is_acknowledged) return false;
-return true;
-  });
-
   const totalPages = Math.ceil(totalAlerts / perPage);
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className={`bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <MaterialSymbol icon="error" size={20} className="text-red-500 flex-shrink-0" />
+          <p className="flex-1 text-sm font-medium">{error}</p>
+          <button onClick={() => setError(null)} className="p-1 hover:bg-red-100 rounded-lg transition-colors">
+            <MaterialSymbol icon="close" size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className={`flex justify-between items-end ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className={isRtl ? 'text-right' : ''}>
@@ -316,14 +349,14 @@ return true;
                     </div>
                   </td>
                 </tr>
-              ) : filteredAlerts.length === 0 ? (
+              ) : alerts.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center text-[#717973]">
                   <MaterialSymbol icon="notifications_off" size={48} className="mx-auto mb-4 opacity-50" />
                   <p>{t('common.noData')}</p>
                 </td>
               </tr>
-            ) : filteredAlerts.map((alert) => {
+            ) : alerts.map((alert) => {
               const colors = getAlertColors(alert.type, alert.is_acknowledged);
               const severity = getAlertSeverity(alert.type);
               return (
@@ -425,7 +458,7 @@ return true;
           </tbody>
         </table>
 
-        {filteredAlerts.length > 0 && (
+        {alerts.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

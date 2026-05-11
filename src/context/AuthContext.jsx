@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Login failed response:', response.status, errorData);
-        return false;
+        return { error: errorData.error || 'unauthorized', message: errorData.message || 'Login failed' };
       }
       
       const data = await response.json();

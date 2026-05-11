@@ -34,7 +34,7 @@ export default function ForgotPassword() {
         setSuccess(true);
       } else {
         const data = await response.json();
-        setError(data.message || t('errors.serverError'));
+        setError(t(`errors.${data.error}`) || data.message || t('errors.serverError'));
       }
     } catch (err) {
       setError(t('errors.networkError'));

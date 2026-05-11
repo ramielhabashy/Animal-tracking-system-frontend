@@ -9,6 +9,9 @@ import { apiFetch } from '../../utils/api';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -18,9 +21,49 @@ export default function Header() {
 
   const isRtl = dir === 'rtl';
 
+  const canViewAlerts = ['Admin', 'Owner', 'Manager'].includes(user?.role);
+
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    if (canViewAlerts) {
+      fetchNotifications();
+    }
+  }, [canViewAlerts]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      setShowSearchResults(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await apiFetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.data);
+          setShowSearchResults(true);
+        }
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchResultClick = (type, id) => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    setSearchResults(null);
+    const paths = { animals: `/animals/${id}`, users: `/users/${id}/edit`, devices: `/devices/${id}/edit`, auctions: `/auctions/${id}` };
+    navigate(paths[type] || '/');
+  };
+
+  const hasResults = searchResults && (searchResults.animals?.length || searchResults.users?.length || searchResults.devices?.length || searchResults.auctions?.length);
+
+  const searchResultCount = searchResults ? (searchResults.animals?.length || 0) + (searchResults.users?.length || 0) + (searchResults.devices?.length || 0) + (searchResults.auctions?.length || 0) : 0;
 
   const fetchNotifications = async () => {
     try {
@@ -54,14 +97,85 @@ export default function Header() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchResults && setShowSearchResults(true)}
+            onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
             placeholder={t('common.search')}
             className={`w-full py-3.5 bg-[#F4F4EF] rounded-xl border-none text-sm ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'} placeholder:text-[#717973]/60 focus:outline-none focus:ring-2 focus:ring-[#06402B]/20 transition-all`}
           />
+          {showSearchResults && (
+            <div className={`absolute mt-2 w-full bg-white rounded-2xl shadow-[0_12px_32px_rgba(6,64,43,0.12)] p-4 z-50 ${isRtl ? 'right-0' : 'left-0'}`}>
+              {searching ? (
+                <p className="text-sm text-[#717973] text-center py-4">Searching...</p>
+              ) : !hasResults ? (
+                <p className="text-sm text-[#717973] text-center py-4">No results found</p>
+              ) : (
+                <div className="space-y-1 max-h-96 overflow-y-auto">
+                  {searchResults.animals?.map(animal => (
+                    <button key={`animal-${animal.id}`} onMouseDown={() => handleSearchResultClick('animals', animal.id)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F4EF] transition-colors ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                      <div className="w-8 h-8 rounded-lg bg-[#06402B]/10 flex items-center justify-center">
+                        <MaterialSymbol icon="pets" size={16} className="text-[#06402B]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#002819] truncate">{animal.animal_id} - {animal.name || 'Unnamed'}</p>
+                        <p className="text-xs text-[#717973] truncate">{animal.species}{animal.breed ? ` - ${animal.breed}` : ''}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults.users?.map(user => (
+                    <button key={`user-${user.id}`} onMouseDown={() => handleSearchResultClick('users', user.id)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F4EF] transition-colors ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                      <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/15 flex items-center justify-center">
+                        <MaterialSymbol icon="person" size={16} className="text-[#735C00]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#002819] truncate">{user.name}</p>
+                        <p className="text-xs text-[#717973] truncate">{user.email} - {user.role || 'User'}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults.devices?.map(device => (
+                    <button key={`device-${device.id}`} onMouseDown={() => handleSearchResultClick('devices', device.id)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F4EF] transition-colors ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                      <div className="w-8 h-8 rounded-lg bg-[#002819]/10 flex items-center justify-center">
+                        <MaterialSymbol icon="sensors" size={16} className="text-[#002819]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#002819] truncate">{device.device_id || device.name}</p>
+                        <p className="text-xs text-[#717973] truncate">{device.name}{device.status ? ` - ${device.status}` : ''}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults.auctions?.map(auction => (
+                    <button key={`auction-${auction.id}`} onMouseDown={() => handleSearchResultClick('auctions', auction.id)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F4EF] transition-colors ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                      <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/15 flex items-center justify-center">
+                        <MaterialSymbol icon="gavel" size={16} className="text-[#735C00]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#002819] truncate">{auction.title}</p>
+                        <p className="text-xs text-[#717973] truncate">{auction.status}{auction.current_price ? ` - ${new Intl.NumberFormat('en-SA', { style: 'currency', currency: 'SAR' }).format(auction.current_price)}` : ''}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {hasResults && (
+                <p className="text-[10px] text-[#717973] text-center mt-2 pt-2 border-t border-[#c0c9c1]/20">
+                  {searchResultCount} result{searchResultCount !== 1 ? 's' : ''} found
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-        <button className="w-11 h-11 rounded-xl flex items-center justify-center text-[#002819] hover:bg-[#F4F4EF] transition-colors">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-ai-assistant'))}
+          className="w-11 h-11 rounded-xl flex items-center justify-center text-[#002819] hover:bg-[#F4F4EF] transition-colors"
+          title="AI Assistant"
+        >
           <MaterialSymbol icon="help" size={22} />
         </button>
 
@@ -123,7 +237,7 @@ export default function Header() {
         <div className="w-px h-8 bg-[#002819]/10 mx-2" />
 
         <div className="flex items-center gap-3">
-          <div className={`text-right hidden sm:block ${isRtl ? 'text-left' : 'text-right'}`}>
+          <div className={`hidden sm:block ${isRtl ? 'text-right' : 'text-left'}`}>
             <p className="text-sm font-bold text-[#002819]">{user?.name || 'User'}</p>
             <p className="text-xs text-[#717973]">{user?.role || 'Guest'}</p>
           </div>

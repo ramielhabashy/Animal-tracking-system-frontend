@@ -33,11 +33,7 @@ function transformFlatTranslations(data) {
     data.forEach(item => {
       const fullKey = item.group ? `${item.group}.${item.key}` : item.key;
       if (!nested[item.language_code]) nested[item.language_code] = {};
-      // Store both the full key (common.edit) and the short key (edit)
       nested[item.language_code][fullKey] = item.value;
-      if (item.group && !nested[item.language_code][item.key]) {
-        nested[item.language_code][item.key] = item.value;
-      }
     });
   }
   return nested;

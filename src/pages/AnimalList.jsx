@@ -44,7 +44,7 @@ export default function AnimalList() {
     setCurrentPage(1);
   }, [debouncedSearch]);
   
-  const canModify = user?.role !== 'Shepherd';
+  const canModify = user?.role !== 'Shepherd' && user?.role !== 'Doctor';
   const isAdmin = user?.role === 'Admin';
 
   const extractList = (res) => Array.isArray(res.data) ? res.data : (res.data?.data || []);
@@ -58,12 +58,6 @@ export default function AnimalList() {
     if (!deviceId) return null;
     return devices.find(d => d.device_id === deviceId || d.id === deviceId);
   };
-  const getOwnerName = (ownerId) => {
-    if (!ownerId) return t('common.noData');
-    const owner = users.find(u => u.id === ownerId);
-    return owner?.name || t('common.noData');
-  };
-
   useEffect(() => {
     fetchData();
     fetchStats();
@@ -278,13 +272,15 @@ export default function AnimalList() {
               {exporting ? t('common.exporting') : t('common.export')}
             </button>
           )}
-          <Link
-            to="/animals/new"
-            className="btn-primary flex items-center gap-2"
-          >
-            <MaterialSymbol icon="add" size={20} />
-            {t('animals.addAnimal')}
-          </Link>
+          {canModify && (
+            <Link
+              to="/animals/new"
+              className="btn-primary flex items-center gap-2"
+            >
+              <MaterialSymbol icon="add" size={20} />
+              {t('animals.addAnimal')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -436,6 +432,22 @@ return (
                         {animal.device?.device_id ? animal.device.device_id : 
                          animalDeviceId && !/^\d+$/.test(animalDeviceId) ? animalDeviceId : '-'}
                       </p>
+                    </div>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('animals.owner')}</p>
+                      <p className="font-semibold text-[#002819] text-sm truncate">
+                        {animal.owner?.name || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('animals.groups')}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {animal.groups?.length > 0 ? animal.groups.map(g => (
+                          <span key={g.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: g.color || '#D4AF37', color: '#fff' }}>
+                            {g.name}
+                          </span>
+                        )) : <span className="text-xs font-semibold text-[#002819]">-</span>}
+                      </div>
                     </div>
                   </div>
 

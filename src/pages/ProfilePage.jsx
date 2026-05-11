@@ -27,6 +27,12 @@ export default function ProfilePage() {
     sms: false,
     push: true,
   });
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,16 +43,16 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const promises = [
-        apiFetch(`/api/users/${user?.id}`),
+      const results = await Promise.allSettled([
+        apiFetch(`/api/auth/me`),
         apiFetch('/api/subscription/current'),
         apiFetch('/api/devices'),
         apiFetch('/api/subscription/tiers'),
-      ];
+      ]);
 
-      const [profileRes, subscriptionRes, devicesRes, tiersRes] = await Promise.all(promises);
+      const [profileRes, subscriptionRes, devicesRes, tiersRes] = results.map(r => r.status === 'fulfilled' ? r.value : null);
 
-      if (profileRes.ok) {
+      if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         setProfile({
           name: data.name || '',
@@ -56,18 +62,18 @@ export default function ProfilePage() {
         });
       }
 
-      if (subscriptionRes.ok) {
+      if (subscriptionRes && subscriptionRes.ok) {
         const subData = await subscriptionRes.json();
         setSubscription(subData.subscription || subData.data);
       }
 
-      if (devicesRes.ok) {
+      if (devicesRes && devicesRes.ok) {
         const devicesData = await devicesRes.json();
         const myDevices = (devicesData.data || []).filter(d => d.owner_id === user?.id);
         setDevices(myDevices);
       }
 
-      if (tiersRes.ok) {
+      if (tiersRes && tiersRes.ok) {
         const tiersData = await tiersRes.json();
         setTiers(tiersData.data || []);
       }
@@ -100,7 +106,8 @@ if (res.ok) {
         setAuthUser(updatedUser);
       } else {
         const data = await res.json();
-        setMsg({ ok: false, text: data.message || 'Failed to update profile' });
+        const errors = data.errors ? Object.values(data.errors).flat().join(' ') : null;
+        setMsg({ ok: false, text: errors || data.message || 'Failed to update profile' });
       }
     } catch (err) {
       setMsg({ ok: false, text: 'Network error' });
@@ -136,6 +143,33 @@ if (res.ok) {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangingPassword(true);
+    setMsg(null);
+
+    try {
+      const res = await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(passwordForm),
+      });
+
+      if (res.ok) {
+        setMsg({ ok: true, text: 'Password changed successfully!' });
+        setPasswordForm({ current_password: '', password: '', password_confirmation: '' });
+      } else {
+        const data = await res.json();
+        const errors = data.errors ? Object.values(data.errors).flat().join(' ') : null;
+        setMsg({ ok: false, text: errors || data.message || 'Failed to change password' });
+      }
+    } catch (err) {
+      setMsg({ ok: false, text: 'Network error' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -146,6 +180,7 @@ if (res.ok) {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: 'person' },
+    { id: 'security', label: 'Security', icon: 'lock' },
     { id: 'subscription', label: t('subscription.title'), icon: 'workspace_premium' },
     { id: 'notifications', label: 'Notifications', icon: 'notifications' },
   ];
@@ -271,6 +306,84 @@ if (res.ok) {
                 <option value="en">English (US)</option>
                 <option value="ar">Arabic (العربية)</option>
               </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Security Tab */}
+      {activeTab === 'security' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
+              <MaterialSymbol icon="lock" size={24} className="text-[#06402B]" />
+              Change Password
+            </h3>
+
+            <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
+              <div>
+                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Current Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.password_confirmation}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, password_confirmation: e.target.value })}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={changingPassword || !passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation}
+                  className="bg-[#002819] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {changingPassword ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                      Changing...
+                    </>
+                  ) : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="lg:col-span-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-[2rem] p-6">
+              <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
+                <MaterialSymbol icon="info" size={20} />
+                Password Requirements
+              </h4>
+              <ul className="text-sm text-amber-700 space-y-1">
+                <li>• Minimum 8 characters</li>
+                <li>• Must be different from your current password</li>
+                <li>• Use a mix of letters and numbers for better security</li>
+              </ul>
             </div>
           </div>
         </div>
