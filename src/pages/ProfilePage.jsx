@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tiersError, setTiersError] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -44,13 +45,23 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       const results = await Promise.allSettled([
-        apiFetch(`/api/auth/me`),
+        apiFetch('/api/auth/me'),
         apiFetch('/api/subscription/current'),
         apiFetch('/api/devices'),
         apiFetch('/api/subscription/tiers'),
       ]);
 
-      const [profileRes, subscriptionRes, devicesRes, tiersRes] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+      const [profileRes, subscriptionRes, devicesRes, tiersRes] = results.map((r, i) => {
+        const labels = ['/api/auth/me', '/api/subscription/current', '/api/devices', '/api/subscription/tiers'];
+        if (r.status === 'rejected') {
+          console.warn(`API call failed: ${labels[i]}`, r.reason);
+          return null;
+        }
+        if (!r.value.ok) {
+          console.warn(`API returned ${r.value.status}: ${labels[i]}`);
+        }
+        return r.value;
+      });
 
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
@@ -64,7 +75,11 @@ export default function ProfilePage() {
 
       if (subscriptionRes && subscriptionRes.ok) {
         const subData = await subscriptionRes.json();
-        setSubscription(subData.subscription || subData.data);
+        const sub = subData.subscription || subData.data;
+        if (sub && subData.tier && (!sub.tier || sub.status === 'pending_payment')) {
+          sub.tier = subData.tier;
+        }
+        setSubscription(sub);
       }
 
       if (devicesRes && devicesRes.ok) {
@@ -76,8 +91,12 @@ export default function ProfilePage() {
       if (tiersRes && tiersRes.ok) {
         const tiersData = await tiersRes.json();
         setTiers(tiersData.data || []);
+      } else {
+        setTiersError(true);
+        if (!tiersRes) setTiers([]);
       }
     } catch (error) {
+      setTiersError(true);
       console.error('Failed to fetch profile:', error);
     } finally {
       setLoading(false);
@@ -141,6 +160,27 @@ if (res.ok) {
 
   const toggleNotification = (key) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Are you sure you want to cancel your subscription?')) return;
+    setSaving(true);
+    setMsg(null);
+
+    try {
+      const res = await apiFetch('/api/subscription/cancel', { method: 'POST' });
+      if (res.ok) {
+        setMsg({ ok: true, text: 'Subscription cancelled successfully' });
+        fetchProfile();
+      } else {
+        const data = await res.json();
+        setMsg({ ok: false, text: data.message || 'Failed to cancel subscription' });
+      }
+    } catch (err) {
+      setMsg({ ok: false, text: 'Network error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async (e) => {
@@ -391,73 +431,199 @@ if (res.ok) {
 
       {/* Subscription Tab */}
       {activeTab === 'subscription' && (
-        <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-            <MaterialSymbol icon="workspace_premium" size={24} className="text-[#D4AF37]" />
-            {t('subscription.title')}
-          </h3>
+        <div className="space-y-6">
+          {subscription && ['active', 'pending', 'cancelled', 'pending_payment'].includes(subscription.status) && (
+            <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
+                <MaterialSymbol icon="workspace_premium" size={24} className="text-[#D4AF37]" />
+                {t('subscription.title')}
+              </h3>
 
-          {/* Current Plan */}
-          {subscription && subscription.status === 'active' && (
-            <div className="mb-8 p-6 rounded-2xl border-2 border-[#D4AF37] bg-[#D4AF37]/5">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-full">
-                  Current Plan
-                </span>
-                <span className={`text-xs font-bold px-2 py-1 rounded ${subscription.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {subscription.status === 'active' ? 'Active' : subscription.status}
-                </span>
+              <div className="border-2 border-[#D4AF37] rounded-2xl p-6 bg-[#D4AF37]/5">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h4 className="text-2xl font-bold text-[#002819]">{subscription.tier?.name || 'Plan'}</h4>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        subscription.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                        subscription.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                        subscription.status === 'pending_payment' ? 'bg-amber-100 text-amber-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {subscription.status === 'active' ? 'Active' :
+                         subscription.status === 'cancelled' ? 'Cancelled' :
+                         subscription.status === 'pending_payment' ? 'Pending Payment' :
+                         'Free Plan'}
+                      </span>
+                    </div>
+                    <p className="text-3xl font-black text-[#002819]">
+                      {subscription.tier?.price_monthly === '0.00' || subscription.tier?.price_monthly == 0 ? 'Free' : `$${subscription.tier?.price_monthly}`}
+                      {subscription.tier?.price_monthly !== '0.00' && subscription.tier?.price_monthly != 0 && (
+                        <span className="text-base font-normal text-[#717973]">/month</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-[#717973] mt-1">{subscription.tier?.description}</p>
+                  </div>
+                  {subscription.status === 'active' && (
+                    <button
+                      onClick={handleCancelSubscription}
+                      disabled={saving}
+                      className="px-6 py-2 border-2 border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition disabled:opacity-50 text-sm"
+                    >
+                      Cancel Subscription
+                    </button>
+                  )}
+                  {subscription.status === 'pending' && (
+                    <span className="px-6 py-2 bg-gray-100 text-gray-500 rounded-xl font-bold text-sm">
+                      Free Plan
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-[#D4AF37]/20">
+                  <div>
+                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Started</p>
+                    <p className="font-bold text-[#002819] mt-1">
+                      {subscription.started_at ? new Date(subscription.started_at).toLocaleDateString() : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Renewal Date</p>
+                    <p className="font-bold text-[#002819] mt-1">
+                      {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Billing Cycle</p>
+                    <p className="font-bold text-[#002819] mt-1 capitalize">{subscription.billing_cycle || 'Monthly'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Payment Method</p>
+                    <p className="font-bold text-[#002819] mt-1 capitalize">{subscription.payment_method || 'Card'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#D4AF37]/20">
+                  <div className="flex items-center gap-2">
+                    <MaterialSymbol icon="pets" size={18} className="text-[#717973]" />
+                    <span className="text-sm text-[#404943]">
+                      {subscription.tier?.max_animals === 0 ? 'Unlimited' : subscription.tier?.max_animals} animals
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MaterialSymbol icon="sensors" size={18} className="text-[#717973]" />
+                    <span className="text-sm text-[#404943]">
+                      {subscription.tier?.max_devices === 0 ? 'Unlimited' : subscription.tier?.max_devices} devices
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MaterialSymbol icon="group" size={18} className="text-[#717973]" />
+                    <span className="text-sm text-[#404943]">
+                      {subscription.tier?.max_users === 0 ? 'Unlimited' : subscription.tier?.max_users} users
+                    </span>
+                  </div>
+                </div>
               </div>
-              <h4 className="text-2xl font-bold text-[#002819]">{subscription.tier?.name || 'Plan'}</h4>
-              <p className="text-3xl font-black text-[#002819] mt-1">
-                {subscription.tier?.price_monthly === '0.00' || subscription.tier?.price_monthly == 0 ? 'Free' : `$${subscription.tier?.price_monthly}`}
-              </p>
-              <p className="text-sm text-[#717973] mt-1">{subscription.tier?.description}</p>
-              <ul className="mt-4 space-y-2 text-sm text-[#404943]">
-                <li>• {subscription.tier?.max_animals === 0 ? 'Unlimited' : subscription.tier?.max_animals} animals included</li>
-                <li>• {subscription.tier?.max_devices === 0 ? 'Unlimited' : subscription.tier?.max_devices} devices included</li>
-                <li>• {subscription.tier?.max_users === 0 ? 'Unlimited' : subscription.tier?.max_users} users included</li>
-              </ul>
             </div>
           )}
 
-          <h4 className="text-lg font-bold text-[#002819] mb-4">Available Plans</h4>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {tiers.map((tier) => {
-              const isCurrent = subscription?.tier_id === tier.id && subscription?.status === 'active';
-              return (
-                <div
-                  key={tier.id}
-                  className={`p-6 rounded-2xl border-2 ${isCurrent ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-transparent bg-[#F4F4EF]'}`}
-                >
-                  {isCurrent && (
-                    <span className="inline-block bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
-                      Current
-                    </span>
-                  )}
-                  <h4 className="text-xl font-bold text-[#002819]">{tier.name}</h4>
-                  <p className="text-3xl font-black text-[#002819] mt-2">
-                    {tier.price_monthly === '0.00' || tier.price_monthly == 0 ? 'Free' : `$${tier.price_monthly}`}
-                  </p>
-                  <p className="text-sm text-[#717973] mt-1">{tier.description}</p>
-                  <ul className="mt-4 space-y-2 text-sm text-[#404943]">
-                    <li>{tier.max_animals === 0 ? 'Unlimited' : tier.max_animals} animals</li>
-                    <li>{tier.max_devices === 0 ? 'Unlimited' : tier.max_devices} devices</li>
-                    <li>{tier.max_users === 0 ? 'Unlimited' : tier.max_users} users</li>
-                  </ul>
-                  {!isCurrent && (
-                    <button
-                      onClick={() => handleSaveSubscription(tier.id)}
-                      disabled={saving}
-                      className="w-full mt-4 py-2 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+          {(!subscription || subscription.status === 'none') && subscription?.status !== 'pending_payment' && (
+            <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
+                <MaterialSymbol icon="workspace_premium" size={24} className="text-[#D4AF37]" />
+                {t('subscription.title')}
+              </h3>
+              <div className="text-center py-8">
+                <MaterialSymbol icon="credit_card_off" size={48} className="text-[#717973] mx-auto mb-3" />
+                <h4 className="text-lg font-bold text-[#002819] mb-2">No Active Subscription</h4>
+                <p className="text-[#717973] mb-6">Choose a plan below to get started</p>
+              </div>
+            </div>
+          )}
+
+          {tiers.length > 0 && (
+            <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+              <h4 className="text-lg font-bold text-[#002819] mb-4">Available Plans</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {tiers.map((tier) => {
+                  const effectiveTierId = subscription?.tier?.id ?? subscription?.tier_id;
+                  const isCurrent = effectiveTierId === tier.id && ['active', 'pending', 'pending_payment'].includes(subscription?.status);
+                  const currentTier = tiers.find(t => t.id === effectiveTierId);
+                  const currentSortOrder = currentTier?.sort_order ?? 0;
+                  const isUpgrade = tier.sort_order > currentSortOrder && !isCurrent;
+                  const isDowngrade = tier.sort_order < currentSortOrder && !isCurrent;
+                  return (
+                    <div
+                      key={tier.id}
+                      className={`p-6 rounded-2xl border-2 ${isCurrent ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-gray-100 bg-[#F4F4EF]'}`}
                     >
-                      Select Plan
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                      {isCurrent && (
+                        <span className="inline-block bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
+                          Current
+                        </span>
+                      )}
+                      <h4 className="text-xl font-bold text-[#002819]">{tier.name}</h4>
+                      <p className="text-3xl font-black text-[#002819] mt-2">
+                        {tier.price_monthly === '0.00' || tier.price_monthly == 0 ? 'Free' : `$${tier.price_monthly}`}
+                        {tier.price_monthly !== '0.00' && tier.price_monthly != 0 && (
+                          <span className="text-base font-normal text-[#717973]">/mo</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-[#717973] mt-1">{tier.description}</p>
+                      <ul className="mt-4 space-y-2 text-sm text-[#404943]">
+                        <li className="flex items-center gap-2">
+                          <MaterialSymbol icon="pets" size={16} className="text-[#D4AF37]" />
+                          {tier.max_animals === 0 ? 'Unlimited' : tier.max_animals} animals
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <MaterialSymbol icon="sensors" size={16} className="text-[#D4AF37]" />
+                          {tier.max_devices === 0 ? 'Unlimited' : tier.max_devices} devices
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <MaterialSymbol icon="group" size={16} className="text-[#D4AF37]" />
+                          {tier.max_users === 0 ? 'Unlimited' : tier.max_users} users
+                        </li>
+                      </ul>
+                      {isUpgrade && (
+                        <button
+                          onClick={() => handleSaveSubscription(tier.id)}
+                          disabled={saving}
+                          className="w-full mt-4 py-2 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+                        >
+                          Upgrade
+                        </button>
+                      )}
+                      {isDowngrade && (
+                        <button
+                          onClick={() => handleSaveSubscription(tier.id)}
+                          disabled={saving}
+                          className="w-full mt-4 py-2 border-2 border-[#002819] text-[#002819] rounded-xl font-bold hover:bg-[#002819]/5 transition disabled:opacity-50"
+                        >
+                          Downgrade
+                        </button>
+                      )}
+                      {(!subscription || subscription.status === 'none') && subscription?.status !== 'pending_payment' && (
+                        <button
+                          onClick={() => handleSaveSubscription(tier.id)}
+                          disabled={saving}
+                          className="w-full mt-4 py-2 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+                        >
+                          {tier.price_monthly === '0.00' || tier.price_monthly == 0 ? 'Select Free Plan' : 'Subscribe'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {tiers.length === 0 && !loading && (
+            <div className="bg-white rounded-[2rem] p-8 shadow-sm text-center">
+              <MaterialSymbol icon="error_outline" size={40} className="text-[#717973] mx-auto mb-3" />
+              <p className="text-[#717973]">No subscription plans are available at this time.</p>
+            </div>
+          )}
         </div>
       )}
 
