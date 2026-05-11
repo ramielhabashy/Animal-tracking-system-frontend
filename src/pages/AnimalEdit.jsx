@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useRole } from '../hooks/useRole';
 
@@ -150,7 +150,7 @@ export default function AnimalEdit() {
         });
         if (currentAnimal.identification_photo) {
           setExistingImage(currentAnimal.identification_photo);
-          setImagePreview(currentAnimal.identification_photo);
+          setImagePreview(storageUrl(currentAnimal.identification_photo));
         }
         if (currentAnimal.owner_id) {
           const owner = users.find(u => u.id === currentAnimal.owner_id);
@@ -462,7 +462,7 @@ export default function AnimalEdit() {
                 <div className="w-full md:w-64">
                   <div className="relative group aspect-square rounded-xl overflow-hidden shadow-inner bg-stone-100 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                     {imagePreview ? (
-                      <img src={imagePreview} alt="Animal" className="w-full h-full object-cover" />
+                      <img src={storageUrl(imagePreview)} alt="Animal" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#E3E3DE] to-[#cfe5d6]">
                         <MaterialSymbol icon="add_a_photo" size={48} className="text-[#002819]/20 mb-2" />
@@ -570,7 +570,7 @@ export default function AnimalEdit() {
                     <>
                       <div className={`w-20 h-20 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0 ${isRtl ? 'ml-4 mr-0' : 'mr-4 ml-0'}`}>
                         {existingImage || imagePreview ? (
-                          <img src={imagePreview || existingImage} alt="Animal" className="w-full h-full object-cover" />
+                          <img src={storageUrl(imagePreview || existingImage)} alt="Animal" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-[#E3E3DE] to-[#cfe5d6] flex items-center justify-center">
                             <MaterialSymbol icon="pets" size={40} className="text-[#002819]/20" />
@@ -683,7 +683,7 @@ export default function AnimalEdit() {
                     <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <div className="w-10 h-10 rounded-full bg-[#06402b]/10 overflow-hidden">
                         {currentOwner.avatar_url ? (
-                          <img src={currentOwner.avatar_url} alt={currentOwner.name} className="w-full h-full object-cover" />
+                          <img src={storageUrl(currentOwner.avatar_url)} alt={currentOwner.name} className="w-full h-full object-cover" />
                         ) : (
                           <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentOwner.name)}&background=002819&color=D4AF37`} alt={currentOwner.name} className="w-full h-full object-cover" />
                         )}

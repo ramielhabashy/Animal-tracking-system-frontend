@@ -1,6 +1,6 @@
 import React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 
 const PlatformContext = createContext();
 
@@ -36,7 +36,7 @@ export function PlatformProvider({ children }) {
           setFaviconUrl(d.favicon_url || '');
           setCopyrightText(d.copyright_text || 'Digital Majlis.');
           setPlatformUrl(d.platform_url || '');
-          applyFavicon(d.favicon_url);
+          applyFavicon(storageUrl(d.favicon_url));
         }
       } catch (error) {
         console.error('Failed to fetch platform settings:', error);
@@ -60,7 +60,7 @@ export function PlatformProvider({ children }) {
         setFaviconUrl(d.favicon_url || '');
         setCopyrightText(d.copyright_text || 'Digital Majlis.');
         setPlatformUrl(d.platform_url || '');
-        applyFavicon(d.favicon_url);
+        applyFavicon(storageUrl(d.favicon_url));
       }
     } catch (error) {
       console.error('Failed to refresh platform settings:', error);

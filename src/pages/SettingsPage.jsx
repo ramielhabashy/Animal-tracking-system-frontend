@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { exportDatabase } from '../utils/export';
 import { useI18n } from '../i18n';
 import { usePlatform } from '../context/PlatformContext';
@@ -723,7 +723,7 @@ const tabs = [
               <div className="flex items-center gap-4">
                 {(logoPreview || generalSettings.logo) && (
                   <img
-                    src={logoPreview || generalSettings.logo}
+                    src={storageUrl(logoPreview || generalSettings.logo)}
                     alt="Logo"
                     className="w-16 h-16 object-contain rounded-xl border border-[#e5e7db]"
                   />
@@ -747,7 +747,7 @@ const tabs = [
               <div className="flex items-center gap-4">
                 {(faviconPreview || generalSettings.favicon) && (
                   <img
-                    src={faviconPreview || generalSettings.favicon}
+                    src={storageUrl(faviconPreview || generalSettings.favicon)}
                     alt="Favicon"
                     className="w-8 h-8 object-contain rounded border border-[#e5e7db]"
                   />

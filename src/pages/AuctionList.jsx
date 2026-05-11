@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
 
 export default function AuctionList() {
@@ -327,7 +327,7 @@ function AuctionCard({ auction, onBid, isRtl }) {
       <div className="relative h-56 overflow-hidden">
         {auction.animal?.identification_photo ? (
           <img
-            src={auction.animal.identification_photo}
+            src={storageUrl(auction.animal.identification_photo)}
             alt={auction.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />

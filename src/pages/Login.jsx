@@ -7,6 +7,7 @@ import { useI18n } from '../i18n';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { usePlatform } from '../context/PlatformContext';
 import { setAuthToken, setAuthUser, setUserRole, setPendingSubscription } from '../utils/cookies';
+import { storageUrl } from '../utils/api';
 
 export default function Login() {
   const { t, dir } = useI18n();
@@ -94,7 +95,7 @@ const handleSubmit = async (e) => {
           <div className="bg-white/95 backdrop-blur-xl p-10 md:p-12 rounded-3xl shadow-[0_24px_64px_rgba(6,64,43,0.15)]">
           <div className="flex flex-col items-center mb-10">
             {logoUrl ? (
-              <img src={logoUrl} alt={platformName} className="h-18 mb-5 object-contain" />
+              <img src={storageUrl(logoUrl)} alt={platformName} className="h-18 mb-5 object-contain" />
             ) : (
               <div className="w-18 h-18 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-[#002819]/30">
                 <MaterialSymbol icon="track_changes" size={36} className="text-[#D4AF37]" weight="fill" />

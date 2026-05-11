@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 
@@ -264,7 +264,7 @@ export default function MyPayments() {
                   <div key={auction.id} className="bg-white rounded-[2rem] overflow-hidden shadow-lg border-2 border-emerald-200">
                     <div className="relative h-48 overflow-hidden">
                       {auction.animal?.identification_photo ? (
-                        <img src={auction.animal.identification_photo} alt={auction.title} className="w-full h-full object-cover" />
+                        <img src={storageUrl(auction.animal.identification_photo)} alt={auction.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
                           <MaterialSymbol icon="pets" size={64} className="text-emerald-400" />
@@ -329,7 +329,7 @@ export default function MyPayments() {
                   <div key={auction.id} className="bg-white rounded-[2rem] overflow-hidden shadow-lg border-2 border-amber-200">
                     <div className="relative h-48 overflow-hidden">
                       {auction.animal?.identification_photo ? (
-                        <img src={auction.animal.identification_photo} alt={auction.title} className="w-full h-full object-cover" />
+                        <img src={storageUrl(auction.animal.identification_photo)} alt={auction.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
                           <MaterialSymbol icon="pets" size={64} className="text-amber-400" />
@@ -413,7 +413,7 @@ export default function MyPayments() {
                   <div key={auction.id} className="bg-white rounded-[2rem] overflow-hidden shadow-lg border-2 border-blue-200">
                     <div className="relative h-48 overflow-hidden">
                       {auction.animal?.identification_photo ? (
-                        <img src={auction.animal.identification_photo} alt={auction.title} className="w-full h-full object-cover" />
+                        <img src={storageUrl(auction.animal.identification_photo)} alt={auction.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                           <MaterialSymbol icon="pets" size={64} className="text-blue-400" />
@@ -477,7 +477,7 @@ export default function MyPayments() {
                   >
                     <div className="relative h-48 overflow-hidden">
                       {auction.animal?.identification_photo ? (
-                        <img src={auction.animal.identification_photo} alt={auction.title} className="w-full h-full object-cover" />
+                        <img src={storageUrl(auction.animal.identification_photo)} alt={auction.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
                           <MaterialSymbol icon="pets" size={64} className="text-emerald-400" />

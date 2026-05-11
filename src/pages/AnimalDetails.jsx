@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 
@@ -194,7 +194,7 @@ const fetchAnimal = async () => {
           {/* Main Hero Image */}
           <div className="lg:col-span-8 relative rounded-[2rem] overflow-hidden shadow-2xl h-[400px] group">
             {animal.identification_photo ? (
-              <img src={animal.identification_photo} alt={animal.animal_id} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img src={storageUrl(animal.identification_photo)} alt={animal.animal_id} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
                 <MaterialSymbol icon="pets" size={120} className="text-emerald-300" />

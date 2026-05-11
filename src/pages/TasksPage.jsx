@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 
@@ -642,7 +642,7 @@ export default function TasksPage() {
                           <p className="mt-3 text-sm text-[#404943]">{log.description}</p>
                           {log.photo_path && (
                             <img 
-                              src={`/storage/${log.photo_path}`} 
+                              src={storageUrl('/storage/' + log.photo_path)} 
                               alt="Log photo" 
                               className="mt-3 rounded-lg max-w-xs" 
                             />

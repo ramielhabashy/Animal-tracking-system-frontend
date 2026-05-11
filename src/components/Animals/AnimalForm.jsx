@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, storageUrl } from '../../utils/api';
 
 const initialFormData = {
   species: 'Camel',
@@ -89,7 +89,7 @@ export default function AnimalForm() {
         });
         if (data.identification_photo) {
           setExistingImage(data.identification_photo);
-          setImagePreview(data.identification_photo);
+          setImagePreview(storageUrl(data.identification_photo));
         }
       }
     } catch (error) {
@@ -277,7 +277,7 @@ export default function AnimalForm() {
             <div className="space-y-4">
               {imagePreview ? (
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={storageUrl(imagePreview)} alt="Preview" className="w-full h-full object-cover" />
                   <button type="button" onClick={removeImage} className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600">
                     <MaterialSymbol icon="close" size={16} />
                   </button>

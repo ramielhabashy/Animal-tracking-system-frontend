@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
-import { apiFetch } from '../utils/api';
+import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
 
 export default function AuctionCreate() {
@@ -157,7 +157,7 @@ export default function AuctionCreate() {
                 >
                   <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#eeeee9] flex-shrink-0">
                     {animal.identification_photo ? (
-                      <img src={animal.identification_photo} alt={animal.animal_id} className="w-full h-full object-cover" />
+                      <img src={storageUrl(animal.identification_photo)} alt={animal.animal_id} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <MaterialSymbol icon="pets" className="text-[#002819]/20" />
