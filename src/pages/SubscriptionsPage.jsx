@@ -134,6 +134,7 @@ export default function SubscriptionsPage() {
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
+  const [subscriberSearch, setSubscriberSearch] = useState('');
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -465,6 +466,12 @@ export default function SubscriptionsPage() {
     if (rangeStart && sub.created_at) {
       const subDate = new Date(sub.created_at);
       if (subDate < rangeStart) return false;
+    }
+    if (subscriberSearch) {
+      const q = subscriberSearch.toLowerCase();
+      const name = sub.user?.name?.toLowerCase() || '';
+      const email = sub.user?.email?.toLowerCase() || '';
+      if (!name.includes(q) && !email.includes(q)) return false;
     }
     return true;
   });
@@ -850,30 +857,40 @@ export default function SubscriptionsPage() {
           {/* Summary Bar */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Owners</p>
               <p className="text-2xl font-bold text-[#002819]">{allSubscriptions.length}</p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Subs</p>
-              <p className="text-2xl font-bold text-emerald-600">{allSubscriptions.filter(s => s.status === 'active').length}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Devices</p>
+              <p className="text-2xl font-bold text-emerald-600">{allSubscriptions.reduce((s, sub) => s + (sub.usage?.devices?.used || 0), 0)}</p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Payments</p>
-              <p className="text-2xl font-bold text-amber-600">{allSubscriptions.filter(s => s.status === 'pending_payment').length}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Animals</p>
+              <p className="text-2xl font-bold text-blue-600">{allSubscriptions.reduce((s, sub) => s + (sub.usage?.animals?.used || 0), 0)}</p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cancelled</p>
-              <p className="text-2xl font-bold text-red-600">{allSubscriptions.filter(s => s.status === 'cancelled').length}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Team</p>
+              <p className="text-2xl font-bold text-purple-600">{allSubscriptions.reduce((s, sub) => s + (sub.usage?.team?.used || 0), 0)}</p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">MRR</p>
-              <p className="text-2xl font-bold text-[#002819]">{formatCurrency(allSubscriptions.reduce((sum, s) => sum + (s.status === 'active' ? (parseFloat(s.tier?.price_monthly) || 0) : 0), 0))}</p>
+              <p className="text-2xl font-bold text-[#002819]">{formatCurrency(allSubscriptions.reduce((sum, sub) => sum + (parseFloat(sub.tier?.price_monthly) || 0), 0))}</p>
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="flex flex-wrap gap-4">
+          {/* Search & Filters */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <MaterialSymbol icon="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={subscriberSearch}
+                  onChange={(e) => setSubscriberSearch(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-gray-600 uppercase">Status</label>
                 <select
@@ -915,7 +932,7 @@ export default function SubscriptionsPage() {
                 </select>
               </div>
               <div className="text-xs text-gray-400 self-center ml-auto">
-                {sortedSubscriptions.length} subscriber{sortedSubscriptions.length !== 1 ? 's' : ''}
+                {sortedSubscriptions.length} owner{sortedSubscriptions.length !== 1 ? 's' : ''}
               </div>
             </div>
           </div>
@@ -958,16 +975,24 @@ export default function SubscriptionsPage() {
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('billing_cycle')}>
                       <div className="flex items-center">
-                        Billing Cycle
+                        Billing
                         <SortIcon field="billing_cycle" />
                       </div>
                     </th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Payment Method</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Devices</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Animals</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Team</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Payment</th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedSubscriptions.map((sub) => (
+                  {sortedSubscriptions.map((sub) => {
+                    const usage = sub.usage || {};
+                    const animals = usage.animals || {};
+                    const devices = usage.devices || {};
+                    const team = usage.team || {};
+                    return (
                     <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="font-medium text-[#002819]">{sub.user?.name || 'Unknown'}</div>
@@ -991,6 +1016,54 @@ export default function SubscriptionsPage() {
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
                         {sub.billing_cycle || '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium text-[#002819]">{devices.used ?? '-'}</span>
+                          <span className="text-gray-400">/</span>
+                          <span className={devices.max > 0 && devices.used > devices.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
+                            {devices.max === 0 ? '∞' : devices.max ?? '-'}
+                          </span>
+                        </div>
+                        {devices.max > 0 && (
+                          <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-16">
+                            <div className={`h-full rounded-full ${devices.used > devices.max ? 'bg-red-500' : devices.used / devices.max > 0.8 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min((devices.used / devices.max) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium text-[#002819]">{animals.used ?? '-'}</span>
+                          <span className="text-gray-400">/</span>
+                          <span className={animals.max > 0 && animals.used > animals.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
+                            {animals.max === 0 ? '∞' : animals.max ?? '-'}
+                          </span>
+                        </div>
+                        {animals.max > 0 && (
+                          <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-16">
+                            <div className={`h-full rounded-full ${animals.used > animals.max ? 'bg-red-500' : animals.used / animals.max > 0.8 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min((animals.used / animals.max) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium text-[#002819]">{team.used ?? '-'}</span>
+                          <span className="text-gray-400">/</span>
+                          <span className={team.max > 0 && team.used > team.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
+                            {team.max === 0 ? '∞' : team.max ?? '-'}
+                          </span>
+                        </div>
+                        {team.max > 0 && (
+                          <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-16">
+                            <div className={`h-full rounded-full ${team.used > team.max ? 'bg-red-500' : team.used / team.max > 0.8 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min((team.used / team.max) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
                         {sub.payment_method || '-'}
@@ -1017,10 +1090,11 @@ export default function SubscriptionsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {sortedSubscriptions.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-gray-500">No subscribers found</td>
+                      <td colSpan={11} className="py-8 text-center text-gray-500">No owners found</td>
                     </tr>
                   )}
                 </tbody>

@@ -44,8 +44,10 @@ export default function UserList() {
 const fetchData = async () => {
     setLoading(true);
     try {
+      const queryParams = new URLSearchParams({ per_page: perPage, page: currentPage });
+      if (debouncedSearch) queryParams.set('search', debouncedSearch);
       const [usersRes, tiersRes] = await Promise.all([
-        apiFetch(`/api/users?per_page=${perPage}&page=${currentPage}`),
+        apiFetch(`/api/users?${queryParams}`),
         apiFetch('/api/subscription/tiers'),
       ]);
       
@@ -70,19 +72,10 @@ const fetchData = async () => {
   };
 
    const filteredUsers = users.filter((u) => {
-     const search = debouncedSearch.toLowerCase();
-     
      if (isOwner && u.role === 'Admin') {
        return false;
      }
-     
-     if (!debouncedSearch) return true;
-     
-     return (
-       u.name?.toLowerCase().includes(search) ||
-       u.email?.toLowerCase().includes(search) ||
-       u.phone?.includes(debouncedSearch)
-     );
+     return true;
    });
 
   const totalPages = Math.ceil(totalUsers / perPage);

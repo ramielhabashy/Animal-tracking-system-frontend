@@ -341,7 +341,7 @@ export default function AnimalList() {
           onChange={(e) => setOwnerFilter(e.target.value)}
           className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
         >
-          <option value="all">{t('animals.allOwners') || 'All Owners'}</option>
+          <option value="all">{t('mapPage.allOwners')}</option>
           {ownerOptions.map(owner => (
             <option key={owner.id} value={owner.id}>{owner.name}</option>
           ))}

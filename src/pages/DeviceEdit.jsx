@@ -36,10 +36,10 @@ export default function DeviceEdit() {
 
   const fetchData = async () => {
     try {
-      const [deviceRes, animalsRes, usersRes] = await Promise.all([
+      const [deviceRes, animalsRes, ownersRes] = await Promise.all([
         apiFetch(`/api/devices/${id}`),
         apiFetch('/api/animals?per_page=100'),
-        apiFetch('/api/users'),
+        apiFetch('/api/users/owners/list'),
       ]);
 
       if (deviceRes.ok) {
@@ -63,9 +63,9 @@ export default function DeviceEdit() {
         setAnimals((await animalsRes.json()).data || []);
       }
       
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setOwners((usersData.data || []).filter(u => u.role === 'Owner'));
+      if (ownersRes.ok) {
+        const data = await ownersRes.json();
+        setOwners(data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch device:', error);
