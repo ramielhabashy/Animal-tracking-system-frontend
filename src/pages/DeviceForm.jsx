@@ -21,7 +21,7 @@ export default function DeviceForm() {
   const [formData, setFormData] = useState({
     name: '',
     type: 'collar',
-    status: 'inactive',
+    status: 'offline',
     battery_level: 100,
     firmware_version: 'v2.4',
     update_interval: 15,
@@ -213,9 +213,9 @@ export default function DeviceForm() {
                   onChange={handleChange}
                   className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="maintenance">Maintenance</option>
+                  <option value="online">Online</option>
+                  <option value="offline">Offline</option>
+                  <option value="low_signal">Low Signal</option>
                 </select>
               </div>
             </div>
