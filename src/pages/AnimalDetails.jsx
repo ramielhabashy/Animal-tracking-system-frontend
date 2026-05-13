@@ -432,7 +432,7 @@ const fetchAnimal = async () => {
         <div className="h-[450px] relative z-0">
           {positions.length > 0 ? (
             <MapContainer 
-              center={currentPosition || [24.4539, 54.3773]} 
+              center={currentPosition || [24.7136, 46.6753]} 
               zoom={14} 
               style={{ height: '100%', width: '100%' }}
               className="z-0"

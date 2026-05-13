@@ -5,6 +5,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 
 export default function TaskLogsArchive() {
   const { user } = useAuth();
@@ -162,7 +163,7 @@ export default function TaskLogsArchive() {
                     </span>
                   </div>
 
-                  <p className="mt-3 text-[#404943]">{log.description}</p>
+                  <p className="mt-3 text-[#404943]">{log.description} <TranslateButton text={log.description} /></p>
 
                   <div className={`flex items-center gap-5 mt-4 text-sm text-[#717973] ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>

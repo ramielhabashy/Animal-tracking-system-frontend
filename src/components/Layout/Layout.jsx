@@ -1,11 +1,13 @@
 import React from 'react';
 import { useState } from 'react';
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import Header from './Header';
 import AIAssistant from '../AIAssistant';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n';
+import { usePlatform } from '../../context/PlatformContext';
+import { storageUrl } from '../../utils/api';
 
 const mainNavItems = [
   { path: '/dashboard', icon: 'dashboard', labelKey: 'nav.dashboard', roles: ['Admin', 'Owner', 'Manager', 'Shepherd', 'Doctor'] },
@@ -41,6 +43,7 @@ const auctionSubmenu = [
 
 const usersSubmenu = [
   { path: '/users', labelKey: 'nav.users', roles: ['Admin', 'Owner'] },
+  { path: '/invitations', labelKey: 'nav.invitations', roles: ['Admin', 'Owner'] },
   { path: '/team', labelKey: 'nav.team', roles: ['Admin'] },
 ];
 
@@ -51,7 +54,6 @@ const tasksSubmenu = [
 
 export default function Layout() {
   const location = useLocation();
-  const navigate = useNavigate();
 const [animalSubmenuOpen, setAnimalSubmenuOpen] = useState(false);
   const [auctionSubmenuOpen, setAuctionSubmenuOpen] = useState(false);
   const [usersSubmenuOpen, setUsersSubmenuOpen] = useState(false);
@@ -60,13 +62,14 @@ const [animalSubmenuOpen, setAnimalSubmenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
   const { t, dir } = useI18n();
+  const { logoUrl, platformName, copyrightText } = usePlatform();
 
   const isRtl = dir === 'rtl';
 
   const isAnimalsActive = location.pathname === '/animals' || location.pathname.startsWith('/animal-groups') || location.pathname === '/geofences';
   const isMedicalActive = location.pathname === '/medical-records' || location.pathname === '/vaccination-schedule';
   const isAuctionsActive = location.pathname === '/auctions' || location.pathname.startsWith('/my-payments') || location.pathname.startsWith('/payments');
-  const isUsersActive = location.pathname === '/users' || location.pathname === '/team' || location.pathname.startsWith('/users/');
+  const isUsersActive = location.pathname === '/users' || location.pathname === '/team' || location.pathname === '/invitations' || location.pathname.startsWith('/users/');
   const isTasksActive = location.pathname === '/tasks' || location.pathname.startsWith('/task-logs');
 
 const getSubmenu = (item) => {
@@ -105,6 +108,7 @@ const getSubmenu = (item) => {
     if (subItem.path === '/my-payments') return 'account_balance_wallet';
     if (subItem.path === '/payments') return 'payments';
     if (subItem.path === '/users') return 'group';
+    if (subItem.path === '/invitations') return 'mail';
     if (subItem.path === '/team') return 'groups';
     if (subItem.path === '/tasks') return 'task';
     if (subItem.path === '/task-logs-archive') return 'history';
@@ -118,14 +122,18 @@ const visibleNavItems = mainNavItems.filter(item => !item.roles || item.roles.in
       <aside className={`hidden md:flex flex-col h-screen fixed top-0 bg-gradient-to-b from-[#FAF1F5] to-[#F4F4EF] py-6 px-4 z-50 transition-all duration-300 start-0 ${sidebarCollapsed ? 'w-20' : 'w-72'}`}>
         <div className={`mb-8 ${sidebarCollapsed ? 'px-1' : ''}`}>
           <div className={`flex items-center gap-4 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-14 h-14 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center shadow-lg shadow-[#002819]/20 flex-shrink-0">
-              <MaterialSymbol icon="eco" size={28} className="text-[#D4AF37]" fill />
-            </div>
+            {logoUrl ? (
+              <img src={storageUrl(logoUrl)} alt={platformName} className="w-14 h-14 object-contain rounded-2xl flex-shrink-0" />
+            ) : (
+              <div className="w-14 h-14 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center shadow-lg shadow-[#002819]/20 flex-shrink-0">
+                <MaterialSymbol icon="eco" size={28} className="text-[#D4AF37]" fill />
+              </div>
+            )}
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-xl font-black text-[#002819] leading-tight">The Oasis</h1>
+                <h1 className="text-xl font-black text-[#002819] leading-tight">{platformName}</h1>
                 <p className="text-[11px] uppercase tracking-wider text-[#06402B]/60 font-semibold">
-                  Digital Majlis
+                  {copyrightText}
                 </p>
               </div>
             )}
@@ -230,16 +238,6 @@ const visibleNavItems = mainNavItems.filter(item => !item.roles || item.roles.in
         </nav>
 
         <div className="mt-auto pt-8">
-          {!sidebarCollapsed && ['Admin', 'Owner', 'Manager', 'Shepherd'].includes(user?.role) && (
-            <button
-              onClick={() => navigate('/animals/new')}
-              className="w-full py-5 bg-gradient-to-br from-[#D4AF37] to-[#735C00] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#D4AF37]/25 flex items-center justify-center gap-3 hover:opacity-95 transition-opacity"
-            >
-              <MaterialSymbol icon="add_circle" size={22} />
-              {t('nav.addNewEntry')}
-            </button>
-          )}
-
           <NavLink
             to="/profile"
             className={`flex items-center gap-4 mt-6 p-3 rounded-2xl bg-[#F4F4EF] hover:bg-[#E3E3DE] transition-colors ${sidebarCollapsed ? 'justify-center p-2' : ''} ${!sidebarCollapsed && isRtl ? 'flex-row-reverse' : ''}`}

@@ -98,9 +98,9 @@ export default function StatsCardsWidget({ dashboardData }) {
             <h3 className="text-3xl font-black text-[#D4AF37]">
               {stats.subscription.tier_name || 'Free'}
             </h3>
-            {stats.subscription.is_on_trial && stats.subscription.trial_ends_at && (
+            {stats.subscription.ends_at && (
               <p className="text-xs text-white/60 mt-1">
-                Trial ends: {new Date(stats.subscription.trial_ends_at).toLocaleDateString()}
+                Renews: {new Date(stats.subscription.ends_at).toLocaleDateString()}
               </p>
             )}
           </div>

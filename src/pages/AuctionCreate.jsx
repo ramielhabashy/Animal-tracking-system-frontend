@@ -238,7 +238,7 @@ export default function AuctionCreate() {
                 <option value={24}>24 {t('auctionsPage.hours')} (1 {t('auctionsPage.days')})</option>
                 <option value={48}>48 {t('auctionsPage.hours')} (2 {t('auctionsPage.days')})</option>
                 <option value={72}>72 {t('auctionsPage.hours')} (3 {t('auctionsPage.days')})</option>
-                <option value={168}>168 {t('auctionsPage.hours')} (1 {t('auctionsPage.days')})</option>
+                <option value={168}>168 {t('auctionsPage.hours')} (7 {t('auctionsPage.days')})</option>
               </select>
             </div>
 

@@ -210,6 +210,16 @@ const handleRemoveMember = async (memberId) => {
     );
   };
 
+  const getTypeBadge = (roleName) => {
+    const role = availableRoles.find(r => r.name === roleName);
+    const isAdminType = role?.type === 'admin';
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isAdminType ? 'bg-[#D4AF37]/20 text-[#735C00]' : 'bg-[#10B981]/20 text-[#059669]'}`}>
+        {isAdminType ? 'Staff' : 'Farm'}
+      </span>
+    );
+  };
+
   const getRoleIcon = (role) => {
     switch (role) {
       case 'Manager': return 'manage_accounts';
@@ -273,6 +283,7 @@ const handleRemoveMember = async (memberId) => {
                     <div className="flex items-center gap-3">
                       <h3 className="text-xl font-bold text-[#002819]">{owner.name}</h3>
                       {getRoleBadge(owner.role)}
+                      {getTypeBadge(owner.role)}
                       {isOwnTeam && (
                         <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">{t('team.yourAccount')}</span>
                       )}
@@ -304,19 +315,20 @@ const handleRemoveMember = async (memberId) => {
                     <div className="divide-y divide-gray-100">
                       {members.map(member => (
                         <div key={member.id} className={`p-4 ${isRtl ? 'pr-20' : 'pl-20'} flex items-center justify-between hover:bg-gray-50 transition-colors`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                              member.role === 'Manager' ? 'bg-purple-500' : 'bg-blue-500'
-                            }`}>
-                              <MaterialSymbol icon={getRoleIcon(member.role)} size={20} />
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                                member.role === 'Manager' ? 'bg-purple-500' : 'bg-blue-500'
+                              }`}>
+                                <MaterialSymbol icon={getRoleIcon(member.role)} size={20} />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-[#002819]">{member.name}</p>
+                                <p className="text-xs text-[#717973]">{member.email}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-[#002819]">{member.name}</p>
-                              <p className="text-xs text-[#717973]">{member.email}</p>
-                            </div>
-                          </div>
                 <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                     {getRoleBadge(member.role)}
+                    {getTypeBadge(member.role)}
                     {(isAdmin || isOwnTeam) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); openRoleModal(member); }}
@@ -381,6 +393,7 @@ const handleRemoveMember = async (memberId) => {
                 </div>
               <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 {getRoleBadge(u.role)}
+                {getTypeBadge(u.role)}
                 <button
                   onClick={(e) => { e.stopPropagation(); openRoleModal(u); }}
                   className="p-2 text-[#06402B] hover:bg-[#F4F4EF] rounded-lg transition-colors"

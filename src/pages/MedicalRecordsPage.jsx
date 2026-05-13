@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 
 export default function MedicalRecordsPage() {
   const { t, dir } = useI18n();
@@ -563,7 +564,7 @@ export default function MedicalRecordsPage() {
                         {record.record_type}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-[#404943]">{record.title}</td>
+                    <td className="px-6 py-5 text-[#404943]">{record.title} <TranslateButton text={record.title} /></td>
                     <td className="px-6 py-5 text-[#404943]">{record.veterinarian || '-'}</td>
                     <td className="px-6 py-5 text-center">
                       {record.attachments && record.attachments.length > 0 ? (
@@ -665,14 +666,14 @@ export default function MedicalRecordsPage() {
                     <td className="px-6 py-5">
                       {isVacc ? (
                         <div>
-                          <p className="font-medium text-[#002819]">{item.vaccine_name}</p>
+                          <p className="font-medium text-[#002819]">{item.vaccine_name} <TranslateButton text={item.vaccine_name} /></p>
                           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.vaccination_type === 'routine' ? 'bg-blue-100 text-blue-700' : item.vaccination_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
                             {item.vaccination_type}
                           </span>
                         </div>
                       ) : (
                         <div>
-                          <p className="font-medium text-[#002819]">{item.title || item.description || '-'}</p>
+                          <p className="font-medium text-[#002819]">{item.title || item.description || '-'} <TranslateButton text={item.title || item.description} /></p>
                           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.record_type === 'checkup' ? 'bg-blue-100 text-blue-700' : item.record_type === 'surgery' ? 'bg-purple-100 text-purple-700' : item.record_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
                             {item.record_type || 'appointment'}
                           </span>

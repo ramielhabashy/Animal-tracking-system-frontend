@@ -4,10 +4,11 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { useI18n } from '../i18n';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { usePlatform } from '../context/PlatformContext';
+import { storageUrl } from '../utils/api';
 
 export default function ForgotPassword() {
   const { t, dir } = useI18n();
-  const { platformName } = usePlatform();
+  const { platformName, loginBackgroundUrl } = usePlatform();
   const isRtl = dir === 'rtl';
 
   const [email, setEmail] = useState('');
@@ -50,11 +51,9 @@ export default function ForgotPassword() {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[#eeeee9]/30" />
         <div
-          className="w-full h-full"
+          className="w-full h-full bg-cover bg-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(0, 40, 25, 0.85), rgba(6, 64, 43, 0.7)), url(https://images.unsplash.com/photo-1542332213-31f87348057f?q=80&w=2070&auto=format&fit=crop)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundImage: `linear-gradient(135deg,rgba(0,40,25,0.85),rgba(6,64,43,0.7)),url(${loginBackgroundUrl ? storageUrl(loginBackgroundUrl) : 'https://images.unsplash.com/photo-1542332213-31f87348057f?q=80&w=2070&auto=format&fit=crop'})`
           }}
         />
       </div>

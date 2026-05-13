@@ -589,6 +589,7 @@ export default {
     forbidden: 'ممنوع',
     not_found: 'غير موجود',
     validation_error: 'فشل التحقق من الصحة',
+    limit_reached: 'تم الوصول إلى الحد الأقصى لأعضاء الفريق',
     error: 'حدث خطأ',
   },
   devicesPage: {
@@ -968,6 +969,7 @@ export default {
     dateFormat: 'صيغة التاريخ',
     defaultLanguage: 'اللغة الافتراضية',
     exportDatabase: 'تصدير قاعدة البيانات',
+    loginBackground: 'خلفية صفحة تسجيل الدخول',
     smtpSettings: 'إعدادات SMTP',
     smtpDescription: 'تكوين خادم البريد لإرسال الإشعارات',
     stripeSettings: 'إعدادات Stripe',

@@ -552,6 +552,7 @@ export default {
     forbidden: 'ممنوع',
     not_found: 'نہیں ملا',
     validation_error: 'توثیق ناکام',
+    limit_reached: 'ٹیم ممبران کی حد پہنچ گئی',
     error: 'ایک خرابی پیش آگئی',
   },
   devicesPage: {
@@ -923,6 +924,7 @@ export default {
     dateFormat: 'تاریخ کی شکل',
     defaultLanguage: 'طے شدہ زبان',
     exportDatabase: 'ڈیٹابیس ایکسپورٹ کریں',
+    loginBackground: 'لاگ ان صفحہ کا پس منظر',
     smtpSettings: 'SMTP ترتیبات',
     smtpDescription: 'نوٹیفیکیشنز بھیجنے کے لیے ای میل سرور ترتیب کریں',
     stripeSettings: 'سٹرائپ ترتیبات',

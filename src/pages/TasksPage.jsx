@@ -5,6 +5,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 import TaskCalendar from '../components/Tasks/TaskCalendar';
 
 const priorityColors = {
@@ -634,13 +635,14 @@ export default function TasksPage() {
                               </span>
                               <h3 className={`font-bold text-lg text-[#002819] ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>
                                 {task.title}
+                                <TranslateButton text={task.title} className="ml-1" />
                               </h3>
                               {task.is_recurring && (
                                 <MaterialSymbol icon="repeat" size={16} className="text-[#D4AF37]" />
                               )}
                             </div>
                             {task.description && (
-                              <p className="text-sm text-[#717973] mt-1">{task.description}</p>
+                              <p className="text-sm text-[#717973] mt-1">{task.description} <TranslateButton text={task.description} /></p>
                             )}
                           </div>
                           <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -781,7 +783,7 @@ export default function TasksPage() {
                                   </div>
                                   <span className="text-xs text-[#717973]">{new Date(log.created_at).toLocaleString()}</span>
                                 </div>
-                                <p className="mt-3 text-sm text-[#404943]">{log.description}</p>
+                                <p className="mt-3 text-sm text-[#404943]">{log.description} <TranslateButton text={log.description} /></p>
                                 {log.photo_path && (
                                   <img src={storageUrl('/storage/' + log.photo_path)} alt="Log photo" className="mt-3 rounded-lg max-w-xs" />
                                 )}
@@ -1001,7 +1003,7 @@ export default function TasksPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
             <h3 className="text-2xl font-bold text-[#002819] mb-2">Deliver Task</h3>
-            <p className="text-sm text-[#717973] mb-6">{deliverTask.title}</p>
+            <p className="text-sm text-[#717973] mb-6">{deliverTask.title} <TranslateButton text={deliverTask.title} /></p>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Delivery Notes</label>
@@ -1028,7 +1030,7 @@ export default function TasksPage() {
             <div className={`flex items-center justify-between mb-8 ${isRtl ? 'flex-row-reverse' : ''}`}>
               <div>
                 <h3 className="text-2xl font-bold text-[#002819]">{t('tasks.submitLog')}</h3>
-                <p className="text-sm text-[#717973] mt-1">{selectedTask.title}</p>
+                <p className="text-sm text-[#717973] mt-1">{selectedTask.title} <TranslateButton text={selectedTask.title} /></p>
               </div>
               <button onClick={() => setShowLogModal(false)} className="p-3 hover:bg-[#F4F4EF] rounded-xl transition">
                 <MaterialSymbol icon="close" size={24} className="text-[#717973]" />

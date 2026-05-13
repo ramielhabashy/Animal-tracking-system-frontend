@@ -26,6 +26,7 @@ import OwnerOverviewWidget from './widgets/OwnerOverviewWidget';
 import ChartsWidget from './widgets/ChartsWidget';
 import MedicalOverviewWidget from './widgets/MedicalOverviewWidget';
 import TasksWidget from './widgets/TasksWidget';
+import AuctionsWidget from './widgets/AuctionsWidget';
 
 const widgetComponents = {
   statsCards: StatsCardsWidget,
@@ -38,6 +39,7 @@ const widgetComponents = {
   chartsWidget: ChartsWidget,
   medicalOverview: MedicalOverviewWidget,
   tasksWidget: TasksWidget,
+  auctionsWidget: AuctionsWidget,
 };
 
 function getGridColsClass(gridDesktop) {

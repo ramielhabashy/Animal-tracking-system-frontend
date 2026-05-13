@@ -7,6 +7,7 @@ import { useI18n } from '../i18n';
 import { usePlatform } from '../context/PlatformContext';
 import { useAuth } from '../hooks/useAuth';
 import { getAuthUser } from '../utils/cookies';
+import SimulatorPage from './SimulatorPage';
 
 export default function SettingsPage() {
   const { t, dir } = useI18n();
@@ -28,12 +29,15 @@ export default function SettingsPage() {
     default_language: 'en',
     logo: '',
     favicon: '',
+    login_background: '',
     copyright_text: 'Digital Majlis.',
   });
   const [logoFile, setLogoFile] = useState(null);
   const [faviconFile, setFaviconFile] = useState(null);
+  const [loginBackgroundFile, setLoginBackgroundFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [faviconPreview, setFaviconPreview] = useState('');
+  const [loginBackgroundPreview, setLoginBackgroundPreview] = useState('');
 
   const [smtpSettings, setSmtpSettings] = useState({
     host: '',
@@ -43,6 +47,16 @@ export default function SettingsPage() {
     encryption: 'tls',
     from_email: '',
     from_name: '',
+  });
+  const [emailNotificationPrefs, setEmailNotificationPrefs] = useState({
+    welcome: true,
+    invitation: true,
+    subscription: true,
+    auction_won: true,
+    auction_bid: true,
+    auction_payment: true,
+    task_assigned: true,
+    medical: true,
   });
 
   const [stripeSettings, setStripeSettings] = useState({
@@ -73,6 +87,11 @@ export default function SettingsPage() {
     enabled: false,
   });
 
+  const [translationSettings, setTranslationSettings] = useState({
+    deepl_api_key: '',
+    google_api_key: '',
+  });
+
 const [speciesList, setSpeciesList] = useState([]);
   const [editingSpecies, setEditingSpecies] = useState(null);
   const [editingBreed, setEditingBreed] = useState(null);
@@ -91,8 +110,9 @@ const [speciesList, setSpeciesList] = useState([]);
   const groups = ['common', 'dashboard', 'animals', 'devices', 'geofences', 'alerts', 'tasks', 'auctions', 'profile', 'settings'];
 
   const [rolesData, setRolesData] = useState({ roles: [], permissions: [], permissionsByCategory: {} });
-  const [roleForm, setRoleForm] = useState({ name: '', permissions: [] });
+  const [roleForm, setRoleForm] = useState({ name: '', type: 'user', permissions: [] });
   const [editingRole, setEditingRole] = useState(null);
+  const [roleTypeTab, setRoleTypeTab] = useState('staff');
 
   const [taskTypes, setTaskTypes] = useState([]);
   const [taskTypeForm, setTaskTypeForm] = useState({ name: '', slug: '', icon: 'assignment', color: '#002819', is_active: true });
@@ -154,13 +174,15 @@ const fetchSettings = async () => {
         'auctions': { label: 'Auctions', permissions: ['auction_view', 'auction_create', 'auction_edit', 'auction_bid'] },
       };
 
-      const [generalRes, smtpRes, stripeRes, geminiRes, whatsappRes, twilioRes, speciesRes, languagesRes, rolesRes, taskTypesRes, logTypesRes, medicalTypesRes, vaccinationTypesRes] = await Promise.all([
+      const [generalRes, smtpRes, stripeRes, geminiRes, whatsappRes, twilioRes, translationRes, emailPrefsRes, speciesRes, languagesRes, rolesRes, taskTypesRes, logTypesRes, medicalTypesRes, vaccinationTypesRes] = await Promise.all([
         apiFetch('/api/admin/settings/general'),
         apiFetch('/api/admin/settings/smtp'),
         apiFetch('/api/admin/settings/stripe'),
         apiFetch('/api/admin/settings/gemini'),
         apiFetch('/api/admin/settings/whatsapp'),
         apiFetch('/api/admin/settings/twilio'),
+        userRole === 'Admin' ? apiFetch('/api/admin/settings/translation') : Promise.resolve({ ok: false }),
+        userRole === 'Admin' ? apiFetch('/api/admin/settings/email-preferences') : Promise.resolve({ ok: false }),
         userRole === 'Admin' ? apiFetch('/api/species') : Promise.resolve({ ok: false }),
         userRole === 'Admin' ? apiFetch('/api/admin/languages') : Promise.resolve({ ok: false }),
         userRole === 'Admin' ? apiFetch('/api/admin/roles') : Promise.resolve({ ok: false }),
@@ -234,6 +256,14 @@ const fetchSettings = async () => {
         const data = await twilioRes.json();
         setTwilioSettings(data.data);
       }
+      if (translationRes.ok) {
+        const data = await translationRes.json();
+        setTranslationSettings(data.data);
+      }
+      if (emailPrefsRes.ok) {
+        const data = await emailPrefsRes.json();
+        setEmailNotificationPrefs(data.data);
+      }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
     } finally {
@@ -257,14 +287,18 @@ const fetchSettings = async () => {
       else fd.append('logo', generalSettings.logo || '');
       if (faviconFile) fd.append('favicon', faviconFile);
       else fd.append('favicon', generalSettings.favicon || '');
+      if (loginBackgroundFile) fd.append('login_background', loginBackgroundFile);
+      else fd.append('login_background', generalSettings.login_background || '');
 
       const res = await apiFetch('/api/admin/settings/general', { method: 'POST', body: fd });
       if (res.ok) {
         setMessage({ type: 'success', text: t('settings.saved') });
         setLogoFile(null);
         setFaviconFile(null);
+        setLoginBackgroundFile(null);
         setLogoPreview('');
         setFaviconPreview('');
+        setLoginBackgroundPreview('');
         refreshPlatformSettings();
         const generalRes = await apiFetch('/api/admin/settings/general');
         if (generalRes.ok) {
@@ -319,6 +353,28 @@ const fetchSettings = async () => {
       setMessage({ type: 'error', text: 'Network error' });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleSaveEmailPrefs = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await apiFetch('/api/admin/settings/email-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailNotificationPrefs),
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: t('settings.saved') });
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to save' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -399,6 +455,28 @@ const handleSaveTwilio = async () => {
       });
       if (res.ok) {
         setMessage({ type: 'success', text: t('settings.saved') });
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to save' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveTranslationSettings = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await apiFetch('/api/admin/settings/translation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(translationSettings),
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Translation settings saved' });
       } else {
         const data = await res.json();
         setMessage({ type: 'error', text: data.message || 'Failed to save' });
@@ -525,6 +603,14 @@ const handleSaveTwilio = async () => {
     setShowTranslations(true);
   };
 
+  const refreshRoles = async () => {
+    const rolesRes = await apiFetch('/api/admin/roles');
+    if (rolesRes.ok) {
+      const rolesJson = await rolesRes.json();
+      setRolesData({ roles: rolesJson.roles || [], permissions: rolesJson.permissions || [], permissionsByCategory: rolesJson.permissionsByCategory || {} });
+    }
+  };
+
   const handleSaveRole = async () => {
     if (!roleForm.name.trim()) {
       setMessage({ type: 'error', text: 'Role name is required' });
@@ -537,7 +623,7 @@ const handleSaveTwilio = async () => {
         ? await apiFetch(`/api/admin/roles/${editingRole}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ permissions: roleForm.permissions }),
+            body: JSON.stringify({ permissions: roleForm.permissions, type: roleForm.type }),
           })
         : await apiFetch('/api/admin/roles', {
             method: 'POST',
@@ -546,13 +632,9 @@ const handleSaveTwilio = async () => {
           });
       if (res.ok) {
         setMessage({ type: 'success', text: t('settings.saved') });
-        setRoleForm({ name: '', permissions: [] });
+        setRoleForm({ name: '', type: 'user', permissions: [] });
         setEditingRole(null);
-        const rolesRes = await apiFetch('/api/admin/roles');
-        if (rolesRes.ok) {
-          const rolesJson = await rolesRes.json();
-          setRolesData({ roles: rolesJson.roles || [], permissions: rolesJson.permissions || [], permissionsByCategory: rolesJson.permissionsByCategory || {} });
-        }
+        await refreshRoles();
       } else {
         const data = await res.json();
         setMessage({ type: 'error', text: data.message || 'Failed to save' });
@@ -569,11 +651,7 @@ const handleSaveTwilio = async () => {
     try {
       const res = await apiFetch(`/api/admin/roles/${roleName}`, { method: 'DELETE' });
       if (res.ok) {
-        const rolesRes = await apiFetch('/api/admin/roles');
-        if (rolesRes.ok) {
-          const rolesJson = await rolesRes.json();
-          setRolesData({ roles: rolesJson.roles || [], permissions: rolesJson.permissions || [], permissionsByCategory: rolesJson.permissionsByCategory || {} });
-        }
+        await refreshRoles();
       } else {
         const data = await res.json();
         setMessage({ type: 'error', text: data.message || 'Failed to delete' });
@@ -585,7 +663,7 @@ const handleSaveTwilio = async () => {
 
   const handleEditRole = (role) => {
     setEditingRole(role.name);
-    setRoleForm({ name: role.name, permissions: role.permissions || [] });
+    setRoleForm({ name: role.name, type: role.type || 'user', permissions: role.permissions || [] });
   };
 
   const togglePermission = (perm) => {
@@ -613,7 +691,9 @@ const tabs = [
     { id: 'roles', label: t('settings.roles') || 'Roles', icon: 'admin_panel_settings' },
     { id: 'taskTypes', label: 'Task Types', icon: 'task' },
     { id: 'medicalTypes', label: 'Medical Types', icon: 'vaccines' },
-    { id: 'smtp', label: t('settings.smtp'), icon: 'mail' },
+    { id: 'simulator', label: 'Simulator', icon: 'moving' },
+    { id: 'translation', label: 'Translation', icon: 'translate' },
+    { id: 'email', label: 'Email', icon: 'mail' },
     { id: 'stripe', label: t('settings.stripe'), icon: 'credit_card' },
     { id: 'gemini', label: t('settings.gemini'), icon: 'psychology' },
     { id: 'whatsapp', label: t('settings.whatsapp'), icon: 'chat' },
@@ -804,6 +884,31 @@ const tabs = [
                     if (file) {
                       setFaviconFile(file);
                       setFaviconPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-3 text-sm text-[#002819] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#002819] file:text-white file:font-bold file:text-xs hover:file:bg-[#06402b]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('settings.loginBackground')}</label>
+              <div className="flex items-center gap-4">
+                {(loginBackgroundPreview || generalSettings.login_background) && (
+                  <div
+                    className="w-24 h-16 rounded-xl border border-[#e5e7db] bg-cover bg-center flex-shrink-0"
+                    style={{
+                      backgroundImage: `url(${storageUrl(loginBackgroundPreview || generalSettings.login_background)})`
+                    }}
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setLoginBackgroundFile(file);
+                      setLoginBackgroundPreview(URL.createObjectURL(file));
                     }
                   }}
                   className="w-full bg-[#F4F4EF] border-none rounded-xl p-3 text-sm text-[#002819] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#002819] file:text-white file:font-bold file:text-xs hover:file:bg-[#06402b]"
@@ -1204,118 +1309,234 @@ const tabs = [
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <h4 className="font-bold text-[#002819] mb-4">{editingRole ? t('common.edit') : t('common.add')} Role</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('common.name') || 'Role Name'}</label>
-                  <input
-                    type="text"
-                    value={roleForm.name}
-                    onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
-                    placeholder="Role name"
-                    disabled={!!editingRole}
-                    className="w-full bg-[#F4F4EF] border-none rounded-xl px-4 py-3 text-[#002819] font-semibold disabled:opacity-50"
-                  />
-                </div>
+          <div className="flex gap-2 bg-[#F4F4EF] p-1 rounded-xl w-fit mb-6">
+            <button
+              onClick={() => setRoleTypeTab('staff')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                roleTypeTab === 'staff' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#404943] hover:text-[#002819]'
+              }`}
+            >
+              Administration Staff
+            </button>
+            <button
+              onClick={() => setRoleTypeTab('farm')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                roleTypeTab === 'farm' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#404943] hover:text-[#002819]'
+              }`}
+            >
+              Farm Users
+            </button>
+          </div>
 
-                {Object.entries(rolesData.permissionsByCategory).map(([categoryKey, category]) => (
-                  <div key={categoryKey} className="border border-[#F4F4EF] rounded-xl p-4">
-                    <label className="flex items-center gap-2 mb-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={category.permissions.every(p => roleForm.permissions.includes(p))}
-                        onChange={(e) => toggleAllInCategory(category.permissions, e.target.checked)}
-                        className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
-                      />
-                      <span className="font-bold text-[#002819]">{category.label}</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 pl-6">
-                      {category.permissions.map((perm) => (
-                        <label key={perm} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={roleForm.permissions.includes(perm)}
-                            onChange={() => togglePermission(perm)}
-                            className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
-                          />
-                          <span className="text-sm text-[#404943]">{perm}</span>
-                        </label>
-                      ))}
-                    </div>
+          {roleTypeTab === 'staff' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-bold text-[#002819] mb-4">
+                  {editingRole ? 'Edit' : 'New'} Staff Role
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Role Name</label>
+                    <input
+                      type="text"
+                      value={roleForm.name}
+                      onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value, type: 'admin' })}
+                      placeholder="e.g. Support, Accountant"
+                      disabled={!!editingRole}
+                      className="w-full bg-[#F4F4EF] border-none rounded-xl px-4 py-3 text-[#002819] font-semibold disabled:opacity-50"
+                    />
                   </div>
-                ))}
 
-                <button
-                  onClick={handleSaveRole}
-                  disabled={saving}
-                  className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
-                >
-                  {saving ? '...' : editingRole ? (t('common.update') || 'Update') : (t('common.add') || 'Add')} Role
-                </button>
-                {editingRole && (
-                  <button
-                    onClick={() => { setEditingRole(null); setRoleForm({ name: '', permissions: [] }); }}
-                    className="w-full py-3 bg-gray-400 text-white rounded-xl font-bold hover:bg-gray-500"
+                  {Object.entries(rolesData.permissionsByCategory).filter(([key]) =>
+                    ['support', 'billing', 'customer_service', 'platform', 'users', 'reports', 'settings', 'animals', 'devices', 'geofences', 'tasks', 'medical', 'vaccinations', 'auctions'].includes(key)
+                  ).map(([categoryKey, category]) => (
+                    <div key={categoryKey} className="border border-[#F4F4EF] rounded-xl p-4">
+                      <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={category.permissions.every(p => roleForm.permissions.includes(p))}
+                          onChange={(e) => toggleAllInCategory(category.permissions, e.target.checked)}
+                          className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                        />
+                        <span className="font-bold text-[#002819]">{category.label}</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 pl-6">
+                        {category.permissions.map((perm) => (
+                          <label key={perm} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={roleForm.permissions.includes(perm)}
+                              onChange={() => togglePermission(perm)}
+                              className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                            />
+                            <span className="text-sm text-[#404943]">{perm}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button onClick={handleSaveRole} disabled={saving}
+                    className="w-full py-3 bg-[#D4AF37] text-white rounded-xl font-bold hover:bg-[#c9a330] transition disabled:opacity-50"
                   >
-                    {t('common.cancel') || 'Cancel'}
+                    {saving ? '...' : editingRole ? 'Update' : 'Add'} Staff Role
                   </button>
+                  {editingRole && (
+                    <button onClick={() => { setEditingRole(null); setRoleForm({ name: '', type: 'user', permissions: [] }); }}
+                      className="w-full py-3 bg-gray-400 text-white rounded-xl font-bold hover:bg-gray-500"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-[#002819] mb-4">Staff Roles</h4>
+                {rolesData.roles.filter(r => r.type === 'admin').length === 0 ? (
+                  <div className="text-center py-8 text-[#717973]">No staff roles yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {rolesData.roles.filter(r => r.type === 'admin').map((role) => (
+                      <div key={role.name} className={`p-4 rounded-xl ${role.is_system ? 'bg-gray-100' : 'bg-[#f4f4ef]'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-xs bg-[#D4AF37]/20 text-[#735C00] font-bold">Staff</span>
+                            <span className="font-bold text-[#002819]">{role.name}</span>
+                            {role.is_system && (
+                              <span className="px-2 py-0.5 rounded text-xs bg-gray-300 text-gray-600">System</span>
+                            )}
+                          </div>
+                          <span className="text-sm text-[#717973]">{role.user_count || 0} user{(role.user_count || 0) !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {role.permissions?.slice(0, 6).map((perm) => (
+                            <span key={perm} className="px-2 py-1 bg-white rounded text-xs text-[#404943]">{perm}</span>
+                          ))}
+                          {role.permissions?.length > 6 && (
+                            <span className="px-2 py-1 text-xs text-[#717973]">+{role.permissions.length - 6} more</span>
+                          )}
+                        </div>
+                        {!role.is_system && (
+                          <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            <button onClick={() => handleEditRole(role)}
+                              className="text-sm text-[#002819] hover:text-[#06402B] font-medium">Edit</button>
+                            <button onClick={() => handleDeleteRole(role.name)}
+                              className="text-sm text-red-600 hover:text-red-700 font-medium">Delete</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
+          )}
 
-            <div>
-              <h4 className="font-bold text-[#002819] mb-4">{t('settings.existingRoles') || 'Existing Roles'}</h4>
-              {rolesData.roles.length === 0 ? (
-                <div className="text-center py-8 text-[#717973]">
-                  No roles found. Add a new role to get started.
+          {roleTypeTab === 'farm' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-bold text-[#002819] mb-4">
+                  {editingRole ? 'Edit' : 'New'} Farm Role
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Role Name</label>
+                    <input
+                      type="text"
+                      value={roleForm.name}
+                      onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value, type: 'user' })}
+                      placeholder="e.g. Helper, Trainer"
+                      disabled={!!editingRole}
+                      className="w-full bg-[#F4F4EF] border-none rounded-xl px-4 py-3 text-[#002819] font-semibold disabled:opacity-50"
+                    />
+                  </div>
+
+                  {Object.entries(rolesData.permissionsByCategory).filter(([key]) =>
+                    ['animals', 'devices', 'geofences', 'geofence_alerts', 'tasks', 'reports', 'medical', 'vaccinations', 'users', 'auctions'].includes(key)
+                  ).map(([categoryKey, category]) => (
+                    <div key={categoryKey} className="border border-[#F4F4EF] rounded-xl p-4">
+                      <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={category.permissions.every(p => roleForm.permissions.includes(p))}
+                          onChange={(e) => toggleAllInCategory(category.permissions, e.target.checked)}
+                          className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                        />
+                        <span className="font-bold text-[#002819]">{category.label}</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 pl-6">
+                        {category.permissions.map((perm) => (
+                          <label key={perm} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={roleForm.permissions.includes(perm)}
+                              onChange={() => togglePermission(perm)}
+                              className="w-4 h-4 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                            />
+                            <span className="text-sm text-[#404943]">{perm}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button onClick={handleSaveRole} disabled={saving}
+                    className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+                  >
+                    {saving ? '...' : editingRole ? 'Update' : 'Add'} Farm Role
+                  </button>
+                  {editingRole && (
+                    <button onClick={() => { setEditingRole(null); setRoleForm({ name: '', type: 'user', permissions: [] }); }}
+                      className="w-full py-3 bg-gray-400 text-white rounded-xl font-bold hover:bg-gray-500"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {rolesData.roles.map((role) => (
-                  <div key={role.name} className={`p-4 rounded-xl ${role.is_system ? 'bg-gray-100' : 'bg-[#f4f4ef]'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#002819]">{role.name}</span>
-                        {role.is_system && (
-                          <span className="px-2 py-0.5 rounded text-xs bg-gray-300 text-gray-600">System</span>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-[#002819] mb-4">Farm Roles</h4>
+                {rolesData.roles.filter(r => r.type !== 'admin').length === 0 ? (
+                  <div className="text-center py-8 text-[#717973]">No farm roles yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {rolesData.roles.filter(r => r.type !== 'admin').map((role) => (
+                      <div key={role.name} className={`p-4 rounded-xl ${role.is_system ? 'bg-gray-100' : 'bg-[#f4f4ef]'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-xs bg-[#10B981]/20 text-[#059669] font-bold">Farm</span>
+                            <span className="font-bold text-[#002819]">{role.name}</span>
+                            {role.is_system && (
+                              <span className="px-2 py-0.5 rounded text-xs bg-gray-300 text-gray-600">System</span>
+                            )}
+                          </div>
+                          <span className="text-sm text-[#717973]">{role.user_count || 0} user{(role.user_count || 0) !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {role.permissions?.slice(0, 6).map((perm) => (
+                            <span key={perm} className="px-2 py-1 bg-white rounded text-xs text-[#404943]">{perm}</span>
+                          ))}
+                          {role.permissions?.length > 6 && (
+                            <span className="px-2 py-1 text-xs text-[#717973]">+{role.permissions.length - 6} more</span>
+                          )}
+                        </div>
+                        {!role.is_system && (
+                          <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            <button onClick={() => handleEditRole(role)}
+                              className="text-sm text-[#002819] hover:text-[#06402B] font-medium">Edit</button>
+                            <button onClick={() => handleDeleteRole(role.name)}
+                              className="text-sm text-red-600 hover:text-red-700 font-medium">Delete</button>
+                          </div>
                         )}
                       </div>
-                      <span className="text-sm text-[#717973]">{role.user_count || 0} user{(role.user_count || 0) !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {role.permissions?.slice(0, 6).map((perm) => (
-                        <span key={perm} className="px-2 py-1 bg-white rounded text-xs text-[#404943]">
-                          {perm}
-                        </span>
-                      ))}
-                      {role.permissions?.length > 6 && (
-                        <span className="px-2 py-1 text-xs text-[#717973]">+{role.permissions.length - 6} more</span>
-                      )}
-                    </div>
-                    {!role.is_system && (
-                      <div className="flex gap-2 pt-2 border-t border-gray-200">
-                        <button
-onClick={() => handleEditRole(role)}
-                          className="text-sm text-[#002819] hover:text-[#06402B] font-medium"
-                        >
-                          {t('common.edit')}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRole(role.name)}
-                          className="text-sm text-red-600 hover:text-red-700 font-medium"
-                        >
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -1965,17 +2186,19 @@ onClick={() => handleEditRole(role)}
       )}
 
       {/* SMTP Tab */}
-      {activeTab === 'smtp' && (
+      {activeTab === 'email' && (
         <div className="bg-white rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-[#002819] rounded-xl flex items-center justify-center">
               <MaterialSymbol icon="mail" size={24} className="text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#002819]">{t('settings.smtpSettings')}</h3>
-              <p className="text-sm text-[#717973]">{t('settings.smtpDescription')}</p>
+              <h3 className="text-xl font-bold text-[#002819]">Email Settings</h3>
+              <p className="text-sm text-[#717973]">Configure SMTP, email notifications, and send test emails</p>
             </div>
           </div>
+
+          <h4 className="text-lg font-bold text-[#002819] mb-4 pb-2 border-b border-[#F4F4EF]">SMTP Configuration</h4>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
@@ -2052,7 +2275,7 @@ onClick={() => handleEditRole(role)}
             </div>
           </div>
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4 mt-6 mb-8">
             <button
               onClick={handleSaveSmtp}
               disabled={saving}
@@ -2066,6 +2289,45 @@ onClick={() => handleEditRole(role)}
               className="px-6 py-3 bg-[#D4AF37] text-white rounded-xl font-bold hover:bg-[#c9a030] transition disabled:opacity-50"
             >
               {testing ? t('common.loading') : t('settings.sendTest')}
+            </button>
+          </div>
+
+          <h4 className="text-lg font-bold text-[#002819] mb-4 pb-2 border-b border-[#F4F4EF]">Email Notification Preferences</h4>
+          <p className="text-sm text-[#717973] mb-4">Choose which events trigger email notifications to users</p>
+
+          <div className="space-y-3">
+            {[
+              { key: 'welcome', label: 'New User Registration', desc: 'Welcome email when users register or accept an invitation' },
+              { key: 'invitation', label: 'Invitations', desc: 'Email when invitations are sent and accepted' },
+              { key: 'subscription', label: 'Subscription & Payments', desc: 'Payment confirmations, renewals, cancellations, and expiry notices' },
+              { key: 'auction_won', label: 'Auction Won', desc: 'Notify winner when they win an auction' },
+              { key: 'auction_bid', label: 'Auction Bids', desc: 'Outbid notices and new bid alerts for auction owners' },
+              { key: 'auction_payment', label: 'Auction Payments', desc: 'Payment verified/rejected notices for auction winners' },
+              { key: 'task_assigned', label: 'Task Assigned', desc: 'Email when a task is assigned to a user' },
+              { key: 'medical', label: 'Medical Records', desc: 'Notify animal owners when a medical record is added' },
+            ].map(({ key, label, desc }) => (
+              <label key={key} className="flex items-start gap-3 p-4 rounded-xl bg-[#F4F4EF] cursor-pointer hover:bg-[#eeeee9] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={emailNotificationPrefs[key]}
+                  onChange={(e) => setEmailNotificationPrefs(prev => ({ ...prev, [key]: e.target.checked }))}
+                  className="w-5 h-5 rounded-lg border-2 border-[#D4AF37] text-[#D4AF37] focus:ring-[#D4AF37] cursor-pointer mt-0.5"
+                />
+                <div>
+                  <span className="font-bold text-[#002819]">{label}</span>
+                  <p className="text-sm text-[#717973]">{desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={handleSaveEmailPrefs}
+              disabled={saving}
+              className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+            >
+              {saving ? t('common.loading') : 'Save Notification Preferences'}
             </button>
           </div>
         </div>
@@ -2280,6 +2542,11 @@ onClick={() => handleEditRole(role)}
         </div>
       )}
 
+      {/* Simulator Tab */}
+      {activeTab === 'simulator' && (
+        <SimulatorPage embedded />
+      )}
+
       {/* Twilio Tab */}
       {activeTab === 'twilio' && (
         <div className="bg-white rounded-[2rem] p-8 shadow-sm">
@@ -2341,6 +2608,56 @@ onClick={() => handleEditRole(role)}
               onClick={handleSaveTwilio}
               disabled={saving}
               className="w-full py-3 bg-[#F22F46] text-white rounded-xl font-bold hover:bg-[#d91d39] transition disabled:opacity-50"
+            >
+              {saving ? t('common.loading') : t('common.save')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Translation Settings Tab */}
+      {activeTab === 'translation' && (
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-[#002819] rounded-xl flex items-center justify-center">
+              <MaterialSymbol icon="translate" size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[#002819]">Translation Settings</h3>
+              <p className="text-sm text-[#717973]">Configure API keys for on-demand translation (DeepL + Google Translate)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">DeepL API Key</label>
+              <input
+                type="password"
+                value={translationSettings.deepl_api_key}
+                onChange={(e) => setTranslationSettings({ ...translationSettings, deepl_api_key: e.target.value })}
+                className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                placeholder="DeepL API Key (en/ar/ur)"
+              />
+              <p className="text-xs text-[#717973] mt-1">Used for English, Arabic, Urdu translations</p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Google Translate API Key</label>
+              <input
+                type="password"
+                value={translationSettings.google_api_key}
+                onChange={(e) => setTranslationSettings({ ...translationSettings, google_api_key: e.target.value })}
+                className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                placeholder="Google Translate API Key (all langs)"
+              />
+              <p className="text-xs text-[#717973] mt-1">Fallback for Basque (eu) and all other languages</p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={handleSaveTranslationSettings}
+              disabled={saving}
+              className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
             >
               {saving ? t('common.loading') : t('common.save')}
             </button>

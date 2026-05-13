@@ -1,13 +1,47 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell,
 } from 'recharts';
+import { MaterialSymbol } from 'react-material-symbols';
 import { useI18n } from '../../../i18n';
 import { useAuth } from '../../../context/AuthContext';
 
 const COLORS = ['#002819', '#06402B', '#D4AF37', '#735C00', '#10b981', '#BA1A1A', '#8b5cf6', '#06b6d4'];
 
-function getRoleBasedCharts(role, adminSubStats, stats) {
+function computeSpeciesData(animals) {
+  const map = {};
+  (animals || []).forEach(a => {
+    const species = a.species || 'Unknown';
+    map[species] = (map[species] || 0) + 1;
+  });
+  return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+}
+
+function computeHealthData(animals) {
+  const counts = { Healthy: 0, Warning: 0, Critical: 0 };
+  (animals || []).forEach(a => {
+    const temp = parseFloat(a.baseline_temperature);
+    if (!temp || isNaN(temp)) { counts.Healthy++; return; }
+    if (temp <= 39) counts.Healthy++;
+    else if (temp <= 39.5) counts.Warning++;
+    else counts.Critical++;
+  });
+  return Object.entries(counts).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }));
+}
+
+function computeDeviceStatusData(animals) {
+  const counts = { Online: 0, Offline: 0, Unassigned: 0 };
+  (animals || []).forEach(a => {
+    const device = a.device;
+    if (!device || !device.device_id) { counts.Unassigned++; return; }
+    if (device.status === 'online') counts.Online++;
+    else counts.Offline++;
+  });
+  return Object.entries(counts).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }));
+}
+
+function getRoleBasedCharts(role, adminSubStats, stats, speciesData, healthData, deviceStatusData) {
   if (role === 'Admin' && adminSubStats) {
     const charts = [];
 
@@ -72,46 +106,107 @@ function getRoleBasedCharts(role, adminSubStats, stats) {
       }
     }
 
-    return charts;
-  }
-
-  if (role === 'Owner' && stats) {
-    return [
-      {
-        id: 'species',
-        type: 'pie',
-        titleKey: 'dashboard.chartSpecies',
-        data: [
-          { name: 'Camel', value: Math.round(stats.totalAnimals * 0.5) },
-          { name: 'Goat', value: Math.round(stats.totalAnimals * 0.3) },
-          { name: 'Sheep', value: stats.totalAnimals - Math.round(stats.totalAnimals * 0.5) - Math.round(stats.totalAnimals * 0.3) },
-        ].filter(d => d.value > 0),
-      },
-      {
-        id: 'devices',
-        type: 'pie',
-        titleKey: 'dashboard.chartDevices',
-        data: [
-          { name: 'Assigned', value: stats.activeDevices },
-          { name: 'Unassigned', value: Math.max(0, stats.totalAnimals - stats.activeDevices) },
-        ].filter(d => d.value > 0),
-      },
-    ];
-  }
-
-  if (role === 'Doctor' && stats) {
-    return [
-      {
+    if (healthData.length > 0) {
+      charts.push({
         id: 'health',
         type: 'pie',
         titleKey: 'dashboard.chartHealth',
-        data: [
-          { name: 'Healthy', value: Math.round(stats.totalAnimals * 0.75) },
-          { name: 'Monitoring', value: Math.round(stats.totalAnimals * 0.15) },
-          { name: 'Critical', value: stats.totalAnimals - Math.round(stats.totalAnimals * 0.75) - Math.round(stats.totalAnimals * 0.15) },
-        ].filter(d => d.value > 0),
-      },
-    ];
+        data: healthData,
+      });
+    }
+
+    if (speciesData.length > 0) {
+      charts.push({
+        id: 'species',
+        type: 'pie',
+        titleKey: 'dashboard.chartSpecies',
+        data: speciesData,
+      });
+    }
+
+    return charts;
+  }
+
+  if ((role === 'Owner' || role === 'Manager') && stats) {
+    const charts = [];
+
+    if (speciesData.length > 0) {
+      charts.push({
+        id: 'species',
+        type: 'pie',
+        titleKey: 'dashboard.chartSpecies',
+        data: speciesData,
+      });
+    }
+
+    charts.push({
+      id: 'devices',
+      type: 'pie',
+      titleKey: 'dashboard.chartDevices',
+      data: [
+        { name: 'Assigned', value: stats.activeDevices },
+        { name: 'Unassigned', value: Math.max(0, stats.totalAnimals - stats.activeDevices) },
+      ].filter(d => d.value > 0),
+    });
+
+    if (healthData.length > 0) {
+      charts.push({
+        id: 'health',
+        type: 'pie',
+        titleKey: 'dashboard.chartHealth',
+        data: healthData,
+      });
+    }
+
+    return charts;
+  }
+
+  if (role === 'Doctor' && stats) {
+    const charts = [];
+
+    if (healthData.length > 0) {
+      charts.push({
+        id: 'health',
+        type: 'pie',
+        titleKey: 'dashboard.chartHealth',
+        data: healthData,
+      });
+    }
+
+    if (speciesData.length > 0) {
+      charts.push({
+        id: 'species',
+        type: 'pie',
+        titleKey: 'dashboard.chartSpecies',
+        data: speciesData,
+      });
+    }
+
+    return charts;
+  }
+
+  if (role === 'Shepherd' && stats) {
+    const charts = [];
+
+    if (deviceStatusData.length > 0) {
+      charts.push({
+        id: 'deviceStatus',
+        type: 'pie',
+        titleKey: 'dashboard.chartDevices',
+        data: deviceStatusData,
+      });
+    }
+
+    if (speciesData.length > 0) {
+      charts.push({
+        id: 'species',
+        type: 'pie',
+        titleKey: 'dashboard.chartSpecies',
+        data: speciesData,
+      });
+    }
+
+    return charts;
   }
 
   return [];
@@ -122,10 +217,16 @@ export default function ChartsWidget({ dashboardData }) {
   const { user } = useAuth();
   const isRtl = dir === 'rtl';
   const role = user?.role;
-  const { adminSubStats, stats } = dashboardData;
+  const { adminSubStats, stats, animals } = dashboardData;
 
-  const charts = getRoleBasedCharts(role, adminSubStats, stats);
+  const speciesData = computeSpeciesData(animals);
+  const healthData = computeHealthData(animals);
+  const deviceStatusData = computeDeviceStatusData(animals);
+
+  const charts = getRoleBasedCharts(role, adminSubStats, stats, speciesData, healthData, deviceStatusData);
   if (charts.length === 0) return null;
+
+  const canViewReports = ['Admin', 'Owner', 'Manager', 'Doctor'].includes(role);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload) return null;
@@ -203,13 +304,27 @@ export default function ChartsWidget({ dashboardData }) {
   };
 
   return (
-    <div className={`grid grid-cols-1 ${charts.length >= 2 ? 'lg:grid-cols-2' : ''} gap-6`}>
-      {charts.map((chart) => (
-        <div key={chart.id} className="card p-5">
-          <h5 className="font-bold text-sm text-[#002819] mb-4">{t(chart.titleKey)}</h5>
-          {renderChart(chart)}
+    <div>
+      {canViewReports && (
+        <div className={`flex justify-between items-center mb-5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <h4 className="font-bold text-[#002819]">{t('dashboard.analytics')}</h4>
+          <Link
+            to="/reports"
+            className="text-sm font-bold text-[#D4AF37] hover:underline flex items-center gap-1"
+          >
+            {t('reports.reportCenter')}
+            <MaterialSymbol icon={isRtl ? 'arrow_back' : 'arrow_forward'} size={16} />
+          </Link>
         </div>
-      ))}
+      )}
+      <div className={`grid grid-cols-1 ${charts.length >= 2 ? 'lg:grid-cols-2' : ''} gap-6`}>
+        {charts.map((chart) => (
+          <div key={chart.id} className="card p-5">
+            <h5 className="font-bold text-sm text-[#002819] mb-4">{t(chart.titleKey)}</h5>
+            {renderChart(chart)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

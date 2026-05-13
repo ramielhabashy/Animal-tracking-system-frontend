@@ -6,6 +6,7 @@ import { apiFetch } from '../utils/api';
 import { exportData } from '../utils/export';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -524,7 +525,7 @@ export default function GeofenceList() {
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded" style={{ backgroundColor: geofence.color }} />
-                      <span className="font-medium text-gray-900">{geofence.name}</span>
+                      <span className="font-medium text-gray-900">{geofence.name} <TranslateButton text={geofence.name} /></span>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-600">{geofence.owner?.name || '-'}</td>
@@ -580,7 +581,7 @@ export default function GeofenceList() {
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: geofence.color }}
                   />
-                  <h3 className="font-semibold text-gray-900">{geofence.name}</h3>
+                  <h3 className="font-semibold text-gray-900">{geofence.name} <TranslateButton text={geofence.name} /></h3>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${
                   geofence.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -733,7 +734,7 @@ export default function GeofenceList() {
                 </div>
                 <div className="h-64 border border-gray-200 rounded-lg overflow-hidden">
                   <MapContainer
-                    center={[24.3185, 54.4619]}
+                    center={[24.7136, 46.6753]}
                     zoom={12}
                     style={{ height: '100%', width: '100%' }}
                   >

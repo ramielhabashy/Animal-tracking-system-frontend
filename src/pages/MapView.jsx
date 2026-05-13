@@ -117,7 +117,6 @@ export default function MapView() {
   const canCreateGeofence = ['Admin', 'Owner', 'Manager'].includes(user?.role);
   const canDeleteGeofence = ['Admin', 'Owner'].includes(user?.role);
   const [animals, setAnimals] = useState([]);
-  const [devices, setDevices] = useState([]);
   const [locationHistories, setLocationHistories] = useState({});
   const [geofences, setGeofences] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -144,9 +143,9 @@ export default function MapView() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [showLegend, setShowLegend] = useState(false);
+
   const [showFilters, setShowFilters] = useState(true);
-  const [mapCenter] = useState([24.4539, 54.3773]);
+  const [mapCenter] = useState([24.7136, 46.6753]);
   const searchInputRef = useRef(null);
   const [geofenceStats, setGeofenceStats] = useState({});
   const [drawMode, setDrawMode] = useState('polygon');
@@ -156,105 +155,75 @@ export default function MapView() {
 
   const fetchBaseData = useCallback(async () => {
     try {
-      const [animalsRes, devicesRes, geofencesRes, alertsRes, groupsRes, usersRes] = await Promise.all([
+      const [animalsRes, mapRes, alertsRes] = await Promise.all([
         apiFetch('/api/animals?per_page=100'),
-        apiFetch('/api/devices?per_page=100'),
-        apiFetch('/api/geofences?include_inactive=true'),
+        apiFetch(`/api/map?hours=${timeFilter}`),
         apiFetch('/api/geofence-alerts'),
-        apiFetch('/api/animal-groups'),
-        apiFetch('/api/users'),
       ]);
-      
-      if (animalsRes.ok && devicesRes.ok) {
+
+      if (animalsRes.ok && mapRes.ok) {
         const animalsData = await animalsRes.json();
-        const devicesData = await devicesRes.json();
-        const geofencesData = geofencesRes.ok ? await geofencesRes.json() : { data: [] };
+        const mapData = await mapRes.json();
         const alertsData = alertsRes.ok ? await alertsRes.json() : { data: [] };
-        const groupsData = groupsRes.ok ? await groupsRes.json() : { data: [] };
-        const usersData = usersRes.ok ? await usersRes.json() : { data: [] };
-        
-        setAnimals(animalsData.data || []);
-        setDevices(devicesData.data?.data || devicesData.data || devicesData || []);
-        setGeofences(geofencesData.data || []);
+
+        const animalList = animalsData.data || [];
+        setAnimals(animalList);
+        setGeofences(mapData.geofences || []);
         setAlerts(alertsData.data || []);
-        setGroups(groupsData.data || []);
-        setOwners(usersData.data?.filter(u => u.role === 'Owner') || []);
+        setGroups(mapData.groups || []);
+        setOwners(mapData.users || []);
+
+        const historyMap = {};
+        (mapData.markers || []).forEach(marker => {
+          if (marker.animal && marker.location_history?.length > 0) {
+            historyMap[marker.animal.id] = marker.location_history;
+          } else if (marker.animal && marker.gps_lat && marker.gps_lng) {
+            historyMap[marker.animal.id] = [{
+              latitude: marker.gps_lat,
+              longitude: marker.gps_lng,
+              recorded_at: marker.last_ping,
+            }];
+          }
+        });
+        setLocationHistories(historyMap);
+
         setLastUpdated(new Date());
-        return animalsData.data || [];
+        return animalList;
       }
       return [];
     } catch (error) {
-      console.error('Failed to fetch base data:', error);
+      console.error('Failed to fetch map data:', error);
       return [];
-    }
-  }, []);
-
-  const fetchLocationHistory = useCallback(async (animalsList) => {
-    if (!animalsList.length || loading) return;
-    setLoading(true);
-    try {
-      const animalsWithDevices = animalsList.filter(a => a.device?.device_id || a.device_id);
-      
-      const historyPromises = animalsWithDevices.map(animal => 
-        apiFetch(`/api/animals/${animal.id}/location-history?hours=${timeFilter}`)
-          .then(res => res.ok ? res.json() : null)
-      );
-      
-      const histories = await Promise.all(historyPromises);
-      const historyMap = {};
-      animalsWithDevices.forEach((animal, idx) => {
-        if (histories[idx]) {
-          let locations = histories[idx].locations || [];
-          if (locations.length === 0 && animal.device?.gps_lat && animal.device?.gps_lng) {
-            locations = [{
-              latitude: animal.device.gps_lat,
-              longitude: animal.device.gps_lng,
-              recorded_at: animal.device.last_ping
-            }];
-          }
-          historyMap[animal.id] = locations;
-        } else if (animal.device?.gps_lat && animal.device?.gps_lng) {
-          historyMap[animal.id] = [{
-            latitude: animal.device.gps_lat,
-            longitude: animal.device.gps_lng,
-            recorded_at: animal.device.last_ping
-          }];
-        }
-      });
-      
-      setLocationHistories(historyMap);
-    } catch (error) {
-      console.error('Failed to fetch location history:', error);
-    } finally {
-      setLoading(false);
     }
   }, [timeFilter]);
 
+
+
   useEffect(() => {
-    fetchBaseData().then(animals => {
-      if (animals.length > 0) {
-        fetchLocationHistory(animals);
-      }
-      setLoading(false);
+    let cancelled = false;
+    fetchBaseData().finally(() => {
+      if (!cancelled) setLoading(false);
     });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    fetchLocationHistory(animals);
-  }, [timeFilter, animals, fetchLocationHistory]);
+    if (!loading && animals.length > 0) {
+      fetchBaseData();
+    }
+  }, [timeFilter, fetchBaseData, loading]);
 
   useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        fetchBaseData().then(animals => {
-          if (animals.length > 0) {
-            fetchLocationHistory(animals);
-          }
-        });
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, fetchBaseData, fetchLocationHistory]);
+    setSelectedOwner('all');
+  }, [user]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      fetchBaseData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, fetchBaseData]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -452,17 +421,10 @@ export default function MapView() {
 
   const hasPathData = (animal) => getPathPositions(animal.id).length > 0;
 
-  const roleFilteredAnimals = animals.filter(a => {
-    if (user?.role === 'Admin') return true;
-    if (user?.role === 'Owner') return a.owner_id === user?.id;
-    if (user?.role === 'Manager') return a.owner_id === user?.id || animals.some(x => x.owner_id === a.owner_id && x.owner?.managed_by === user?.id);
-    return true;
-  });
+  const animalsWithDevice = animals.filter(a => a.device?.device_id);
+  const animalsWithoutDevice = animals.filter(a => !a.device?.device_id);
 
-  const animalsWithPaths = roleFilteredAnimals.filter(a => a.device?.device_id && (hasPathData(a) || hasGpsData(a)));
-  const animalsWithoutPaths = roleFilteredAnimals.filter(a => !a.device?.device_id);
-
-  const filteredAnimals = [...animalsWithPaths, ...animalsWithoutPaths].filter(animal => {
+  const filteredAnimals = [...animalsWithDevice, ...animalsWithoutDevice].filter(animal => {
     const matchesSearch = searchQuery === '' || 
       animal.animal_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       animal.species?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -483,8 +445,8 @@ export default function MapView() {
     return matchesSearch && matchesStatus && matchesGroup && matchesGeofence && matchesOwner;
   });
 
-  const filteredAnimalsWithPaths = filteredAnimals.filter(a => animalsWithPaths.includes(a));
-  const filteredAnimalsWithoutPaths = filteredAnimals.filter(a => animalsWithoutPaths.includes(a));
+  const filteredAnimalsWithPaths = filteredAnimals.filter(a => a.device?.device_id && (hasGpsData(a) || hasPathData(a)));
+  const filteredAnimalsWithoutPaths = filteredAnimals.filter(a => !a.device?.device_id || (!hasGpsData(a) && !hasPathData(a)));
 
   const allPositions = [];
   filteredAnimalsWithPaths.forEach(animal => {
@@ -622,18 +584,36 @@ export default function MapView() {
     setSelectedAnimal(null);
   };
 
-  const filteredAlerts = alerts.filter(a => {
+  const unacknowledgedAlerts = alerts.filter(a => !a.is_acknowledged);
+  const filteredPanelAlerts = unacknowledgedAlerts.filter(a => {
     if (alertTypeFilter === 'all') return true;
     if (alertTypeFilter === 'entry' || alertTypeFilter === 'exit') {
       return a.type === alertTypeFilter;
     }
     return true;
   });
-  const unacknowledgedAlerts = filteredAlerts.filter(a => !a.is_acknowledged);
+
+  const animalsForCounts = [...animalsWithDevice, ...animalsWithoutDevice].filter(animal => {
+    const matchesSearch = searchQuery === '' || 
+      animal.animal_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      animal.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      animal.species?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      animal.breed?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesGroup = selectedGroup === 'all' || 
+      animal.groups?.some(g => g.id === parseInt(selectedGroup));
+    const matchesGeofence = selectedGeofence === 'all' || 
+      animal.geofences?.some(g => g.id === parseInt(selectedGeofence));
+    const matchesOwner = selectedOwner === 'all' || 
+      animal.owner_id === parseInt(selectedOwner) ||
+      animal.owner?.id === parseInt(selectedOwner);
+    return matchesSearch && matchesGroup && matchesGeofence && matchesOwner;
+  });
+  const animalStatusMap = {};
+  animalsForCounts.forEach(a => { animalStatusMap[a.id] = getAnimalStatus(a); });
   const statusCounts = {
-    healthy: filteredAnimals.filter(a => getAnimalStatus(a) === 'healthy').length,
-    warning: filteredAnimals.filter(a => getAnimalStatus(a) === 'warning').length,
-    critical: filteredAnimals.filter(a => getAnimalStatus(a) === 'critical').length,
+    healthy: animalsForCounts.filter(a => animalStatusMap[a.id] === 'healthy').length,
+    warning: animalsForCounts.filter(a => animalStatusMap[a.id] === 'warning').length,
+    critical: animalsForCounts.filter(a => animalStatusMap[a.id] === 'critical').length,
   };
 
   if (loading) {
@@ -686,17 +666,19 @@ export default function MapView() {
 
           {showFilters && (
             <>
-              {/* Owner Filter */}
-              <select
-                value={selectedOwner}
-                onChange={(e) => setSelectedOwner(e.target.value)}
-                className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37] max-w-[120px]"
-              >
-                <option value="all">{t('mapPage.allOwners')}</option>
-                {owners.map(owner => (
-                  <option key={owner.id} value={owner.id}>{owner.name}</option>
-                ))}
-              </select>
+              {/* Owner Filter — Admin only */}
+              {user?.role === 'Admin' && (
+                <select
+                  value={selectedOwner}
+                  onChange={(e) => setSelectedOwner(e.target.value)}
+                  className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37] max-w-[120px]"
+                >
+                  <option value="all">{t('mapPage.allOwners')}</option>
+                  {owners.map(owner => (
+                    <option key={owner.id} value={owner.id}>{owner.name}</option>
+                  ))}
+                </select>
+              )}
 
               {/* Group Filter - filtered by owner */}
               <select
@@ -781,13 +763,7 @@ export default function MapView() {
           >
             <MaterialSymbol icon="fence" size={18} />
           </button>
-          <button 
-            onClick={() => setShowLegend(!showLegend)}
-            className={`p-2 rounded-lg transition-all ${showLegend ? 'bg-[#D4AF37] text-[#002819]' : 'bg-white/10 text-white hover:bg-white/20'}`}
-            title={t('mapPage.legend')}
-          >
-            <MaterialSymbol icon="info" size={18} />
-          </button>
+
           <button
             onClick={() => setShowAlertsPanel(!showAlertsPanel)}
             className={`relative p-2 rounded-lg transition-all ${showAlertsPanel ? 'bg-[#D4AF37] text-[#002819]' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -917,113 +893,113 @@ export default function MapView() {
                 icon={createAnimalIcon(groupColor, isSelected)}
                 eventHandlers={{ click: () => { setSelectedAnimal(animal); setZoomPosition(position); } }}
               >
-                <Popup>
-                  <div className="p-3 min-w-[220px]">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 ${
-                        isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {isOnline(animal.id) && <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />}
-                        {isOnline(animal.id) ? 'Live' : 'Offline'}
-                      </span>
+                  <Popup>
+                    <div className="p-3 min-w-[220px]">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 ${
+                          isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {isOnline(animal.id) && <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />}
+                          {isOnline(animal.id) ? 'Live' : 'Offline'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#717973] mt-0.5">{animal.animal_id}</p>
+                      <p className="text-xs text-[#404943] mt-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}</p>
+                      {['Admin', 'Owner', 'Manager'].includes(user?.role) && (
+                        <p className="text-xs text-[#717973]">Owner: {animal.owner?.name || animal.owner_name || 'N/A'}</p>
+                      )}
+                      <p className="text-xs text-[#717973]">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
+
+                      {/* Doctor sees health data */}
+                      {user?.role === 'Doctor' ? (
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-blue-50 p-2 rounded">
+                            <span className="text-[#717973]">Temp</span>
+                            <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
+                          </div>
+                          <div className="bg-blue-50 p-2 rounded">
+                            <span className="text-[#717973]">Heart Rate</span>
+                            <p className="font-bold text-[#002819]">{animal.normal_heart_rate ? `${animal.normal_heart_rate} bpm` : 'N/A'}</p>
+                          </div>
+                          <div className="bg-blue-50 p-2 rounded">
+                            <span className="text-[#717973]">Weight</span>
+                            <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
+                          </div>
+                          <div className="bg-blue-50 p-2 rounded">
+                            <span className="text-[#717973]">Device</span>
+                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ) : user?.role === 'Shepherd' ? (
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-emerald-50 p-2 rounded">
+                            <span className="text-[#717973]">Battery</span>
+                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                              {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="bg-emerald-50 p-2 rounded">
+                            <span className="text-[#717973]">Signal</span>
+                            <p className="font-bold text-[#002819]">{animal.device?.signal_strength ?? 'N/A'}
+                              {animal.device?.advanced_tracking ? ' ⚡' : ''}
+                            </p>
+                          </div>
+                          <div className="bg-emerald-50 p-2 rounded">
+                            <span className="text-[#717973]">Path Pts</span>
+                            <p className="font-bold text-[#002819]">{getPathPositions(animal.id).length}</p>
+                          </div>
+                          <div className="bg-emerald-50 p-2 rounded">
+                            <span className="text-[#717973]">Device</span>
+                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-[#717973]">Device</span>
+                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-[#717973]">Battery</span>
+                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                              {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-[#717973]">Weight</span>
+                            <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <span className="text-[#717973]">Temp</span>
+                            <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {animal.geofences?.length > 0 && (
+                        <div className="mt-1.5 text-xs">
+                          <span className="text-[#717973]">Geofences: </span>
+                          <span className="text-[#002819] font-medium">{animal.geofences.map(g => g.name).join(', ')}</span>
+                        </div>
+                      )}
+                      <div className="mt-2 flex gap-2">
+                        <Link to={`/animals/${animal.id}`} className="flex-1 text-center text-xs bg-[#002819] text-white py-1.5 rounded font-bold hover:bg-[#06402b]">
+                          View Details
+                        </Link>
+                        <button onClick={() => { setSelectedAnimal(animal); setZoomPosition(position); }} className="flex-1 text-center text-xs border border-gray-200 py-1.5 rounded font-bold hover:bg-gray-50">
+                          Center
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-[#717973] mt-0.5">{animal.animal_id}</p>
-                    <p className="text-xs text-[#404943] mt-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}</p>
-                    <p className="text-xs text-[#717973]">Owner: {animal.owner?.name || animal.owner_name || 'N/A'}</p>
-                    <p className="text-xs text-[#717973]">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Device</span>
-                        <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Battery</span>
-                        <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
-                          {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Weight</span>
-                        <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Temp</span>
-                        <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
-                      </div>
-                    </div>
-                    {animal.geofences?.length > 0 && (
-                      <div className="mt-1.5 text-xs">
-                        <span className="text-[#717973]">Geofences: </span>
-                        <span className="text-[#002819] font-medium">{animal.geofences.map(g => g.name).join(', ')}</span>
-                      </div>
-                    )}
-                    <div className="mt-2 flex gap-2">
-                      <Link to={`/animals/${animal.id}`} className="flex-1 text-center text-xs bg-[#002819] text-white py-1.5 rounded font-bold hover:bg-[#06402b]">
-                        View Details
-                      </Link>
-                      <button onClick={() => { setSelectedAnimal(animal); setZoomPosition(position); }} className="flex-1 text-center text-xs border border-gray-200 py-1.5 rounded font-bold hover:bg-gray-50">
-                        Center
-                      </button>
-                    </div>
-                  </div>
-                </Popup>
+                  </Popup>
               </Marker>
             );
           })}
         </MapContainer>
       </div>
 
-      {/* Legend */}
-      {showLegend && (
-        <div className={`absolute top-24 z-[1000] bg-white rounded-xl shadow-xl p-4 min-w-[200px] ${isRtl ? 'left-24' : 'right-24'}`}>
-          <h4 className="font-bold text-[#002819] text-sm mb-3 flex items-center gap-2">
-            <MaterialSymbol icon="info" size={16} />
-            {t('mapPage.legend')}
-          </h4>
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-[#717973] uppercase mb-1">{t('mapPage.animalGroups')}</div>
-            {groups.slice(0, 6).map((group) => (
-              <div key={group.id} className="flex items-center gap-2 text-xs">
-                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} />
-                <span>{group.name}</span>
-              </div>
-            ))}
-            {groups.length === 0 && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-4 h-4 rounded-full bg-green-500" />
-                <span>No Groups</span>
-              </div>
-            )}
-            <div className="border-t border-gray-100 my-2" />
-            <div className="text-xs font-semibold text-[#717973] uppercase mb-1">{t('mapPage.pathSelection')}</div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-8 h-0.5 bg-green-500" />
-              <span>{t('mapPage.path')}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-8 h-0.5 bg-[#D4AF37]" />
-              <span>{t('mapPage.selected')}</span>
-            </div>
-            <div className="border-t border-gray-100 my-2" />
-            <div className="text-xs font-semibold text-[#717973] uppercase mb-1">{t('mapPage.fenceArea')}</div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-4 h-4 rounded bg-[#D4AF37]/30 border-2 border-[#D4AF37]" />
-              <span>{t('mapPage.perimeter')}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-4 h-3 rounded-sm bg-green-500" />
-              <span>{t('mapPage.animalInside')}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-4 h-3 rounded-sm bg-amber-500" />
-              <span>{t('mapPage.animalOutside')}</span>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Geofence Controls */}
       <div className={`absolute top-24 z-[1000] flex flex-col gap-2 ${isRtl ? 'right-4' : 'left-4'}`}>
@@ -1166,7 +1142,10 @@ export default function MapView() {
         
         {!sidebarCollapsed && (
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {filteredAnimalsWithPaths.map((animal) => (
+            {filteredAnimalsWithPaths.map((animal) => {
+              const statusColor = getAnimalStatus(animal) === 'critical' ? 'bg-red-500' : getAnimalStatus(animal) === 'warning' ? 'bg-amber-500' : 'bg-green-500';
+              const battery = parseInt(animal.device?.battery_level);
+              return (
               <div
                 key={animal.id}
                 onClick={() => { setSelectedAnimal(animal); setZoomPosition(getLastLocation(animal.id)); }}
@@ -1177,36 +1156,98 @@ export default function MapView() {
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${isOnline(animal.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <h4 className="font-bold text-[#002819] text-sm">{animal.animal_id}</h4>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isOnline(animal.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                    <h4 className="font-bold text-[#002819] text-sm truncate">{animal.name || animal.animal_id}</h4>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
-                    isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {isOnline(animal.id) ? 'Live' : 'Offline'}
-                  </span>
-                </div>
-                <p className="text-xs text-[#717973] mb-2">{animal.species} {animal.breed && `• ${animal.breed}`}</p>
-                <p className="text-[10px] text-[#717973] mb-3">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-[#717973]'} />
-                    <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
-                      {animal.baseline_temperature || 'N/A'}°
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <MaterialSymbol icon="location_on" size={14} className="text-[#717973]" />
-                    <p className="text-xs font-bold mt-1 text-[#002819]">{getPathPositions(animal.id).length}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <MaterialSymbol icon="schedule" size={14} className="text-[#717973]" />
-                    <p className="text-xs font-bold mt-1 text-[#002819]">{timeFilter}h</p>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusColor} ${getAnimalStatus(animal) === 'critical' ? 'animate-pulse' : ''}`} />
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                      isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {isOnline(animal.id) ? 'Live' : 'Offline'}
+                    </span>
                   </div>
                 </div>
+                <p className="text-xs text-[#717973] mb-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}{animal.date_of_birth ? ` • Born ${animal.date_of_birth}` : ''}</p>
+                <div className="flex items-center gap-3 text-[10px] text-[#717973] mb-2">
+                  <span>Last: {formatLastSeen(getLastLocationTime(animal.id))}</span>
+                  {animal.owner?.name && ['Admin', 'Manager', 'Doctor', 'Owner'].includes(user?.role) && (
+                    <span className="truncate">Owner: {animal.owner.name}</span>
+                  )}
+                </div>
+
+                {/* Role-aware data cards */}
+                {['Doctor'].includes(user?.role) ? (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-blue-500'} />
+                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
+                        {animal.baseline_temperature || 'N/A'}°
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <MaterialSymbol icon="favorite" size={14} className="text-blue-500" />
+                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                        {animal.normal_heart_rate ? `${animal.normal_heart_rate} bpm` : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <MaterialSymbol icon="scale" size={14} className="text-blue-500" />
+                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                        {animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ) : ['Admin'].includes(user?.role) ? (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-[#717973]'} />
+                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
+                        {animal.baseline_temperature || 'N/A'}°
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon={battery < 20 ? 'battery_alert' : battery < 50 ? 'battery_low' : 'battery_full'} size={14} className={battery < 20 ? 'text-red-500' : battery < 30 ? 'text-amber-500' : 'text-green-600'} />
+                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                        {!isNaN(battery) ? `${battery}%` : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon="location_on" size={14} className="text-[#717973]" />
+                      <p className="text-xs font-bold mt-1 text-[#002819]">{getPathPositions(animal.id).length} pts</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon={battery < 20 ? 'battery_alert' : battery < 50 ? 'battery_low' : 'battery_full'} size={14} className={battery < 20 ? 'text-red-500' : battery < 30 ? 'text-amber-500' : 'text-green-600'} />
+                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                        {!isNaN(battery) ? `${battery}%` : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon="location_on" size={14} className="text-[#717973]" />
+                      <p className="text-xs font-bold mt-1 text-[#002819]">{getPathPositions(animal.id).length} pts</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <MaterialSymbol icon="scale" size={14} className="text-[#717973]" />
+                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                        {animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Signal strength for Shepherd */}
+                {['Shepherd'].includes(user?.role) && animal.device?.signal_strength != null && (
+                  <div className="mt-1.5 text-[10px] text-[#717973]">
+                    Signal: {animal.device.signal_strength}
+                    {animal.device.advanced_tracking ? ' | Advanced ON' : ''}
+                  </div>
+                )}
                 {animal.groups?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {animal.groups.map(g => (
                       <span key={g.id} className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: g.color + '20', color: g.color }}>
                         {g.name}
@@ -1215,7 +1256,7 @@ export default function MapView() {
                   </div>
                 )}
               </div>
-            ))}
+            );})}
             
             {filteredAnimalsWithoutPaths.length > 0 && (
               <div className="pt-4 border-t border-[#eeeee9]">
@@ -1223,10 +1264,13 @@ export default function MapView() {
                   <MaterialSymbol icon="gps_off" size={14} />
                   No Tracking Data ({filteredAnimalsWithoutPaths.length})
                 </p>
-                {filteredAnimalsWithoutPaths.map((animal) => (
+                {filteredAnimalsWithoutPaths.map((animal) => {
+                  const hasDevice = !!animal.device?.device_id;
+                  const battery = parseInt(animal.device?.battery_level);
+                  return (
                   <div
                     key={animal.id}
-                    onClick={() => setSelectedAnimal(animal)}
+                    onClick={() => hasDevice && setSelectedAnimal(animal)}
                     className={`p-3 rounded-xl border cursor-pointer transition-all mb-2 ${
                       selectedAnimal?.id === animal.id 
                         ? 'border-[#D4AF37] bg-amber-50/50' 
@@ -1234,12 +1278,19 @@ export default function MapView() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+                      <div className={`w-2.5 h-2.5 rounded-full ${hasDevice ? 'bg-amber-400' : 'bg-gray-300'}`} />
                       <span className="font-medium text-sm text-[#404943]">{animal.animal_id}</span>
                     </div>
-                        <p className={`text-xs text-[#717973] ${isRtl ? 'mr-4' : 'ml-4'}`}>{animal.species}</p>
+                    <p className={`text-xs text-[#717973] ${isRtl ? 'mr-4' : 'ml-4'}`}>
+                      {animal.species}{hasDevice ? ' • Device: ' + (animal.device.device_id || 'paired') : ' • No device'}
+                    </p>
+                    {hasDevice && !isNaN(battery) && (
+                      <p className={`text-xs ${isRtl ? 'mr-4' : 'ml-4'} mt-0.5 ${battery < 20 ? 'text-red-500' : 'text-amber-600'}`}>
+                        Battery: {battery}%
+                      </p>
+                    )}
                   </div>
-                ))}
+                );})}
               </div>
             )}
             
@@ -1275,7 +1326,7 @@ export default function MapView() {
                 <option value="entry" className="text-gray-800">{t('mapPage.entryOnly')}</option>
                 <option value="exit" className="text-gray-800">{t('mapPage.exitOnly')}</option>
               </select>
-              {unacknowledgedAlerts.length > 0 && (
+              {filteredPanelAlerts.length > 0 && (
                 <button 
                   onClick={acknowledgeAllAlerts}
                   className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs text-white font-medium transition-all"
@@ -1286,14 +1337,14 @@ export default function MapView() {
             </div>
           </div>
           <div className="divide-y divide-[#eeeee9] max-h-[35vh] overflow-y-auto">
-            {unacknowledgedAlerts.length === 0 ? (
+            {filteredPanelAlerts.length === 0 ? (
               <div className="p-6 text-center text-[#717973]">
                 <MaterialSymbol icon="check_circle" size={32} className="mx-auto mb-2 text-green-500" />
                 <p className="text-sm font-medium">No alerts</p>
                 <p className="text-xs">All clear!</p>
               </div>
             ) : (
-              unacknowledgedAlerts.map((alert) => (
+              filteredPanelAlerts.map((alert) => (
                 <div key={alert.id} className={`p-4 ${alert.is_acknowledged ? 'opacity-50' : ''}`}>
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-lg ${alert.type === 'entry' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
@@ -1419,6 +1470,13 @@ export default function MapView() {
             />
             <span className="text-xs text-[#717973]">Auto-refresh</span>
           </label>
+          <button
+            onClick={() => fetchBaseData()}
+            className="p-1.5 rounded-lg bg-white/10 text-[#717973] hover:bg-white/20 hover:text-[#002819] transition"
+            title="Refresh now"
+          >
+            <MaterialSymbol icon="refresh" size={16} />
+          </button>
         </div>
       </div>
     </div>

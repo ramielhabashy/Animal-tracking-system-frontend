@@ -552,6 +552,7 @@ export default {
     forbidden: 'Debekatua',
     not_found: 'Ez aurkituta',
     validation_error: 'Balioztatzeak huts egin du',
+    limit_reached: 'Taldekideen muga iritsi da',
     error: 'Errore bat gertatu da',
   },
   devicesPage: {
@@ -926,6 +927,7 @@ export default {
     dateFormat: 'Data formatua',
     defaultLanguage: 'Hizkuntza lehenetsia',
     exportDatabase: 'Esportatu datu basea',
+    loginBackground: 'Saio-hasierako orriaren atzeko planoa',
     smtpSettings: 'SMTP konfigurazioa',
     smtpDescription: 'Konfiguratu jakinarazpenak bidaltzeko e-posta zerbitzaria',
     stripeSettings: 'Stripe konfigurazioa',

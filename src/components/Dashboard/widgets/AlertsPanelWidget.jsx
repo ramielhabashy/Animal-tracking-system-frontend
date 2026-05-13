@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MaterialSymbol } from 'react-material-symbols';
 import { useI18n } from '../../../i18n';
 import { apiFetch } from '../../../utils/api';
+import TranslateButton from '../../TranslateButton';
 
 const getSeverityClass = (severity) => {
   switch (severity) {
@@ -136,20 +137,20 @@ export default function AlertsPanelWidget({ dashboardData }) {
               >
                 <div className={`flex items-start gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    notif.type === 'subscription_expiring' ? 'bg-amber-100' : notif.type === 'task_assigned' || notif.type === 'task_completed' ? 'bg-blue-100' : 'bg-blue-100'
+                    notif.type === 'subscription_expiring' ? 'bg-amber-100' : notif.type === 'task_assigned' || notif.type === 'task_completed' ? 'bg-blue-100' : notif.type === 'invitation_accepted' ? 'bg-purple-100' : notif.type === 'auction_new' ? 'bg-amber-100' : notif.type === 'auction_won' ? 'bg-yellow-100' : notif.type === 'auction_payment_verified' ? 'bg-emerald-100' : notif.type === 'auction_payment_rejected' || notif.type === 'auction_cancelled' || notif.type === 'bidder_disqualified' ? 'bg-red-100' : notif.type === 'auction_bid' || notif.type === 'payment_proof_submitted' ? 'bg-blue-100' : notif.type === 'auction_outbid' ? 'bg-red-100' : notif.type === 'auction_ended' ? 'bg-gray-100' : 'bg-blue-100'
                   }`}>
                     <MaterialSymbol
-                      icon={notif.type === 'subscription_expiring' ? 'hourglass' : notif.type === 'task_assigned' ? 'assignment' : notif.type === 'task_completed' ? 'task_alt' : 'circle_notifications'}
+                      icon={notif.type === 'subscription_expiring' ? 'hourglass' : notif.type === 'task_assigned' ? 'assignment' : notif.type === 'task_completed' ? 'task_alt' : notif.type === 'invitation_accepted' ? 'person_add' : notif.type === 'auction_new' ? 'gavel' : notif.type === 'auction_bid' ? 'add' : notif.type === 'auction_outbid' ? 'trending_down' : notif.type === 'auction_won' ? 'emoji_events' : notif.type === 'auction_ended' ? 'timer_off' : notif.type === 'auction_cancelled' ? 'block' : notif.type === 'auction_payment_verified' ? 'verified' : notif.type === 'auction_payment_rejected' ? 'block' : notif.type === 'bidder_disqualified' ? 'person_remove' : notif.type === 'payment_proof_submitted' ? 'upload' : 'circle_notifications'}
                       size={18}
-                      className={notif.type === 'subscription_expiring' ? 'text-amber-700' : 'text-blue-700'}
+                      className={notif.type === 'subscription_expiring' ? 'text-amber-700' : notif.type === 'invitation_accepted' ? 'text-purple-700' : notif.type === 'auction_new' ? 'text-amber-700' : notif.type === 'auction_won' ? 'text-yellow-700' : notif.type === 'auction_payment_verified' ? 'text-emerald-700' : notif.type === 'auction_payment_rejected' || notif.type === 'auction_cancelled' || notif.type === 'bidder_disqualified' || notif.type === 'auction_outbid' ? 'text-red-700' : notif.type === 'auction_bid' || notif.type === 'payment_proof_submitted' ? 'text-blue-700' : notif.type === 'auction_ended' ? 'text-gray-600' : 'text-blue-700'}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-[#002819]">{notif.title}</p>
+                      <p className="text-sm font-bold text-[#002819]">{notif.title} <TranslateButton text={notif.title} /></p>
                       {!notif.read_at && <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0" />}
                     </div>
-                    <p className="text-xs text-[#404943] mt-0.5">{notif.body}</p>
+                    <p className="text-xs text-[#404943] mt-0.5">{notif.body} <TranslateButton text={notif.body} /></p>
                     <p className="text-[10px] text-[#717973] mt-1">
                       {new Date(notif.created_at).toLocaleDateString()} {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>

@@ -36,6 +36,7 @@ function SuspenseFallback() {
 
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AnimalList = lazy(() => import('./pages/AnimalList'));
 const AnimalDetails = lazy(() => import('./pages/AnimalDetails'));
@@ -46,6 +47,7 @@ const DeviceEdit = lazy(() => import('./pages/DeviceEdit'));
 const UserList = lazy(() => import('./pages/UserList'));
 const UserEdit = lazy(() => import('./pages/UserEdit'));
 const UserCreate = lazy(() => import('./pages/UserCreate'));
+const InvitationsPage = lazy(() => import('./pages/InvitationsPage'));
 const MapView = lazy(() => import('./pages/MapView'));
 const AuctionList = lazy(() => import('./pages/AuctionList'));
 const AuctionCreate = lazy(() => import('./pages/AuctionCreate'));
@@ -79,6 +81,10 @@ const router = createBrowserRouter([
     element: <Suspense fallback={<SuspenseFallback />}><ForgotPassword /></Suspense>,
   },
   {
+    path: '/invitations/:token',
+    element: <Suspense fallback={<SuspenseFallback />}><AcceptInvitation /></Suspense>,
+  },
+  {
     element: <ProtectedLayout />,
     children: [
       {
@@ -98,6 +104,7 @@ const router = createBrowserRouter([
           { path: 'users/new', element: <Suspense fallback={<SuspenseFallback />}><UserCreate /></Suspense> },
           { path: 'users/add', element: <Navigate to="/users/new" replace /> },
           { path: 'users/:id/edit', element: <Suspense fallback={<SuspenseFallback />}><UserEdit /></Suspense> },
+          { path: 'invitations', element: <Suspense fallback={<SuspenseFallback />}><InvitationsPage /></Suspense> },
           { path: 'map', element: <Suspense fallback={<SuspenseFallback />}><MapView /></Suspense> },
           { path: 'auctions', element: <Suspense fallback={<SuspenseFallback />}><AuctionList /></Suspense> },
           { path: 'auctions/new', element: <Suspense fallback={<SuspenseFallback />}><AuctionCreate /></Suspense> },

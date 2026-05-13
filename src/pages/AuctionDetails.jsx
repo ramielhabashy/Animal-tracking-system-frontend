@@ -5,6 +5,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 
 export default function AuctionDetails() {
   const { id } = useParams();
@@ -448,7 +449,7 @@ export default function AuctionDetails() {
               <p className="text-[#D4AF37] text-sm font-bold uppercase tracking-widest mb-2">
                 {auction.animal?.animal_id || 'No ID'}
               </p>
-              <h1 className="text-4xl font-bold font-['Manrope'] mb-2">{auction.title}</h1>
+              <h1 className="text-4xl font-bold font-['Manrope'] mb-2">{auction.title} <TranslateButton text={auction.title} /></h1>
               <p className="text-white/70">
                 {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`} 
                 {' • '} {auction.animal?.gender}
@@ -460,7 +461,7 @@ export default function AuctionDetails() {
           <div className="bg-white rounded-[2rem] p-8 shadow-sm">
             <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-4">About This Animal</h3>
             <p className="text-[#404943] leading-relaxed">
-              {auction.description || 'No description provided for this auction.'}
+              {auction.description || 'No description provided for this auction.'} <TranslateButton text={auction.description || 'No description provided for this auction.'} />
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-[#eeeee9]">

@@ -90,7 +90,7 @@ const fetchData = async () => {
         
         setAvailableRoles(roles);
       } else if (!isAdmin) {
-        setAvailableRoles([{ name: 'Manager' }, { name: 'Doctor' }, { name: 'Shepherd' }]);
+        setAvailableRoles([{ name: 'Manager', type: 'user' }, { name: 'Doctor', type: 'user' }, { name: 'Shepherd', type: 'user' }]);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -186,6 +186,9 @@ const fetchData = async () => {
     }
   };
 
+  const adminRoles = availableRoles.filter(r => r.type === 'admin');
+  const userRoles = availableRoles.filter(r => r.type !== 'admin');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -257,40 +260,76 @@ const fetchData = async () => {
 
               <div>
                 <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>{t('users.role')}</label>
-                <div className="relative">
-                  {isAdmin || currentUser?.role === 'Owner' ? (
-                    <select
-                      value={form.role}
-                      onChange={e => set('role', e.target.value)}
-                      className="input-field appearance-none pr-12"
-                    >
-                      {availableRoles.length > 0 ? (
-                        availableRoles.map(roleItem => (
-                          <option key={roleItem.name || roleItem} value={roleItem.name || roleItem}>
-                            {t(`users.${(roleItem.name || roleItem).toLowerCase()}`) || roleItem.name || roleItem}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="Shepherd">{t('users.shepherd')}</option>
-                          <option value="Doctor">{t('users.doctor') || 'Doctor'}</option>
-                          <option value="Manager">{t('users.manager')}</option>
-                          <option value="Owner">{t('users.owner')}</option>
-                          <option value="Admin">{t('users.admin')}</option>
-                        </>
-                      )}
-                    </select>
-                  ) : (
-                    <input
-                      value={t(`users.${form.role.toLowerCase()}`) || form.role}
-                      disabled
-                      className="input-field bg-[#e8e8e3] cursor-not-allowed"
-                    />
-                  )}
-                  {(isAdmin || currentUser?.role === 'Owner') && (
-                    <MaterialSymbol icon="expand_more" className={`absolute top-1/2 -translate-y-1/2 text-[#002819]/40 pointer-events-none ${isRtl ? 'left-4 right-auto' : 'right-4'}`} />
-                  )}
-                </div>
+                {isAdmin || currentUser?.role === 'Owner' ? (
+                  <div className="space-y-4">
+                    {adminRoles.length > 0 && (
+                      <div>
+                        <p className={`text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                          <MaterialSymbol icon="admin_panel_settings" size={16} />
+                          Administration Staff
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {adminRoles.map(r => (
+                            <button
+                              key={r.name}
+                              type="button"
+                              onClick={() => set('role', r.name)}
+                              className={`p-3 rounded-xl border-2 text-left transition ${
+                                form.role === r.name
+                                  ? 'border-[#D4AF37] bg-[#D4AF37]/10'
+                                  : 'border-transparent bg-[#e8e8e3] hover:border-[#D4AF37]/30'
+                              } ${isRtl ? 'text-right' : ''}`}
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-sm">{t(`users.${r.name.toLowerCase()}`) || r.name}</span>
+                                {form.role === r.name && (
+                                  <MaterialSymbol icon="check_circle" size={18} className="text-[#10B981]" />
+                                )}
+                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#D4AF37]/20 text-[#735C00]">Staff</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {userRoles.length > 0 && (
+                      <div>
+                        <p className={`text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                          <MaterialSymbol icon="agriculture" size={16} />
+                          Farm Users
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {userRoles.map(r => (
+                            <button
+                              key={r.name}
+                              type="button"
+                              onClick={() => set('role', r.name)}
+                              className={`p-3 rounded-xl border-2 text-left transition ${
+                                form.role === r.name
+                                  ? 'border-[#10B981] bg-[#10B981]/10'
+                                  : 'border-transparent bg-[#e8e8e3] hover:border-[#10B981]/30'
+                              } ${isRtl ? 'text-right' : ''}`}
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-sm">{t(`users.${r.name.toLowerCase()}`) || r.name}</span>
+                                {form.role === r.name && (
+                                  <MaterialSymbol icon="check_circle" size={18} className="text-[#10B981]" />
+                                )}
+                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#10B981]/20 text-[#059669]">Farm</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    value={t(`users.${form.role.toLowerCase()}`) || form.role}
+                    disabled
+                    className="input-field bg-[#e8e8e3] cursor-not-allowed"
+                  />
+                )}
               </div>
             </div>
           </section>

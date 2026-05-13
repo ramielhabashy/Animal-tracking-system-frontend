@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n';
 import LanguageSwitcher from '../../i18n/LanguageSwitcher';
 import { apiFetch } from '../../utils/api';
+import TranslateButton from '../TranslateButton';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,14 +208,25 @@ export default function Header() {
                   <p className="text-sm text-[#717973] text-center py-4">{t('common.noNotifications') || 'No notifications'}</p>
                  ) : (
                    notifications.slice(0, 5).map((n) => {
-                     const icons = { task_assigned: 'assignment', medical_record_added: 'vaccines', subscription_expiring: 'timer', task_completed: 'check_circle', geofence_alert: 'warning' };
-                     const colors = { 
-                       task_assigned: 'bg-blue-100 text-blue-600', 
-                       medical_record_added: 'bg-emerald-100 text-emerald-600', 
-                       subscription_expiring: 'bg-amber-100 text-amber-600',
-                       task_completed: 'bg-green-100 text-green-600',
-                       geofence_alert: 'bg-red-100 text-red-600'
-                     };
+                      const icons = { task_assigned: 'assignment', medical_record_added: 'vaccines', subscription_expiring: 'timer', task_completed: 'check_circle', geofence_alert: 'warning', invitation_accepted: 'person_add', auction_new: 'gavel', auction_bid: 'add', auction_outbid: 'trending_down', auction_won: 'emoji_events', auction_ended: 'timer_off', auction_cancelled: 'block', auction_payment_verified: 'verified', auction_payment_rejected: 'block', bidder_disqualified: 'person_remove', payment_proof_submitted: 'upload' };
+                      const colors = { 
+                        task_assigned: 'bg-blue-100 text-blue-600', 
+                        medical_record_added: 'bg-emerald-100 text-emerald-600', 
+                        subscription_expiring: 'bg-amber-100 text-amber-600',
+                        task_completed: 'bg-green-100 text-green-600',
+                        geofence_alert: 'bg-red-100 text-red-600',
+                        invitation_accepted: 'bg-purple-100 text-purple-600',
+                        auction_new: 'bg-amber-100 text-amber-600',
+                        auction_bid: 'bg-blue-100 text-blue-600',
+                        auction_outbid: 'bg-red-100 text-red-600',
+                        auction_won: 'bg-yellow-100 text-yellow-700',
+                        auction_ended: 'bg-gray-100 text-gray-600',
+                        auction_cancelled: 'bg-red-100 text-red-600',
+                        auction_payment_verified: 'bg-emerald-100 text-emerald-600',
+                        auction_payment_rejected: 'bg-rose-100 text-rose-600',
+                        bidder_disqualified: 'bg-pink-100 text-pink-600',
+                        payment_proof_submitted: 'bg-blue-100 text-blue-600'
+                      };
                      const handleNotificationClick = () => {
                        setShowNotifications(false);
                        apiFetch(`/api/notifications/${n.id}/read`, { method: 'PATCH' }).then(fetchNotifications);
@@ -230,8 +242,8 @@ export default function Header() {
                            <MaterialSymbol icon={icons[n.type] || 'notifications'} size={18} />
                          </div>
                          <div className={`flex-1 min-w-0 ${isRtl ? 'text-right' : ''}`}>
-                           <p className="text-sm font-semibold text-[#002819]">{n.title}</p>
-                           <p className="text-xs text-[#717973] mt-0.5 line-clamp-2">{n.body}</p>
+                            <p className="text-sm font-semibold text-[#002819]">{n.title} <TranslateButton text={n.title} /></p>
+                            <p className="text-xs text-[#717973] mt-0.5 line-clamp-2">{n.body} <TranslateButton text={n.body} /></p>
                            <p className="text-[10px] text-[#717973] mt-1">{new Date(n.created_at).toLocaleDateString()}</p>
                          </div>
                          {!n.read_at && (

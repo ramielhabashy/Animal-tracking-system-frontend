@@ -4,6 +4,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import TranslateButton from '../components/TranslateButton';
 
 export default function VaccinationSchedulePage() {
   const { t, dir } = useI18n();
@@ -459,7 +460,7 @@ export default function VaccinationSchedulePage() {
                           onClick={() => openEditModal(vacc)}
                           title={vacc.vaccine_name}
                         >
-                          {vacc.vaccine_name}
+                          <span>{vacc.vaccine_name} <TranslateButton text={vacc.vaccine_name} /></span>
                         </div>
                       );
                     })}
@@ -541,7 +542,7 @@ export default function VaccinationSchedulePage() {
                         {new Date(vacc.scheduled_date).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="font-bold text-sm text-[#002819]">{vacc.vaccine_name}</p>
+                    <p className="font-bold text-sm text-[#002819]">{vacc.vaccine_name} <TranslateButton text={vacc.vaccine_name} /></p>
                     <div className={`flex items-center gap-2 mt-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <div className="w-6 h-6 rounded-md bg-[#002819]/10 flex items-center justify-center">
                         <MaterialSymbol icon="pets" size={14} className="text-[#002819]/60" />

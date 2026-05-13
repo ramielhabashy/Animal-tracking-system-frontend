@@ -11,19 +11,20 @@ const ALL_WIDGETS = {
   chartsWidget: { id: 'chartsWidget', gridDesktop: 12, gridTablet: 12 },
   medicalOverview: { id: 'medicalOverview', gridDesktop: 6, gridTablet: 6 },
   tasksWidget: { id: 'tasksWidget', gridDesktop: 6, gridTablet: 6 },
+  auctionsWidget: { id: 'auctionsWidget', gridDesktop: 12, gridTablet: 12 },
 };
 
 const ROLE_LAYOUTS = {
   Admin: [
-    'statsCards', 'subscriptionOverview', 'map', 'alertsPanel',
+    'statsCards', 'subscriptionOverview', 'auctionsWidget', 'map', 'alertsPanel',
     'chartsWidget', 'tasksWidget', 'ownerOverview', 'tierDistribution', 'quickActions',
   ],
   Owner: [
-    'statsCards', 'map', 'alertsPanel',
+    'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
     'chartsWidget', 'tasksWidget', 'quickActions',
   ],
   Manager: [
-    'statsCards', 'map', 'alertsPanel',
+    'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
     'chartsWidget', 'tasksWidget', 'quickActions',
   ],
   Shepherd: [
@@ -99,14 +100,15 @@ function getWidgetTitle(id, t) {
     chartsWidget: t('dashboard.analytics'),
     medicalOverview: t('nav.medicalRecords'),
     tasksWidget: t('nav.tasks'),
+    auctionsWidget: t('nav.auctions'),
   };
   return titles[id] || id;
 }
 
 const ROLE_AVAILABLE = {
-  Admin: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget'],
-  Owner: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview'],
-  Manager: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget'],
+  Admin: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget', 'auctionsWidget'],
+  Owner: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview', 'auctionsWidget'],
+  Manager: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'auctionsWidget'],
   Shepherd: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'tasksWidget'],
   Doctor: ['statsCards', 'medicalOverview', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget'],
 };

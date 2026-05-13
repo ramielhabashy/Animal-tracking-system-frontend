@@ -4,6 +4,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import TranslateButton from '../components/TranslateButton';
 
 const statusConfig = {
   online: { icon: 'wifi', label: 'Online', color: 'text-[#002819]' },
@@ -195,7 +196,7 @@ export default function DeviceEdit() {
               {status?.label || device.status}
             </div>
           </div>
-          <p className="text-[#404943] mt-1">{device.name || device.type || 'Device'}</p>
+          <p className="text-[#404943] mt-1">{device.name || device.type || 'Device'} <TranslateButton text={device.name || device.type || 'Device'} /></p>
         </div>
         <div className="flex gap-2">
           {!editing && canManageDevices && (
@@ -447,7 +448,7 @@ export default function DeviceEdit() {
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Device Name</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.name || '-'}</p>
+                    <p className="text-lg font-bold text-[#002819] mt-1">{device.name || '-'} <TranslateButton text={device.name || '-'} /></p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Device Type</p>
@@ -507,7 +508,7 @@ export default function DeviceEdit() {
                 </div>
 
                 <h3 className="text-sm font-bold text-white/60 mb-1 uppercase tracking-widest">Management Preview</h3>
-                <p className="text-2xl font-black mb-8 leading-tight">{device.name || device.device_id}</p>
+                <p className="text-2xl font-black mb-8 leading-tight">{device.name || device.device_id} <TranslateButton text={device.name || device.device_id} /></p>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between pb-4 border-b border-white/10">

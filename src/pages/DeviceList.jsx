@@ -36,6 +36,11 @@ export default function DeviceList() {
   const [perPage, setPerPage] = useState(10);
   const [totalDevices, setTotalDevices] = useState(0);
   const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0, maintenance: 0 });
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchCount, setBatchCount] = useState(10);
+  const [batchAssign, setBatchAssign] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchMessage, setBatchMessage] = useState(null);
 
   const isAdmin = user?.role === 'Admin';
   const isOwner = user?.role === 'Owner';
@@ -159,6 +164,34 @@ export default function DeviceList() {
   const lowBatteryCount = stats.lowBattery;
   const maintenanceCount = stats.maintenance;
 
+  const handleBatchCreate = async () => {
+    setBatchLoading(true);
+    setBatchMessage(null);
+    try {
+      const res = await apiFetch('/api/devices/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: batchCount,
+          assign_to_unassigned: batchAssign,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBatchMessage({ type: 'success', text: data.message });
+        fetchData();
+        fetchStats();
+        setTimeout(() => { setShowBatchModal(false); setBatchMessage(null); }, 2000);
+      } else {
+        setBatchMessage({ type: 'error', text: data.message || 'Batch creation failed' });
+      }
+    } catch (e) {
+      setBatchMessage({ type: 'error', text: 'Network error' });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
   const handleExport = async () => {
     setExporting(true);
     const success = await exportData('/api/export/devices', `devices_${new Date().toISOString().split('T')[0]}.csv`);
@@ -204,13 +237,22 @@ export default function DeviceList() {
             </button>
           )}
           {canRegisterDevice && (
-            <button
-              onClick={() => navigate('/devices/new')}
-              className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
-            >
-              <MaterialSymbol icon="add_circle" size={20} />
-              {t('devicesPage.registerNew')}
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/devices/new')}
+                className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
+              >
+                <MaterialSymbol icon="add_circle" size={20} />
+                {t('devicesPage.registerNew')}
+              </button>
+              <button
+                onClick={() => { setBatchCount(10); setBatchAssign(false); setShowBatchModal(true); }}
+                className="flex items-center gap-2 bg-[#735C00] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:bg-[#5c4900] transition-all"
+              >
+                <MaterialSymbol icon="layers" size={20} />
+                Batch Create
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -598,6 +640,61 @@ export default function DeviceList() {
           onPageChange={setCurrentPage}
           onPerPageChange={(value) => { setPerPage(value); setCurrentPage(1); }}
         />
+      )}
+
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowBatchModal(false)}>
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-[#002819]">Batch Create Devices</h3>
+              <button onClick={() => setShowBatchModal(false)} className="p-1 hover:bg-[#F4F4EF] rounded-lg transition">
+                <MaterialSymbol icon="close" size={20} className="text-[#717973]" />
+              </button>
+            </div>
+            {batchMessage && (
+              <div className={`p-3 rounded-xl mb-4 text-sm font-medium ${batchMessage.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+                {batchMessage.text}
+              </div>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">Number of Devices</label>
+                <select
+                  value={batchCount}
+                  onChange={e => setBatchCount(parseInt(e.target.value))}
+                  className="w-full bg-[#F4F4EF] border-none rounded-xl px-4 py-3 mt-1 appearance-none focus:ring-2 focus:ring-[#06402b]"
+                >
+                  <option value={5}>5 Devices</option>
+                  <option value={10}>10 Devices</option>
+                  <option value={20}>20 Devices</option>
+                  <option value={50}>50 Devices</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 py-2">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={batchAssign} onChange={e => setBatchAssign(e.target.checked)} className="sr-only peer" />
+                  <div className="w-14 h-7 bg-[#E3E3DE] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-[#002819]" />
+                </label>
+                <span className="text-sm text-[#404943]">Auto-assign to animals without devices</span>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowBatchModal(false)}
+                className="flex-1 py-3 bg-[#F4F4EF] text-[#404943] rounded-xl font-bold text-sm hover:bg-[#E3E3DE] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBatchCreate}
+                disabled={batchLoading}
+                className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition disabled:opacity-50"
+              >
+                {batchLoading ? 'Creating...' : `Create ${batchCount} Devices`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

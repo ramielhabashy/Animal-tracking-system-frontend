@@ -11,7 +11,7 @@ import { storageUrl } from '../utils/api';
 
 export default function Login() {
   const { t, dir } = useI18n();
-  const { platformName, logoUrl, copyrightText } = usePlatform();
+  const { platformName, logoUrl, loginBackgroundUrl, copyrightText } = usePlatform();
   const isRtl = dir === 'rtl';
 
   const [isLogin, setIsLogin] = useState(true);
@@ -86,7 +86,10 @@ const handleSubmit = async (e) => {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[#eeeee9]/30" />
         <div
-          className="w-full h-full bg-[linear-gradient(135deg,rgba(0,40,25,0.85),rgba(6,64,43,0.7)),url(https://images.unsplash.com/photo-1542332213-31f87348057f?q=80&w=2070&auto=format&fit=crop)] bg-cover bg-center"
+          className="w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: `linear-gradient(135deg,rgba(0,40,25,0.85),rgba(6,64,43,0.7)),url(${loginBackgroundUrl ? storageUrl(loginBackgroundUrl) : 'https://images.unsplash.com/photo-1542332213-31f87348057f?q=80&w=2070&auto=format&fit=crop'})`
+          }}
         />
       </div>
 

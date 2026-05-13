@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
+import TranslateButton from '../components/TranslateButton';
 
 function getComputedStatus(auction) {
   if (auction.status === 'sold') return 'sold';
@@ -19,6 +21,7 @@ function getComputedStatus(auction) {
 
 export default function AuctionList() {
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
   const navigate = useNavigate();
   const [auctions, setAuctions] = useState([]);
@@ -26,11 +29,19 @@ export default function AuctionList() {
   const [enrolledAuctions, setEnrolledAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [viewMode, setViewMode] = useState('tiles');
   const [showBidModal, setShowBidModal] = useState(false);
   const [selectedAuction, setSelectedAuction] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
   const [placing, setPlacing] = useState(false);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchAuctions();
@@ -39,13 +50,13 @@ export default function AuctionList() {
   const fetchAuctions = async () => {
     try {
       setLoading(true);
-      let url = '/api/auctions?';
+      let url;
       if (filter === 'all') {
         url = '/api/auctions?view=all';
       } else if (filter === 'mine') {
-        url = '/api/auctions?status=active&owner=mine';
+        url = '/api/auctions/my';
       } else {
-        url += `status=${filter}`;
+        url = `/api/auctions?status=${filter}`;
       }
       const response = await apiFetch(url);
       if (response.ok) {
@@ -54,6 +65,10 @@ export default function AuctionList() {
           setMyAuctions(data.my_auctions || []);
           setEnrolledAuctions(data.enrolled_auctions || []);
           setAuctions([]);
+        } else if (filter === 'mine') {
+          setAuctions(data.data || []);
+          setMyAuctions([]);
+          setEnrolledAuctions([]);
         } else {
           setAuctions(data.data || []);
           setMyAuctions([]);
@@ -132,9 +147,24 @@ export default function AuctionList() {
   };
 
   const filteredAuctions = React.useMemo(() => {
-    if (filter === 'all') return auctions;
+    if (filter === 'all') return [];
+    if (filter === 'mine') return auctions;
     return auctions.filter(a => getComputedStatus(a) === filter);
   }, [auctions, filter]);
+
+  const searchedAuctions = React.useMemo(() => {
+    if (!debouncedSearch) return filteredAuctions;
+    const q = debouncedSearch.toLowerCase();
+    return filteredAuctions.filter(a =>
+      a.title?.toLowerCase().includes(q) ||
+      a.animal?.animal_id?.toLowerCase().includes(q) ||
+      a.animal?.species?.toLowerCase().includes(q) ||
+      a.animal?.breed?.toLowerCase().includes(q) ||
+      a.owner?.name?.toLowerCase().includes(q)
+    );
+  }, [filteredAuctions, debouncedSearch]);
+
+  const displayAuctions = filter === 'mine' ? searchedAuctions : searchedAuctions;
 
   return (
     <div className="space-y-8">
@@ -146,7 +176,7 @@ export default function AuctionList() {
             <span className="text-[#002819]">{t('auctionsPage.camelAuctions')}</span>
           </nav>
           <h2 className="text-4xl font-['Manrope'] font-extrabold text-[#002819] tracking-tight">
-            {filter === 'all' ? t('auctions.allAuctions') : filter === 'active' ? t('auctionsPage.liveAuctions') : filter === 'sold' ? t('auctionsPage.sold') : t('auctionsPage.ended')}
+            {filter === 'all' ? t('auctions.allAuctions') : filter === 'active' ? t('auctionsPage.liveAuctions') : filter === 'mine' ? t('auctions.myAuctions') : filter === 'sold' ? t('auctionsPage.sold') : t('auctionsPage.ended')}
           </h2>
           <p className="text-[#404943] mt-1">{filteredAuctions.length} {filter === 'active' ? t('auctionsPage.live') : ''} {t('auctionsPage.auctions')}</p>
         </div>
@@ -160,7 +190,7 @@ export default function AuctionList() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {['active', 'ended', 'sold', 'all'].map((status) => (
+        {['active', 'mine', 'ended', 'sold', 'all'].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -170,9 +200,38 @@ export default function AuctionList() {
                 : 'bg-white text-[#404943] hover:bg-[#eeeee9] border border-[#c0c9c1]/30'
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === 'mine' ? t('auctions.myAuctions') : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
+      </div>
+
+      <div className={`flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+        <div className="relative flex-1 w-full sm:max-w-md">
+          <MaterialSymbol icon="search" size={18} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-3' : 'left-3'}`} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('common.search')}
+            className={`w-full py-2.5 bg-[#F4F4EF] rounded-xl border-none text-sm ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3 text-left'} placeholder:text-[#717973]/60 focus:outline-none focus:ring-2 focus:ring-[#06402B]/20 transition-all`}
+          />
+        </div>
+        <div className="flex items-center gap-2 bg-[#F4F4EF] rounded-xl p-1">
+          <button
+            onClick={() => setViewMode('tiles')}
+            className={`p-2 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            title={t('common.grid')}
+          >
+            <MaterialSymbol icon="grid_view" size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            title={t('common.list')}
+          >
+            <MaterialSymbol icon="table_rows" size={18} />
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -200,10 +259,14 @@ export default function AuctionList() {
                 <MaterialSymbol icon="person" size={24} className="text-[#D4AF37]" />
                 {t('auctions.myAuctions')} ({myAuctions.length})
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {myAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
-                ))}
+              <div className={viewMode === 'list' ? 'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}>
+                {viewMode === 'list' ? (
+                  <AuctionTableView auctions={myAuctions} navigate={navigate} formatPrice={formatPrice} getTimeRemaining={getTimeRemaining} isRtl={isRtl} />
+                ) : (
+                  myAuctions.map((auction) => (
+                    <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -214,27 +277,37 @@ export default function AuctionList() {
                 <MaterialSymbol icon="how_to_reg" size={24} className="text-[#06402B]" />
                 {t('auctionsPage.biddingOn')} ({enrolledAuctions.length})
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {enrolledAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
-                ))}
+              <div className={viewMode === 'list' ? 'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}>
+                {viewMode === 'list' ? (
+                  <AuctionTableView auctions={enrolledAuctions} navigate={navigate} formatPrice={formatPrice} getTimeRemaining={getTimeRemaining} isRtl={isRtl} />
+                ) : (
+                  enrolledAuctions.map((auction) => (
+                    <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
+                  ))
+                )}
               </div>
             </div>
           )}
           
-          {filter !== 'all' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredAuctions.map((auction) => (
-                <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
-              ))}
-            </div>
-          )}
-          
-          {filter !== 'all' && filteredAuctions.length === 0 && (
+          {filter !== 'all' && displayAuctions.length === 0 && (
             <div className="text-center py-16 bg-white rounded-[2rem] shadow-sm">
               <MaterialSymbol icon="gavel" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
               <p className="text-[#404943] text-lg font-semibold">{t('auctionsPage.noAuctions')}</p>
             </div>
+          )}
+          
+          {filter !== 'all' && displayAuctions.length > 0 && (
+            viewMode === 'list' ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <AuctionTableView auctions={displayAuctions} navigate={navigate} formatPrice={formatPrice} getTimeRemaining={getTimeRemaining} isRtl={isRtl} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {displayAuctions.map((auction) => (
+                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
+                ))}
+              </div>
+            )
           )}
         </div>
       )}
@@ -245,7 +318,7 @@ export default function AuctionList() {
             <div className="px-6 py-4 bg-[#002819] text-white flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-lg">{t('auctionsPage.placeYourBid')}</h3>
-                <p className="text-white/60 text-sm">{selectedAuction.title}</p>
+                <p className="text-white/60 text-sm">{selectedAuction.title} <TranslateButton text={selectedAuction.title} /></p>
               </div>
               <button onClick={() => setShowBidModal(false)} className="p-2 hover:bg-white/10 rounded-full">
                 <MaterialSymbol icon="close" size={20} />
@@ -403,7 +476,7 @@ function AuctionCard({ auction, onBid, navigate, isRtl }) {
               </p>
             )}
           </div>
-          <h3 className="text-xl font-bold text-[#002819] font-['Manrope']">{auction.title}</h3>
+          <h3 className="text-xl font-bold text-[#002819] font-['Manrope']">{auction.title} <TranslateButton text={auction.title} /></h3>
           <p className="text-sm text-[#4f6357]">
             {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`}
           </p>

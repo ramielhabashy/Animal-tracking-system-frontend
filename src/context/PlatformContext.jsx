@@ -8,6 +8,7 @@ export function PlatformProvider({ children }) {
   const [platformName, setPlatformName] = useState('The Oasis');
   const [logoUrl, setLogoUrl] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('');
+  const [loginBackgroundUrl, setLoginBackgroundUrl] = useState('');
   const [copyrightText, setCopyrightText] = useState('Digital Majlis.');
   const [platformUrl, setPlatformUrl] = useState('');
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,7 @@ export function PlatformProvider({ children }) {
           document.title = name;
           setLogoUrl(d.logo_url || '');
           setFaviconUrl(d.favicon_url || '');
+          setLoginBackgroundUrl(d.login_background_url || '');
           setCopyrightText(d.copyright_text || 'Digital Majlis.');
           setPlatformUrl(d.platform_url || '');
           applyFavicon(storageUrl(d.favicon_url));
@@ -58,6 +60,7 @@ export function PlatformProvider({ children }) {
         document.title = name;
         setLogoUrl(d.logo_url || '');
         setFaviconUrl(d.favicon_url || '');
+        setLoginBackgroundUrl(d.login_background_url || '');
         setCopyrightText(d.copyright_text || 'Digital Majlis.');
         setPlatformUrl(d.platform_url || '');
         applyFavicon(storageUrl(d.favicon_url));
@@ -68,7 +71,7 @@ export function PlatformProvider({ children }) {
   };
 
   return (
-    <PlatformContext.Provider value={{ platformName, logoUrl, faviconUrl, copyrightText, platformUrl, loading, refreshPlatformSettings }}>
+    <PlatformContext.Provider value={{ platformName, logoUrl, faviconUrl, loginBackgroundUrl, copyrightText, platformUrl, loading, refreshPlatformSettings }}>
       {children}
     </PlatformContext.Provider>
   );

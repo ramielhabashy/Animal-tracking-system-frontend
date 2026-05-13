@@ -104,8 +104,8 @@ export default function Dashboard() {
           lat = parseFloat(animal.device.gps_lat);
           lng = parseFloat(animal.device.gps_lng);
         } else {
-          lat = 24.4539 + (index * 0.002) - 0.004;
-          lng = 54.3773 + (index * 0.003) - 0.003;
+          lat = 24.7136 + (index * 0.002) - 0.004;
+          lng = 46.6753 + (index * 0.003) - 0.003;
         }
 
         const path = history

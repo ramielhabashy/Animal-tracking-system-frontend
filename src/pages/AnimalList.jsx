@@ -104,31 +104,15 @@ export default function AnimalList() {
 
   const fetchStats = async () => {
     try {
-      const [animalsRes, devicesRes] = await Promise.all([
-        apiFetch('/api/animals?per_page=1000'),
-        apiFetch('/api/devices?per_page=1000'),
-      ]);
-      
-      if (animalsRes.ok && devicesRes.ok) {
-        const animalsData = await animalsRes.json();
-        const allAnimals = extractList(animalsData);
-        
-        let assigned = 0, healthy = 0, warning = 0, critical = 0;
-        for (const a of allAnimals) {
-          const hasDevice = a.device?.device_id || a.device_id;
-          if (hasDevice) assigned++;
-          const temp = parseFloat(a.baseline_temperature) || 38.5;
-          if (temp > 39.5) critical++;
-          else if (temp > 39) warning++;
-          else healthy++;
-        }
-        
+      const res = await apiFetch('/api/animals/stats');
+      if (res.ok) {
+        const data = await res.json();
         setStats({
-          assigned,
-          unassigned: allAnimals.length - assigned,
-          healthy,
-          warning,
-          critical,
+          assigned: data.assigned,
+          unassigned: data.unassigned,
+          healthy: data.healthy,
+          warning: data.warning,
+          critical: data.critical,
         });
       }
     } catch (error) {
@@ -195,8 +179,11 @@ export default function AnimalList() {
 
   const speciesOptions = [...new Set(animals.map(a => a.species).filter(Boolean))];
   const ownerOptions = users.filter(u => u.role === 'Owner' || u.role === 'Admin');
-  const assignedCount = stats.assigned;
-  const unassignedCount = stats.unassigned;
+  const filteredAssigned = filteredAnimals.filter(a => a.device?.device_id || a.device_id).length;
+  const filteredUnassigned = filteredAnimals.filter(a => !(a.device?.device_id || a.device_id)).length;
+  const filteredHealthy = filteredAnimals.filter(a => getAnimalStatus(a) === 'healthy').length;
+  const filteredWarning = filteredAnimals.filter(a => getAnimalStatus(a) === 'warning').length;
+  const filteredCritical = filteredAnimals.filter(a => getAnimalStatus(a) === 'critical').length;
 
   const assignedDeviceIds = animals
     .map(a => a.device?.device_id || a.device_id)
@@ -369,21 +356,21 @@ export default function AnimalList() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm">
           <p className="text-xs font-bold text-[#717973] uppercase">{t('animals.title')}</p>
-          <p className="text-3xl font-black text-[#002819] mt-1">{totalAnimals}</p>
+          <p className="text-3xl font-black text-[#002819] mt-1">{debouncedSearch || speciesFilter !== 'all' || statusFilter !== 'all' || deviceFilter !== 'all' || ownerFilter !== 'all' ? filteredAnimals.length : totalAnimals}</p>
         </div>
         <div className="bg-[#002819] p-5 rounded-2xl">
           <p className="text-xs font-bold text-white/60 uppercase">{t('devices.assigned')}</p>
-          <p className="text-3xl font-black text-white mt-1">{assignedCount}</p>
+          <p className="text-3xl font-black text-white mt-1">{filteredAssigned}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm">
           <p className="text-xs font-bold text-[#717973] uppercase">{t('animals.noDeviceAssigned')}</p>
-          <p className="text-3xl font-black text-[#BA1A1A] mt-1">{unassignedCount}</p>
+          <p className="text-3xl font-black text-[#BA1A1A] mt-1">{filteredUnassigned}</p>
         </div>
         <div className="bg-[#D4AF37]/10 p-5 rounded-2xl">
           <p className="text-xs font-bold text-[#735C00] uppercase">{t('animals.health')}</p>
-          <p className="text-3xl font-black text-[#735C00] mt-1">{stats.healthy ?? 0}</p>
+          <p className="text-3xl font-black text-[#735C00] mt-1">{filteredHealthy}</p>
           <p className="text-xs text-[#735C00]/60 mt-1">
-            {stats.warning ?? 0} {t('alertsPage.warning')} &middot; {stats.critical ?? 0} {t('dashboard.critical')}
+            {filteredWarning} {t('alertsPage.warning')} &middot; {filteredCritical} {t('dashboard.critical')}
           </p>
         </div>
       </div>

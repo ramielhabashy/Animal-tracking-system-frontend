@@ -6,23 +6,24 @@ import 'leaflet/dist/leaflet.css';
 import { MaterialSymbol } from 'react-material-symbols';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../../i18n';
+import { useAuth } from '../../../context/AuthContext';
 
-const createCustomIcon = () => {
+const createAnimalIcon = (color) => {
   return L.divIcon({
     className: 'custom-marker',
     html: `
       <div style="
         width: 32px;
         height: 32px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-container));
+        background: ${color};
         border-radius: 50%;
-        border: 3px solid var(--tertiary);
-        box-shadow: 0 4px 12px rgba(var(--primary-container-rgb), 0.3);
+        border: 3px solid white;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 14px;
+        font-size: 16px;
       ">🐪</div>
     `,
     iconSize: [32, 32],
@@ -30,6 +31,38 @@ const createCustomIcon = () => {
     popupAnchor: [0, -16],
   });
 };
+
+function getAnimalStatus(animal) {
+  const device = animal.device;
+  if (!device) return 'healthy';
+  const lastPing = device.last_ping ? new Date(device.last_ping) : null;
+  const hoursSincePing = lastPing ? (Date.now() - lastPing) / 3600000 : Infinity;
+  const battery = parseInt(device.battery_level) || 100;
+  if (hoursSincePing > 24 || battery < 10) return 'critical';
+  if (hoursSincePing > 6 || battery < 30) return 'warning';
+  return 'healthy';
+}
+
+function getAnimalGroupColor(animal) {
+  if (animal.groups && animal.groups.length > 0) {
+    return animal.groups[0].color || '#10b981';
+  }
+  return '#10b981';
+}
+
+function getBatteryIcon(level) {
+  const battery = parseInt(level) || 100;
+  if (battery < 20) return 'battery_alert';
+  if (battery < 50) return 'battery_low';
+  return 'battery_full';
+}
+
+function getBatteryColor(level) {
+  const battery = parseInt(level) || 100;
+  if (battery < 20) return 'text-red-500';
+  if (battery < 30) return 'text-amber-500';
+  return 'text-green-600';
+}
 
 function MapUpdater({ bounds }) {
   const map = useMap();
@@ -41,13 +74,9 @@ function MapUpdater({ bounds }) {
   return null;
 }
 
-const pathColors = [
-  '#002819', '#06402B', '#735c00', '#10b981', '#f59e0b',
-  '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
-];
-
 export default function MapWidget({ dashboardData }) {
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
 
   const { animals, geofences } = dashboardData;
@@ -71,9 +100,10 @@ export default function MapWidget({ dashboardData }) {
       ]
     : allPositions.length === 1
       ? [allPositions[0], allPositions[0]]
-      : [[24.4539, 54.3773], [24.4539, 54.3773]];
+      : [[24.7136, 46.6753], [24.7136, 46.6753]];
 
   const animalsWithPaths = (animals || []).filter(a => a.path && a.path.length > 0);
+  const animalsOnMap = (animals || []).filter(a => a.lat && a.lng);
 
   return (
     <div>
@@ -112,7 +142,7 @@ export default function MapWidget({ dashboardData }) {
       </div>
       <div className="h-[450px] relative rounded-3xl overflow-hidden">
         <MapContainer
-          center={[24.4539, 54.3773]}
+          center={[24.7136, 46.6753]}
           zoom={12}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
@@ -157,51 +187,88 @@ export default function MapWidget({ dashboardData }) {
             );
           })}
 
-          {viewMode === 'markers' && (animals || []).filter(a => a.lat && a.lng).map((animal) => (
-            <Marker
-              key={animal.id}
-              position={[animal.lat, animal.lng]}
-              icon={createCustomIcon()}
-            >
-              <Popup>
-                <div className="p-3 min-w-[200px]">
-                  <h3 className="font-bold text-[#002819] text-lg">{animal.animal_id}</h3>
-                  <p className="text-sm text-[#404943] mt-1">{animal.species}</p>
-                  {animal.baseline_temperature && (
-                    <p className="text-xs mt-2 text-[#735C00]">🌡️ {animal.baseline_temperature}°C</p>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          {viewMode === 'markers' && animalsOnMap.map((animal) => {
+            const groupColor = getAnimalGroupColor(animal);
+            const battery = parseInt(animal.device?.battery_level) || 100;
+            return (
+              <Marker
+                key={animal.id}
+                position={[animal.lat, animal.lng]}
+                icon={createAnimalIcon(groupColor)}
+              >
+                <Popup>
+                  <div className="p-3 min-w-[200px]">
+                    <h3 className="font-bold text-[#002819] text-lg">{animal.name || animal.animal_id}</h3>
+                    <p className="text-sm text-[#404943] mt-1">{animal.species}</p>
+                    {['Admin', 'Owner', 'Manager'].includes(user?.role) && (
+                      <div className="mt-2 space-y-1 text-xs">
+                        {animal.device?.battery_level != null && (
+                          <p className="flex items-center gap-1">
+                            <MaterialSymbol icon={getBatteryIcon(battery)} size={14} className={getBatteryColor(battery)} />
+                            <span>{battery}%</span>
+                          </p>
+                        )}
+                        {animal.owner?.name && <p>Owner: {animal.owner.name}</p>}
+                        {animal.baseline_temperature && <p>🌡️ {animal.baseline_temperature}°C</p>}
+                      </div>
+                    )}
+                    {user?.role === 'Doctor' && (
+                      <div className="mt-2 space-y-1 text-xs">
+                        {animal.baseline_temperature && <p>🌡️ {animal.baseline_temperature}°C</p>}
+                        {animal.heart_rate && <p>💓 {animal.heart_rate} bpm</p>}
+                        {animal.weight && <p>⚖️ {animal.weight} kg</p>}
+                      </div>
+                    )}
+                    {user?.role === 'Shepherd' && (
+                      <div className="mt-2 space-y-1 text-xs">
+                        <p className="flex items-center gap-1">
+                          <MaterialSymbol icon={getBatteryIcon(battery)} size={14} className={getBatteryColor(battery)} />
+                          <span>{battery}%</span>
+                        </p>
+                        {animal.device?.signal_strength != null && <p>📶 Signal: {animal.device.signal_strength}</p>}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
 
-          {viewMode === 'paths' && animalsWithPaths.map((animal, idx) => (
-            <Polyline
-              key={animal.id}
-              positions={animal.path}
-              color={pathColors[idx % pathColors.length]}
-              weight={3}
-              opacity={0.8}
-            />
-          ))}
-          {viewMode === 'paths' && animalsWithPaths.map((animal, idx) => (
-            <Marker
-              key={`marker-${animal.id}`}
-              position={animal.path[animal.path.length - 1]}
-              icon={createCustomIcon()}
-            >
-              <Popup>
-                <div className="p-3">
-                  <h3 className="font-bold text-[#002819]">{animal.animal_id}</h3>
-                  <p className="text-xs text-[#404943]">{animal.path.length} tracking points</p>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          {viewMode === 'paths' && animalsWithPaths.map((animal) => {
+            const status = getAnimalStatus(animal);
+            const pathColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : '#10b981';
+            return (
+              <Polyline
+                key={animal.id}
+                positions={animal.path}
+                color={pathColor}
+                weight={3}
+                opacity={0.8}
+              />
+            );
+          })}
+          {viewMode === 'paths' && animalsWithPaths.map((animal) => {
+            const lastPos = animal.path[animal.path.length - 1];
+            const groupColor = getAnimalGroupColor(animal);
+            return (
+              <Marker
+                key={`marker-${animal.id}`}
+                position={lastPos}
+                icon={createAnimalIcon(groupColor)}
+              >
+                <Popup>
+                  <div className="p-3">
+                    <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
+                    <p className="text-xs text-[#404943]">{animal.path.length} tracking points</p>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
         <div className={`absolute bottom-6 z-[1000] bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg shadow-[#002819]/10 flex items-center gap-6 ${isRtl ? 'right-6' : 'left-6'}`}>
           <span className="text-sm font-medium text-[#404943]">
-            {animalsWithPaths.length} animals tracked
+            {animalsOnMap.length} animals tracked
           </span>
           <Link to="/map" className="text-sm font-bold text-[#D4AF37] hover:underline flex items-center gap-1">
             {t('dashboard.fullTracker')}

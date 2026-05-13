@@ -27,8 +27,10 @@ export default function DeviceForm() {
     update_interval: 15,
     advanced_tracking: false,
     owner_id: '',
+    animal_id: '',
   });
-  const [animals, setAnimals] = useState([]);
+  const [unassignedAnimals, setUnassignedAnimals] = useState([]);
+  const [allAnimals, setAllAnimals] = useState([]);
   const [owners, setOwners] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -46,7 +48,9 @@ export default function DeviceForm() {
       ]);
       if (animalsRes.ok) {
         const data = await animalsRes.json();
-        setAnimals(data.data || []);
+        const list = data.data || [];
+        setAllAnimals(list);
+        setUnassignedAnimals(list.filter(a => !a.device?.device_id && !a.device_id));
       }
       if (ownersRes.ok) {
         const data = await ownersRes.json();
@@ -56,6 +60,11 @@ export default function DeviceForm() {
       console.error('Failed to fetch data:', error);
     }
   };
+
+  const ownerUnassignedAnimals = unassignedAnimals.filter(a => {
+    if (!formData.owner_id) return true;
+    return a.owner_id === parseInt(formData.owner_id) || a.owner?.id === parseInt(formData.owner_id);
+  });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -74,7 +83,7 @@ export default function DeviceForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, openSimulator = false) => {
     e.preventDefault();
     setMessage(null);
     
@@ -86,33 +95,53 @@ export default function DeviceForm() {
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        name: formData.name,
-        type: formData.type,
-        status: formData.status,
-        battery_level: parseInt(formData.battery_level) || 100,
-        firmware_version: formData.firmware_version,
-        update_interval: parseInt(formData.update_interval) || 15,
-        advanced_tracking: formData.advanced_tracking,
-        owner_id: formData.owner_id || null,
-      };
-
-      const response = await apiFetch('/api/devices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Device registered successfully!' });
-        setTimeout(() => navigate('/devices'), 1500);
+      if (openSimulator && formData.animal_id) {
+        const response = await apiFetch('/api/devices/provision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            type: formData.type,
+            owner_id: formData.owner_id || null,
+            animal_id: formData.animal_id,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setMessage({ type: 'success', text: 'Device provisioned and ready in simulator!' });
+          setTimeout(() => navigate('/simulator'), 1500);
+        } else {
+          if (data.errors) setErrors(data.errors);
+          setMessage({ type: 'error', text: data.message || 'Failed to provision device' });
+        }
       } else {
-        if (data.errors) setErrors(data.errors);
-        setMessage({ type: 'error', text: data.message || 'Failed to register device' });
+        const payload = {
+          name: formData.name,
+          type: formData.type,
+          status: formData.status,
+          battery_level: parseInt(formData.battery_level) || 100,
+          firmware_version: formData.firmware_version,
+          update_interval: parseInt(formData.update_interval) || 15,
+          advanced_tracking: formData.advanced_tracking,
+          owner_id: formData.owner_id || null,
+          animal_id: formData.animal_id || null,
+        };
+
+        const response = await apiFetch('/api/devices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setMessage({ type: 'success', text: 'Device registered successfully!' });
+          setTimeout(() => navigate('/devices'), 1500);
+        } else {
+          if (data.errors) setErrors(data.errors);
+          setMessage({ type: 'error', text: data.message || 'Failed to register device' });
+        }
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
@@ -159,7 +188,7 @@ export default function DeviceForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form onSubmit={(e) => e.preventDefault()} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Device Identification */}
@@ -299,13 +328,13 @@ export default function DeviceForm() {
             </div>
           </div>
 
-          {/* Ownership */}
+          {/* Ownership & Assignment */}
           <div className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
             <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
               <span className="bg-white p-2 rounded-xl text-[#002819]">
                 <MaterialSymbol icon="person" size={20} />
               </span>
-              <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Ownership</h3>
+              <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Ownership & Assignment</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -323,6 +352,27 @@ export default function DeviceForm() {
                     <option key={owner.id} value={owner.id}>{owner.name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                  Assign to Animal
+                </label>
+                <select
+                  name="animal_id"
+                  value={formData.animal_id}
+                  onChange={handleChange}
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                >
+                  <option value="">— Not assigned —</option>
+                  {ownerUnassignedAnimals.map(animal => (
+                    <option key={animal.id} value={animal.id}>
+                      {animal.name || animal.animal_id} ({animal.species})
+                    </option>
+                  ))}
+                </select>
+                {ownerUnassignedAnimals.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">All animals have devices assigned</p>
+                )}
               </div>
             </div>
           </div>
@@ -353,12 +403,24 @@ export default function DeviceForm() {
             <div className={`space-y-3 ${isRtl ? 'text-right' : ''}`}>
               <button
                 type="submit"
+                onClick={(e) => handleSubmit(e, false)}
                 disabled={isSubmitting}
                 className={`w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
               >
                 <MaterialSymbol icon="save" size={18} />
                 {isSubmitting ? 'Registering...' : 'Register Device'}
               </button>
+              {formData.animal_id && (
+                <button
+                  type="submit"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-[#D4AF37] text-white rounded-xl font-bold text-sm hover:bg-[#c9a030] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <MaterialSymbol icon="developer_board" size={18} />
+                  {isSubmitting ? 'Provisioning...' : 'Register & Open Simulator'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleCancel}

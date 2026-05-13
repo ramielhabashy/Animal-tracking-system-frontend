@@ -4,6 +4,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import TranslateButton from '../components/TranslateButton';
 
 export default function AnimalGroupList() {
   const { t, dir } = useI18n();
@@ -295,7 +296,7 @@ export default function AnimalGroupList() {
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded" style={{ backgroundColor: group.color }} />
-                      <span className="font-medium text-gray-900">{group.name}</span>
+                      <span className="font-medium text-gray-900">{group.name} <TranslateButton text={group.name} /></span>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-600">
@@ -569,7 +570,7 @@ function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: group.color }} />
-          <h3 className="font-semibold text-gray-900 truncate">{group.name}</h3>
+          <h3 className="font-semibold text-gray-900 truncate">{group.name} <TranslateButton text={group.name} /></h3>
           {showOwner && group.owner && (
             <span className="text-xs px-2 py-1 bg-[#D4AF37]/10 text-[#735c00] rounded-full shrink-0">
               {group.owner.name}
@@ -582,7 +583,7 @@ function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
       </div>
 
       {group.description && (
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description}</p>
+        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description} <TranslateButton text={group.description} /></p>
       )}
 
       {group.animals && group.animals.length > 0 && (
