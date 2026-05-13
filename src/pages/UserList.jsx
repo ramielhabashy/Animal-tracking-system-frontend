@@ -18,6 +18,8 @@ export default function UserList() {
   const [loading, setLoading] = useState(true);
    const [searchQuery, setSearchQuery] = useState('');
    const [debouncedSearch, setDebouncedSearch] = useState('');
+   const [roleFilter, setRoleFilter] = useState('all');
+   const [statusFilter, setStatusFilter] = useState('all');
    const [message, setMessage] = useState(null);
    const [exporting, setExporting] = useState(false);
    
@@ -32,7 +34,7 @@ export default function UserList() {
    
    useEffect(() => {
      setCurrentPage(1);
-   }, [debouncedSearch]);
+   }, [debouncedSearch, roleFilter, statusFilter]);
   
   const isAdmin = user?.role === 'Admin';
   const isOwner = user?.role === 'Owner';
@@ -71,10 +73,13 @@ const fetchData = async () => {
     }
   };
 
+   const allRoles = [...new Set(users.map(u => u.role).filter(Boolean))];
+
    const filteredUsers = users.filter((u) => {
-     if (isOwner && u.role === 'Admin') {
-       return false;
-     }
+     if (isOwner && u.role === 'Admin') return false;
+     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+     if (statusFilter === 'active' && u.is_active === false) return false;
+     if (statusFilter === 'inactive' && u.is_active !== false) return false;
      return true;
    });
 
@@ -170,6 +175,27 @@ const fetchData = async () => {
             className={`w-full bg-white border-none rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
           />
         </div>
+
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+        >
+          <option value="all">{t('users.role') || 'Role'} — All</option>
+          {allRoles.map(role => (
+            <option key={role} value={role}>{role}</option>
+          ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+        >
+          <option value="all">Status — All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </div>
 
       <div className="card overflow-hidden">

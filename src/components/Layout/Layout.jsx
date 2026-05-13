@@ -230,7 +230,7 @@ const visibleNavItems = mainNavItems.filter(item => !item.roles || item.roles.in
         </nav>
 
         <div className="mt-auto pt-8">
-          {!sidebarCollapsed && user?.role !== 'Doctor' && (
+          {!sidebarCollapsed && ['Admin', 'Owner', 'Manager', 'Shepherd'].includes(user?.role) && (
             <button
               onClick={() => navigate('/animals/new')}
               className="w-full py-5 bg-gradient-to-br from-[#D4AF37] to-[#735C00] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#D4AF37]/25 flex items-center justify-center gap-3 hover:opacity-95 transition-opacity"

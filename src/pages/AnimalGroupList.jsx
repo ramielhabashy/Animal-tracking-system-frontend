@@ -25,6 +25,28 @@ export default function AnimalGroupList() {
   const [availableAnimals, setAvailableAnimals] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [viewMode, setViewMode] = useState('tiles');
+
+  const isAdmin = user?.role === 'Admin';
+
+  const filteredGroups = groups.filter(g => {
+    const matchesSearch = !searchTerm || 
+      g.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.owner?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.animals?.some(a => a.animal_id?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesOwner = !ownerFilter || g.owner_id === parseInt(ownerFilter);
+    return matchesSearch && matchesOwner;
+  });
+
+  const groupsByOwner = isAdmin ? filteredGroups.reduce((acc, g) => {
+    const key = g.owner?.name || 'Unassigned';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(g);
+    return acc;
+  }, {}) : {};
 
   useEffect(() => {
     fetchGroups();
@@ -50,7 +72,7 @@ export default function AnimalGroupList() {
       const response = await apiFetch('/api/users?per_page=100');
       if (response.ok) {
         const data = await response.json();
-        setOwners(data.data?.filter(u => u.role === 'Owner') || []);
+        setOwners(data.data?.filter(u => u.role === 'Owner' || u.role === 'Admin') || []);
       }
     } catch (error) {
       console.error('Failed to fetch owners:', error);
@@ -191,6 +213,46 @@ export default function AnimalGroupList() {
         </button>
       </div>
 
+      <div className={`flex flex-wrap items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <MaterialSymbol icon="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder={t('common.search')}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+          />
+        </div>
+        <select
+          value={ownerFilter}
+          onChange={e => setOwnerFilter(e.target.value)}
+          className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white min-w-[160px]"
+        >
+          <option value="">{isAdmin ? t('groupsPage.allOwners') : t('common.all')}</option>
+          {owners.map(o => (
+            <option key={o.id} value={o.id}>{o.name}</option>
+          ))}
+        </select>
+        <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode('tiles')}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <MaterialSymbol icon="grid_view" size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <MaterialSymbol icon="table_rows" size={18} />
+          </button>
+        </div>
+        <span className="text-sm text-gray-400">
+          {filteredGroups.length} {t('groupsPage.groups') || 'groups'}
+        </span>
+      </div>
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">{t('groupsPage.loading')}</div>
       ) : groups.length === 0 ? (
@@ -204,71 +266,89 @@ export default function AnimalGroupList() {
             {t('groupsPage.createFirst')}
           </button>
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {groups.map((group) => (
-            <div key={group.id} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <h3 className="font-semibold text-gray-900">{group.name}</h3>
-                  {group.owner && (
-                    <span className="text-xs px-2 py-1 bg-[#D4AF37]/10 text-[#735c00] rounded-full">
-                      {group.owner.name}
+      ) : filteredGroups.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <MaterialSymbol icon="search_off" size={48} className="text-gray-300 mb-3" />
+          <p className="text-gray-500">{t('common.noData')}</p>
+          <button
+            onClick={() => { setSearchTerm(''); setOwnerFilter(''); }}
+            className="mt-4 text-amber-600 hover:text-amber-700 font-medium"
+          >
+            {t('common.clearFilters')}
+          </button>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('geofences.name')}</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('users.owner')}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('groupsPage.animals')}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('common.color') || 'Color'}</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-700">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredGroups.map(group => (
+                <tr key={group.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: group.color }} />
+                      <span className="font-medium text-gray-900">{group.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">
+                    {group.owner?.name || <span className="text-gray-400">-</span>}
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                      {group.animals_count || group.animals?.length || 0}
                     </span>
-                  )}
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: group.color }} />
+                  </td>
+                  <td className="text-right py-3 px-4">
+                    <div className={`flex items-center justify-end gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <button onClick={() => openAssignModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#002819]" title={t('groupsPage.assign')}>
+                        <MaterialSymbol icon="person_add" size={16} />
+                      </button>
+                      <button onClick={() => openEditModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#002819]" title={t('common.edit')}>
+                        <MaterialSymbol icon="edit" size={16} />
+                      </button>
+                      <button onClick={() => deleteGroup(group)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600" title={t('common.delete')}>
+                        <MaterialSymbol icon="delete" size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : isAdmin ? (
+        <div className="space-y-8">
+          {Object.entries(groupsByOwner).map(([ownerName, ownerGroups]) => (
+            <div key={ownerName}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#002819] to-[#06402B] flex items-center justify-center text-white text-sm font-bold">
+                  {ownerName === 'Unassigned' ? '?' : ownerName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                  {group.animals_count || group.animals?.length || 0} {t('groupsPage.animals')}
+                <h3 className="font-bold text-lg text-gray-900">{ownerName}</h3>
+                <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
+                  {ownerGroups.length} {t('groupsPage.groups') || 'groups'}
                 </span>
               </div>
-
-              {group.description && (
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description}</p>
-              )}
-
-              {group.animals && group.animals.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {group.animals.slice(0, 3).map((animal) => (
-                    <span key={animal.id} className="text-xs px-2 py-1 bg-gray-100 rounded-full">
-                      {animal.animal_id}
-                    </span>
-                  ))}
-                  {group.animals.length > 3 && (
-                    <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
-                      +{group.animals.length - 3} more
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => openAssignModal(group)}
-                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                >
-                  <MaterialSymbol icon="person_add" size={16} />
-                  {t('groupsPage.assign')}
-                </button>
-                <button
-                  onClick={() => openEditModal(group)}
-                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                >
-                  <MaterialSymbol icon="edit" size={16} />
-                  {t('common.edit')}
-                </button>
-                <button
-                  onClick={() => deleteGroup(group)}
-                  className={`flex items-center justify-center px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                >
-                  <MaterialSymbol icon="delete" size={16} />
-                </button>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {ownerGroups.map(group => <GroupCard key={group.id} group={group} t={t} isRtl={isRtl} onAssign={openAssignModal} onEdit={openEditModal} onDelete={deleteGroup} showOwner={false} />)}
               </div>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredGroups.map(group => <GroupCard key={group.id} group={group} t={t} isRtl={isRtl} onAssign={openAssignModal} onEdit={openEditModal} onDelete={deleteGroup} showOwner={!!group.owner} />)}
         </div>
       )}
 
@@ -478,6 +558,69 @@ function AnimalAssignmentModal({ group, availableAnimals, onAssign, onClose }) {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: group.color }} />
+          <h3 className="font-semibold text-gray-900 truncate">{group.name}</h3>
+          {showOwner && group.owner && (
+            <span className="text-xs px-2 py-1 bg-[#D4AF37]/10 text-[#735c00] rounded-full shrink-0">
+              {group.owner.name}
+            </span>
+          )}
+        </div>
+        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full shrink-0">
+          {group.animals_count || group.animals?.length || 0} {t('groupsPage.animals')}
+        </span>
+      </div>
+
+      {group.description && (
+        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description}</p>
+      )}
+
+      {group.animals && group.animals.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {group.animals.slice(0, 3).map((animal) => (
+            <span key={animal.id} className="text-xs px-2 py-1 bg-gray-100 rounded-full">
+              {animal.animal_id}
+            </span>
+          ))}
+          {group.animals.length > 3 && (
+            <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
+              +{group.animals.length - 3} more
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+        <button
+          onClick={() => onAssign(group)}
+          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+        >
+          <MaterialSymbol icon="person_add" size={16} />
+          {t('groupsPage.assign')}
+        </button>
+        <button
+          onClick={() => onEdit(group)}
+          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+        >
+          <MaterialSymbol icon="edit" size={16} />
+          {t('common.edit')}
+        </button>
+        <button
+          onClick={() => onDelete(group)}
+          className={`flex items-center justify-center px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+        >
+          <MaterialSymbol icon="delete" size={16} />
+        </button>
       </div>
     </div>
   );

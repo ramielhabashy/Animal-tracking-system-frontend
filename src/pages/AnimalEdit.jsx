@@ -5,12 +5,14 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useRole } from '../hooks/useRole';
+import { useAuth } from '../context/AuthContext';
 
 export default function AnimalEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, dir } = useI18n();
-  const { isShepherd } = useRole();
+  const { user } = useAuth();
+  const { isShepherd, isOwner, isManager } = useRole();
   const isRtl = dir === 'rtl';
   const isNewAnimal = !id || id === 'new';
   const fileInputRef = useRef(null);
@@ -104,6 +106,21 @@ export default function AnimalEdit() {
       });
       setOwners(ownersList);
 
+      if (isNewAnimal) {
+        let assignedOwnerId = '';
+        if (isOwner) {
+          assignedOwnerId = String(user?.id || '');
+        } else if (isManager) {
+          const currentUserInList = users.find(u => u.id === user?.id);
+          assignedOwnerId = String(currentUserInList?.managed_by || '');
+        }
+        if (assignedOwnerId) {
+          setFormData(prev => ({ ...prev, owner_id: assignedOwnerId }));
+          const owner = ownersList.find(u => u.id === parseInt(assignedOwnerId));
+          if (owner) setCurrentOwner(owner);
+        }
+      }
+
       const currentDeviceId = currentAnimal?.device?.device_id;
       const currentDeviceObj = currentDeviceId ? devices.find(d => d.device_id === currentDeviceId) : null;
       
@@ -190,26 +207,22 @@ export default function AnimalEdit() {
     }
   };
 
-  const handleOwnerChange = async (e) => {
+  const handleOwnerChange = (e) => {
     const ownerId = e.target.value;
     setFormData((prev) => ({ ...prev, owner_id: ownerId }));
     if (ownerId) {
-      const ownersRes = await apiFetch('/api/users');
-      const ownersData = await ownersRes.json();
-      const owner = ownersData.data?.find(u => u.id === parseInt(ownerId));
+      const owner = owners.find(u => u.id === parseInt(ownerId));
       setCurrentOwner(owner);
     } else {
       setCurrentOwner(null);
     }
   };
 
-  const handleDeviceChange = async (e) => {
+  const handleDeviceChange = (e) => {
     const deviceId = e.target.value;
     setFormData((prev) => ({ ...prev, device_id: deviceId }));
     if (deviceId) {
-      const devicesRes = await apiFetch('/api/devices');
-      const devicesData = await devicesRes.json();
-      const device = devicesData.data?.find(d => d.device_id === deviceId);
+      const device = availableDevices.find(d => d.device_id === deviceId);
       setCurrentDevice(device);
     } else {
       setCurrentDevice(null);
@@ -671,14 +684,18 @@ export default function AnimalEdit() {
                 </div>
               ) : (
                 <>
-                  <select name="owner_id" value={formData.owner_id} onChange={handleOwnerChange} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
-                    <option value="">{t('animals.selectOwner')}</option>
-                    {owners.map(owner => (
-                      <option key={owner.id} value={owner.id}>
-                        {owner.name}
-                      </option>
-                    ))}
-                  </select>
+                  {!isOwner && !isManager ? (
+                    <select name="owner_id" value={formData.owner_id} onChange={handleOwnerChange} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
+                      <option value="">{t('animals.selectOwner')}</option>
+                      {owners.map(owner => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input type="hidden" name="owner_id" value={formData.owner_id} />
+                  )}
                   {currentOwner && (
                     <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <div className="w-10 h-10 rounded-full bg-[#06402b]/10 overflow-hidden">

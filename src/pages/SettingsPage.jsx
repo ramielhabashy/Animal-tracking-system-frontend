@@ -94,6 +94,24 @@ const [speciesList, setSpeciesList] = useState([]);
   const [roleForm, setRoleForm] = useState({ name: '', permissions: [] });
   const [editingRole, setEditingRole] = useState(null);
 
+  const [taskTypes, setTaskTypes] = useState([]);
+  const [taskTypeForm, setTaskTypeForm] = useState({ name: '', slug: '', icon: 'assignment', color: '#002819', is_active: true });
+  const [editingTaskType, setEditingTaskType] = useState(null);
+
+  const [taskLogTypes, setTaskLogTypes] = useState([]);
+  const [logTypeForm, setLogTypeForm] = useState({ name: '', slug: '', icon: 'note', color: '#717973', allows_media: false, is_status: false, is_active: true });
+  const [editingLogType, setEditingLogType] = useState(null);
+  const [logTypeTab, setLogTypeTab] = useState('task'); // 'task' or 'log'
+
+  const [medicalRecordTypes, setMedicalRecordTypes] = useState([]);
+  const [medicalTypeForm, setMedicalTypeForm] = useState({ name: '', slug: '', icon: 'medical_services', color: '#002819', is_active: true });
+  const [editingMedicalType, setEditingMedicalType] = useState(null);
+  const [medicalSubTab, setMedicalSubTab] = useState('recordTypes');
+
+  const [vaccinationTypesList, setVaccinationTypesList] = useState([]);
+  const [vaccinationTypeForm, setVaccinationTypeForm] = useState({ name: '', slug: '', icon: 'vaccines', color: '#002819', is_active: true });
+  const [editingVaccinationType, setEditingVaccinationType] = useState(null);
+
 useEffect(() => {
     fetchSettings();
   }, []);
@@ -136,7 +154,7 @@ const fetchSettings = async () => {
         'auctions': { label: 'Auctions', permissions: ['auction_view', 'auction_create', 'auction_edit', 'auction_bid'] },
       };
 
-      const [generalRes, smtpRes, stripeRes, geminiRes, whatsappRes, twilioRes, speciesRes, languagesRes, rolesRes] = await Promise.all([
+      const [generalRes, smtpRes, stripeRes, geminiRes, whatsappRes, twilioRes, speciesRes, languagesRes, rolesRes, taskTypesRes, logTypesRes, medicalTypesRes, vaccinationTypesRes] = await Promise.all([
         apiFetch('/api/admin/settings/general'),
         apiFetch('/api/admin/settings/smtp'),
         apiFetch('/api/admin/settings/stripe'),
@@ -146,6 +164,10 @@ const fetchSettings = async () => {
         userRole === 'Admin' ? apiFetch('/api/species') : Promise.resolve({ ok: false }),
         userRole === 'Admin' ? apiFetch('/api/admin/languages') : Promise.resolve({ ok: false }),
         userRole === 'Admin' ? apiFetch('/api/admin/roles') : Promise.resolve({ ok: false }),
+        userRole === 'Admin' ? apiFetch('/api/task-types') : Promise.resolve({ ok: false }),
+        userRole === 'Admin' ? apiFetch('/api/task-log-types') : Promise.resolve({ ok: false }),
+        userRole === 'Admin' ? apiFetch('/api/medical-record-types') : Promise.resolve({ ok: false }),
+        userRole === 'Admin' ? apiFetch('/api/admin/vaccination-types') : Promise.resolve({ ok: false }),
       ]);
 
       if (rolesRes.ok) {
@@ -161,6 +183,26 @@ const fetchSettings = async () => {
       if (languagesRes.ok) {
         const langData = await languagesRes.json();
         setLanguages(langData.data || langData);
+      }
+
+      if (taskTypesRes.ok) {
+        const ttData = await taskTypesRes.json();
+        setTaskTypes(ttData.data || []);
+      }
+
+      if (logTypesRes.ok) {
+        const ltData = await logTypesRes.json();
+        setTaskLogTypes(ltData.data || []);
+      }
+
+      if (medicalTypesRes.ok) {
+        const mtData = await medicalTypesRes.json();
+        setMedicalRecordTypes(mtData.data || []);
+      }
+
+      if (vaccinationTypesRes.ok) {
+        const vtData = await vaccinationTypesRes.json();
+        setVaccinationTypesList(vtData.data || []);
       }
 
       if (speciesRes.ok) {
@@ -569,6 +611,8 @@ const tabs = [
     { id: 'species', label: 'Species', icon: 'pets' },
     { id: 'languages', label: t('settings.languages') || 'Languages', icon: 'language' },
     { id: 'roles', label: t('settings.roles') || 'Roles', icon: 'admin_panel_settings' },
+    { id: 'taskTypes', label: 'Task Types', icon: 'task' },
+    { id: 'medicalTypes', label: 'Medical Types', icon: 'vaccines' },
     { id: 'smtp', label: t('settings.smtp'), icon: 'mail' },
     { id: 'stripe', label: t('settings.stripe'), icon: 'credit_card' },
     { id: 'gemini', label: t('settings.gemini'), icon: 'psychology' },
@@ -1272,6 +1316,651 @@ onClick={() => handleEditRole(role)}
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Task Types Tab */}
+      {activeTab === 'taskTypes' && (
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-[#002819] rounded-xl flex items-center justify-center">
+              <MaterialSymbol icon="task" size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[#002819]">Task Types</h3>
+              <p className="text-sm text-[#717973]">Manage task categories and log types</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 bg-[#F4F4EF] p-1 rounded-xl w-fit mb-6">
+            <button onClick={() => setLogTypeTab('task')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${logTypeTab === 'task' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973]'}`}>
+              <MaterialSymbol icon="task" size={16} className="inline mr-1" />Task Types
+            </button>
+            <button onClick={() => setLogTypeTab('log')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${logTypeTab === 'log' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973]'}`}>
+              <MaterialSymbol icon="note" size={16} className="inline mr-1" />Log Types
+            </button>
+          </div>
+
+          {logTypeTab === 'task' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">{editingTaskType ? 'Edit Task Type' : 'Add New Task Type'}</h4>
+              <div className="space-y-4 p-4 bg-[#F4F4EF] rounded-xl">
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={taskTypeForm.name}
+                    onChange={(e) => setTaskTypeForm({ ...taskTypeForm, name: e.target.value, slug: editingTaskType ? taskTypeForm.slug : e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="e.g. Vaccination"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Slug</label>
+                  <input
+                    type="text"
+                    value={taskTypeForm.slug}
+                    onChange={(e) => setTaskTypeForm({ ...taskTypeForm, slug: e.target.value })}
+                    placeholder="e.g. vaccination"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Icon</label>
+                    <select
+                      value={taskTypeForm.icon}
+                      onChange={(e) => setTaskTypeForm({ ...taskTypeForm, icon: e.target.value })}
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                    >
+                      <option value="assignment">assignment</option>
+                      <option value="search">search</option>
+                      <option value="medical_services">medical_services</option>
+                      <option value="restaurant">restaurant</option>
+                      <option value="directions_walk">directions_walk</option>
+                      <option value="vaccines">vaccines</option>
+                      <option value="nutrition">nutrition</option>
+                      <option value="build">build</option>
+                      <option value="cleaning_services">cleaning_services</option>
+                      <option value="checklist">checklist</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Color</label>
+                    <input
+                      type="color"
+                      value={taskTypeForm.color}
+                      onChange={(e) => setTaskTypeForm({ ...taskTypeForm, color: e.target.value })}
+                      className="w-full h-11 rounded-xl border-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={taskTypeForm.is_active}
+                      onChange={(e) => setTaskTypeForm({ ...taskTypeForm, is_active: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                    />
+                    <span className="text-sm font-semibold text-[#002819]">Active</span>
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!taskTypeForm.name.trim() || !taskTypeForm.slug.trim()) return;
+                      const url = editingTaskType
+                        ? `/api/admin/task-types/${editingTaskType}`
+                        : '/api/admin/task-types';
+                      const method = editingTaskType ? 'PUT' : 'POST';
+                      const res = await apiFetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(taskTypeForm),
+                      });
+                      if (res.ok) {
+                        setTaskTypeForm({ name: '', slug: '', icon: 'assignment', color: '#002819', is_active: true });
+                        setEditingTaskType(null);
+                        const listRes = await apiFetch('/api/task-types');
+                        if (listRes.ok) {
+                          const data = await listRes.json();
+                          setTaskTypes(data.data);
+                        }
+                      }
+                    }}
+                    className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402B] transition"
+                  >
+                    {editingTaskType ? 'Update' : 'Add'}
+                  </button>
+                  {editingTaskType && (
+                    <button
+                      onClick={() => { setEditingTaskType(null); setTaskTypeForm({ name: '', slug: '', icon: 'assignment', color: '#002819', is_active: true }); }}
+                      className="px-4 py-3 bg-[#717973] text-white rounded-xl font-bold hover:bg-[#5a6265] transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">Existing Task Types</h4>
+              <div className="space-y-2">
+                {taskTypes.length === 0 ? (
+                  <p className="text-[#717973] text-sm">No task types defined</p>
+                ) : (
+                  taskTypes.map((tt) => (
+                    <div key={tt.id} className={`p-4 rounded-xl flex items-center justify-between ${tt.is_active ? 'bg-[#F4F4EF]' : 'bg-[#F4F4EF]/50 opacity-60'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: tt.color + '20' }}>
+                          <MaterialSymbol icon={tt.icon || 'assignment'} size={20} style={{ color: tt.color }} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#002819]">{tt.name}</p>
+                          <p className="text-xs text-[#717973]">{tt.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingTaskType(tt.id);
+                            setTaskTypeForm({ name: tt.name, slug: tt.slug, icon: tt.icon || 'assignment', color: tt.color || '#002819', is_active: tt.is_active });
+                          }}
+                          className="p-2 text-[#3B82F6] hover:bg-[#3B82F6]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="edit" size={18} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('Delete this task type?')) {
+                              await apiFetch(`/api/admin/task-types/${tt.id}`, { method: 'DELETE' });
+                              const listRes = await apiFetch('/api/task-types');
+                              if (listRes.ok) {
+                                const data = await listRes.json();
+                                setTaskTypes(data.data);
+                              }
+                            }
+                          }}
+                          className="p-2 text-[#BA1A1A] hover:bg-[#BA1A1A]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="delete" size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          )}
+
+          {logTypeTab === 'log' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">{editingLogType ? 'Edit Log Type' : 'Add New Log Type'}</h4>
+              <div className="space-y-4 p-4 bg-[#F4F4EF] rounded-xl">
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Name</label>
+                  <input type="text" value={logTypeForm.name}
+                    onChange={(e) => setLogTypeForm({ ...logTypeForm, name: e.target.value, slug: editingLogType ? logTypeForm.slug : e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="e.g. Done" className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Slug</label>
+                  <input type="text" value={logTypeForm.slug}
+                    onChange={(e) => setLogTypeForm({ ...logTypeForm, slug: e.target.value })}
+                    placeholder="e.g. done" className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Icon</label>
+                    <select value={logTypeForm.icon} onChange={(e) => setLogTypeForm({ ...logTypeForm, icon: e.target.value })}
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]">
+                      <option value="note">note</option>
+                      <option value="check_circle">check_circle</option>
+                      <option value="block">block</option>
+                      <option value="schedule">schedule</option>
+                      <option value="play_arrow">play_arrow</option>
+                      <option value="photo_camera">photo_camera</option>
+                      <option value="my_location">my_location</option>
+                      <option value="location_on">location_on</option>
+                      <option value="assignment">assignment</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Color</label>
+                    <input type="color" value={logTypeForm.color}
+                      onChange={(e) => setLogTypeForm({ ...logTypeForm, color: e.target.value })}
+                      className="w-full h-11 rounded-xl border-0 cursor-pointer" />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={logTypeForm.allows_media}
+                      onChange={(e) => setLogTypeForm({ ...logTypeForm, allows_media: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]" />
+                    <span className="text-sm font-semibold text-[#002819]">Allows Media</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={logTypeForm.is_status}
+                      onChange={(e) => setLogTypeForm({ ...logTypeForm, is_status: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]" />
+                    <span className="text-sm font-semibold text-[#002819]">Status Change</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={logTypeForm.is_active}
+                      onChange={(e) => setLogTypeForm({ ...logTypeForm, is_active: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]" />
+                    <span className="text-sm font-semibold text-[#002819]">Active</span>
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    if (!logTypeForm.name.trim() || !logTypeForm.slug.trim()) return;
+                    const url = editingLogType ? `/api/admin/task-log-types/${editingLogType}` : '/api/admin/task-log-types';
+                    const method = editingLogType ? 'PUT' : 'POST';
+                    const res = await apiFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logTypeForm) });
+                    if (res.ok) {
+                      setLogTypeForm({ name: '', slug: '', icon: 'note', color: '#717973', allows_media: false, is_status: false, is_active: true });
+                      setEditingLogType(null);
+                      const listRes = await apiFetch('/api/task-log-types');
+                      if (listRes.ok) { const d = await listRes.json(); setTaskLogTypes(d.data); }
+                    }
+                  }} className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402B] transition">
+                    {editingLogType ? 'Update' : 'Add'}
+                  </button>
+                  {editingLogType && (
+                    <button onClick={() => { setEditingLogType(null); setLogTypeForm({ name: '', slug: '', icon: 'note', color: '#717973', allows_media: false, is_status: false, is_active: true }); }}
+                      className="px-4 py-3 bg-[#717973] text-white rounded-xl font-bold hover:bg-[#5a6265] transition">Cancel</button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">Existing Log Types</h4>
+              <div className="space-y-2">
+                {taskLogTypes.length === 0 ? (
+                  <p className="text-[#717973] text-sm">No log types defined</p>
+                ) : (
+                  taskLogTypes.map((lt) => (
+                    <div key={lt.id} className={`p-4 rounded-xl flex items-center justify-between ${lt.is_active ? 'bg-[#F4F4EF]' : 'bg-[#F4F4EF]/50 opacity-60'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: lt.color + '20' }}>
+                          <MaterialSymbol icon={lt.icon || 'note'} size={20} style={{ color: lt.color }} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#002819]">{lt.name}</p>
+                          <p className="text-xs text-[#717973]">{lt.slug} {lt.is_status ? '(status)' : ''} {lt.allows_media ? '(media)' : ''}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => {
+                          setEditingLogType(lt.id);
+                          setLogTypeForm({ name: lt.name, slug: lt.slug, icon: lt.icon || 'note', color: lt.color || '#717973', allows_media: lt.allows_media, is_status: lt.is_status, is_active: lt.is_active });
+                        }} className="p-2 text-[#3B82F6] hover:bg-[#3B82F6]/10 rounded-lg transition">
+                          <MaterialSymbol icon="edit" size={18} />
+                        </button>
+                        <button onClick={async () => {
+                          if (confirm('Delete this log type?')) {
+                            await apiFetch(`/api/admin/task-log-types/${lt.id}`, { method: 'DELETE' });
+                            const listRes = await apiFetch('/api/task-log-types');
+                            if (listRes.ok) { const d = await listRes.json(); setTaskLogTypes(d.data); }
+                          }
+                        }} className="p-2 text-[#BA1A1A] hover:bg-[#BA1A1A]/10 rounded-lg transition">
+                          <MaterialSymbol icon="delete" size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          )}
+        </div>
+      )}
+
+      {/* Medical Record Types Tab */}
+      {activeTab === 'medicalTypes' && (
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-[#002819] rounded-xl flex items-center justify-center">
+              <MaterialSymbol icon="vaccines" size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[#002819]">Medical Types</h3>
+              <p className="text-sm text-[#717973]">Manage medical record and vaccination categories</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 bg-[#F4F4EF] p-1 rounded-xl w-fit mb-6">
+            <button onClick={() => setMedicalSubTab('recordTypes')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${medicalSubTab === 'recordTypes' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973]'}`}>
+              <MaterialSymbol icon="medical_services" size={16} className="inline mr-1" />Record Types
+            </button>
+            <button onClick={() => setMedicalSubTab('vaccinationTypes')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${medicalSubTab === 'vaccinationTypes' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973]'}`}>
+              <MaterialSymbol icon="vaccines" size={16} className="inline mr-1" />Vaccination Types
+            </button>
+          </div>
+
+          {medicalSubTab === 'recordTypes' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">{editingMedicalType ? 'Edit Medical Type' : 'Add New Medical Type'}</h4>
+              <div className="space-y-4 p-4 bg-[#F4F4EF] rounded-xl">
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={medicalTypeForm.name}
+                    onChange={(e) => setMedicalTypeForm({ ...medicalTypeForm, name: e.target.value, slug: editingMedicalType ? medicalTypeForm.slug : e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="e.g. Vaccination"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Slug</label>
+                  <input
+                    type="text"
+                    value={medicalTypeForm.slug}
+                    onChange={(e) => setMedicalTypeForm({ ...medicalTypeForm, slug: e.target.value })}
+                    placeholder="e.g. vaccination"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Icon</label>
+                    <select
+                      value={medicalTypeForm.icon}
+                      onChange={(e) => setMedicalTypeForm({ ...medicalTypeForm, icon: e.target.value })}
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                    >
+                      <option value="medical_services">medical_services</option>
+                      <option value="vaccines">vaccines</option>
+                      <option value="local_hospital">local_hospital</option>
+                      <option value="healing">healing</option>
+                      <option value="emergency">emergency</option>
+                      <option value="checklist">checklist</option>
+                      <option value="monitor_heart">monitor_heart</option>
+                      <option value="biotech">biotech</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Color</label>
+                    <input
+                      type="color"
+                      value={medicalTypeForm.color}
+                      onChange={(e) => setMedicalTypeForm({ ...medicalTypeForm, color: e.target.value })}
+                      className="w-full h-11 rounded-xl border-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={medicalTypeForm.is_active}
+                      onChange={(e) => setMedicalTypeForm({ ...medicalTypeForm, is_active: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                    />
+                    <span className="text-sm font-semibold text-[#002819]">Active</span>
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!medicalTypeForm.name.trim() || !medicalTypeForm.slug.trim()) return;
+                      const url = editingMedicalType
+                        ? `/api/admin/medical-record-types/${editingMedicalType}`
+                        : '/api/admin/medical-record-types';
+                      const method = editingMedicalType ? 'PUT' : 'POST';
+                      const res = await apiFetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(medicalTypeForm),
+                      });
+                      if (res.ok) {
+                        setMedicalTypeForm({ name: '', slug: '', icon: 'medical_services', color: '#002819', is_active: true });
+                        setEditingMedicalType(null);
+                        const listRes = await apiFetch('/api/medical-record-types');
+                        if (listRes.ok) {
+                          const data = await listRes.json();
+                          setMedicalRecordTypes(data.data);
+                        }
+                        setMessage({ type: 'success', text: 'Medical type saved' });
+                        setTimeout(() => setMessage(null), 3000);
+                      }
+                    }}
+                    className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402B] transition"
+                  >
+                    {editingMedicalType ? 'Update' : 'Add'}
+                  </button>
+                  {editingMedicalType && (
+                    <button
+                      onClick={() => { setEditingMedicalType(null); setMedicalTypeForm({ name: '', slug: '', icon: 'medical_services', color: '#002819', is_active: true }); }}
+                      className="px-4 py-3 bg-[#717973] text-white rounded-xl font-bold hover:bg-[#5a6265] transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">Existing Medical Record Types</h4>
+              <div className="space-y-2">
+                {medicalRecordTypes.length === 0 ? (
+                  <p className="text-[#717973] text-sm">No medical record types defined</p>
+                ) : (
+                  medicalRecordTypes.map((mt) => (
+                    <div key={mt.id} className={`p-4 rounded-xl flex items-center justify-between ${mt.is_active ? 'bg-[#F4F4EF]' : 'bg-[#F4F4EF]/50 opacity-60'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: mt.color + '20' }}>
+                          <MaterialSymbol icon={mt.icon || 'medical_services'} size={20} style={{ color: mt.color }} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#002819]">{mt.name}</p>
+                          <p className="text-xs text-[#717973]">{mt.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingMedicalType(mt.id);
+                            setMedicalTypeForm({ name: mt.name, slug: mt.slug, icon: mt.icon || 'medical_services', color: mt.color || '#002819', is_active: mt.is_active });
+                          }}
+                          className="p-2 text-[#3B82F6] hover:bg-[#3B82F6]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="edit" size={18} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('Delete this medical record type?')) {
+                              await apiFetch(`/api/admin/medical-record-types/${mt.id}`, { method: 'DELETE' });
+                              const listRes = await apiFetch('/api/medical-record-types');
+                              if (listRes.ok) {
+                                const data = await listRes.json();
+                                setMedicalRecordTypes(data.data);
+                              }
+                              setMessage({ type: 'success', text: 'Medical type deleted' });
+                              setTimeout(() => setMessage(null), 3000);
+                            }
+                          }}
+                          className="p-2 text-[#BA1A1A] hover:bg-[#BA1A1A]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="delete" size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          )}
+
+          {medicalSubTab === 'vaccinationTypes' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">{editingVaccinationType ? 'Edit Vaccination Type' : 'Add New Vaccination Type'}</h4>
+              <div className="space-y-4 p-4 bg-[#F4F4EF] rounded-xl">
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={vaccinationTypeForm.name}
+                    onChange={(e) => setVaccinationTypeForm({ ...vaccinationTypeForm, name: e.target.value, slug: editingVaccinationType ? vaccinationTypeForm.slug : e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="e.g. Booster"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Slug</label>
+                  <input
+                    type="text"
+                    value={vaccinationTypeForm.slug}
+                    onChange={(e) => setVaccinationTypeForm({ ...vaccinationTypeForm, slug: e.target.value })}
+                    placeholder="e.g. booster"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Icon</label>
+                    <select
+                      value={vaccinationTypeForm.icon}
+                      onChange={(e) => setVaccinationTypeForm({ ...vaccinationTypeForm, icon: e.target.value })}
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-[#002819]"
+                    >
+                      <option value="vaccines">vaccines</option>
+                      <option value="refresh">refresh</option>
+                      <option value="emergency">emergency</option>
+                      <option value="ac_unit">ac_unit</option>
+                      <option value="medical_services">medical_services</option>
+                      <option value="healing">healing</option>
+                      <option value="monitor_heart">monitor_heart</option>
+                      <option value="biotech">biotech</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Color</label>
+                    <input
+                      type="color"
+                      value={vaccinationTypeForm.color}
+                      onChange={(e) => setVaccinationTypeForm({ ...vaccinationTypeForm, color: e.target.value })}
+                      className="w-full h-11 rounded-xl border-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={vaccinationTypeForm.is_active}
+                      onChange={(e) => setVaccinationTypeForm({ ...vaccinationTypeForm, is_active: e.target.checked })}
+                      className="w-5 h-5 rounded border-2 border-[#D4AF37] text-[#D4AF37]"
+                    />
+                    <span className="text-sm font-semibold text-[#002819]">Active</span>
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!vaccinationTypeForm.name.trim() || !vaccinationTypeForm.slug.trim()) return;
+                      const url = editingVaccinationType
+                        ? `/api/admin/vaccination-types/${editingVaccinationType}`
+                        : '/api/admin/vaccination-types';
+                      const method = editingVaccinationType ? 'PUT' : 'POST';
+                      const res = await apiFetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(vaccinationTypeForm),
+                      });
+                      if (res.ok) {
+                        setVaccinationTypeForm({ name: '', slug: '', icon: 'vaccines', color: '#002819', is_active: true });
+                        setEditingVaccinationType(null);
+                        const listRes = await apiFetch('/api/admin/vaccination-types');
+                        if (listRes.ok) {
+                          const data = await listRes.json();
+                          setVaccinationTypesList(data.data);
+                        }
+                        setMessage({ type: 'success', text: 'Vaccination type saved' });
+                        setTimeout(() => setMessage(null), 3000);
+                      }
+                    }}
+                    className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402B] transition"
+                  >
+                    {editingVaccinationType ? 'Update' : 'Add'}
+                  </button>
+                  {editingVaccinationType && (
+                    <button
+                      onClick={() => { setEditingVaccinationType(null); setVaccinationTypeForm({ name: '', slug: '', icon: 'vaccines', color: '#002819', is_active: true }); }}
+                      className="px-4 py-3 bg-[#717973] text-white rounded-xl font-bold hover:bg-[#5a6265] transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[#002819] mb-4">Existing Vaccination Types</h4>
+              <div className="space-y-2">
+                {vaccinationTypesList.length === 0 ? (
+                  <p className="text-[#717973] text-sm">No vaccination types defined</p>
+                ) : (
+                  vaccinationTypesList.map((vt) => (
+                    <div key={vt.id} className={`p-4 rounded-xl flex items-center justify-between ${vt.is_active ? 'bg-[#F4F4EF]' : 'bg-[#F4F4EF]/50 opacity-60'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: vt.color + '20' }}>
+                          <MaterialSymbol icon={vt.icon || 'vaccines'} size={20} style={{ color: vt.color }} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#002819]">{vt.name}</p>
+                          <p className="text-xs text-[#717973]">{vt.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingVaccinationType(vt.id);
+                            setVaccinationTypeForm({ name: vt.name, slug: vt.slug, icon: vt.icon || 'vaccines', color: vt.color || '#002819', is_active: vt.is_active });
+                          }}
+                          className="p-2 text-[#3B82F6] hover:bg-[#3B82F6]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="edit" size={18} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('Delete this vaccination type?')) {
+                              await apiFetch(`/api/admin/vaccination-types/${vt.id}`, { method: 'DELETE' });
+                              const listRes = await apiFetch('/api/admin/vaccination-types');
+                              if (listRes.ok) {
+                                const data = await listRes.json();
+                                setVaccinationTypesList(data.data);
+                              }
+                              setMessage({ type: 'success', text: 'Vaccination type deleted' });
+                              setTimeout(() => setMessage(null), 3000);
+                            }
+                          }}
+                          className="p-2 text-[#BA1A1A] hover:bg-[#BA1A1A]/10 rounded-lg transition"
+                        >
+                          <MaterialSymbol icon="delete" size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          )}
         </div>
       )}
 

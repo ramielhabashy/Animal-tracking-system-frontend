@@ -1,6 +1,7 @@
 import React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { MaterialSymbol } from 'react-material-symbols';
+import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
@@ -10,8 +11,8 @@ export default function MedicalRecordsPage() {
   const isRtl = dir === 'rtl';
   const { user } = useAuth();
   const role = user?.role;
-  const canAdd = ['Admin', 'Owner', 'Doctor'].includes(role);
-  const canEdit = ['Admin', 'Owner', 'Doctor'].includes(role);
+  const canAdd = ['Admin', 'Owner', 'Manager', 'Doctor'].includes(role);
+  const canEdit = ['Admin', 'Owner', 'Manager', 'Doctor'].includes(role);
 
   const [records, setRecords] = useState([]);
   const [vaccinations, setVaccinations] = useState([]);
@@ -19,24 +20,22 @@ export default function MedicalRecordsPage() {
   const [doctors, setDoctors] = useState([]);
   const [showVetDropdown, setShowVetDropdown] = useState(false);
   const [stats, setStats] = useState({});
+  const [recordTypes, setRecordTypes] = useState([]);
+  const [vaccinationTypes, setVaccinationTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('records');
-  const [activeView, setActiveView] = useState('calendar');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [search, setSearch] = useState('');
+  const [newAttachments, setNewAttachments] = useState([]);
+  const [deleteAttachmentIds, setDeleteAttachmentIds] = useState([]);
   const [filters, setFilters] = useState({
     type: 'all',
     status: 'all',
     animal_id: 'all',
     date_range: '30',
   });
-  const [vaccFilters, setVaccFilters] = useState({
-    animal_id: 'all',
-    status: 'all',
-  });
-
   const [formData, setFormData] = useState({
     animal_id: '',
     record_type: 'checkup',
@@ -47,10 +46,9 @@ export default function MedicalRecordsPage() {
     medication: '',
     dosage: '',
     status: 'completed',
+    health_status: '',
     notes: '',
     next_follow_up: '',
-    vaccine_name: '',
-    vaccination_type: 'routine',
   });
 
   useEffect(() => {
@@ -59,31 +57,21 @@ export default function MedicalRecordsPage() {
 
   useEffect(() => {
     fetchRecords();
-  }, [filters]);
+  }, [filters, search]);
 
   const fetchData = async () => {
     try {
-      const [recordsRes, animalsRes, statsRes, vaccRes, doctorsRes] = await Promise.all([
-        apiFetch('/api/medical-records'),
+      const [animalsRes, vaccRes, doctorsRes, typesRes, vaccTypesRes] = await Promise.all([
         apiFetch('/api/animals?per_page=100'),
-        apiFetch('/api/medical-records/stats'),
         apiFetch('/api/vaccination-schedules?per_page=100'),
         apiFetch('/api/users/doctors/list'),
+        apiFetch('/api/medical-record-types'),
+        apiFetch('/api/vaccination-types'),
       ]);
-
-      if (recordsRes.ok) {
-        const data = await recordsRes.json();
-        setRecords(data.data || []);
-      }
 
       if (animalsRes.ok) {
         const data = await animalsRes.json();
         setAnimals(data.data || []);
-      }
-
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data.data || {});
       }
 
       if (vaccRes.ok) {
@@ -95,6 +83,16 @@ export default function MedicalRecordsPage() {
         const data = await doctorsRes.json();
         setDoctors(data.data || []);
       }
+
+      if (typesRes.ok) {
+        const data = await typesRes.json();
+        setRecordTypes(data.data || []);
+      }
+
+      if (vaccTypesRes.ok) {
+        const data = await vaccTypesRes.json();
+        setVaccinationTypes(data.data || []);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -104,89 +102,36 @@ export default function MedicalRecordsPage() {
 
   const fetchRecords = async () => {
     try {
-      let url = '/api/medical-records?';
-      if (filters.type !== 'all') url += `type=${filters.type}&`;
-      if (filters.status !== 'all') url += `status=${filters.status}&`;
-      if (filters.animal_id !== 'all') url += `animal_id=${filters.animal_id}&`;
+      let params = '';
+      if (search) params += `search=${encodeURIComponent(search)}&`;
+      if (filters.type !== 'all') params += `type=${filters.type}&`;
+      if (filters.status !== 'all') params += `status=${filters.status}&`;
+      if (filters.animal_id !== 'all') params += `animal_id=${filters.animal_id}&`;
+      if (filters.date_range !== 'all') {
+        const days = parseInt(filters.date_range);
+        const dateTo = new Date();
+        const dateFrom = new Date();
+        dateFrom.setDate(dateFrom.getDate() - days);
+        params += `date_from=${dateFrom.toISOString().split('T')[0]}&`;
+        params += `date_to=${dateTo.toISOString().split('T')[0]}&`;
+      }
 
-      const res = await apiFetch(url);
-      if (res.ok) {
-        const data = await res.json();
+      const [recordsRes, statsRes] = await Promise.all([
+        apiFetch(`/api/medical-records?${params}`),
+        apiFetch(`/api/medical-records/stats?${params}`),
+      ]);
+
+      if (recordsRes.ok) {
+        const data = await recordsRes.json();
         setRecords(data.data || []);
+      }
+
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setStats(data.data || {});
       }
     } catch (error) {
       console.error('Failed to fetch records:', error);
-    }
-  };
-
-  const getVaccinationsForDate = (date) => {
-    const dateStr = new Date(date).toISOString().split('T')[0];
-    return vaccinations.filter(v => {
-      const vaccDateStr = v.scheduled_date ? new Date(v.scheduled_date).toISOString().split('T')[0] : null;
-      return vaccDateStr === dateStr;
-    });
-  };
-
-  const getEventColor = (vaccination) => {
-    if (vaccination.status === 'administered') return { bg: 'bg-emerald-50', border: 'border-emerald-600', text: 'text-emerald-800' };
-    if (vaccination.status === 'cancelled') return { bg: 'bg-gray-50', border: 'border-gray-400', text: 'text-gray-600' };
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const schedDate = new Date(vaccination.scheduled_date);
-    const diffDays = Math.ceil((schedDate - today) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return { bg: 'bg-red-50', border: 'border-red-600', text: 'text-red-800' };
-    if (diffDays <= 3) return { bg: 'bg-blue-50', border: 'border-blue-600', text: 'text-blue-800' };
-    if (diffDays <= 7) return { bg: 'bg-yellow-50', border: 'border-yellow-600', text: 'text-yellow-800' };
-    return { bg: 'bg-emerald-50', border: 'border-emerald-600', text: 'text-emerald-800' };
-  };
-
-  const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    
-    const days = [];
-    const startPadding = firstDay.getDay();
-    for (let i = startPadding - 1; i >= 0; i--) {
-      const date = new Date(year, month, -i);
-      days.push({ date, isCurrentMonth: false });
-    }
-    
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      days.push({ date: new Date(year, month, day), isCurrentMonth: true });
-    }
-    
-    const endPadding = 42 - days.length;
-    for (let i = 1; i <= endPadding; i++) {
-      days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
-    }
-    
-    return days;
-  }, [currentDate]);
-
-  const navigateCalendar = (direction) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + direction);
-    setCurrentDate(newDate);
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  const handleAdminister = async (id) => {
-    try {
-      const res = await apiFetch(`/api/vaccination-schedules/${id}/administer`, { method: 'POST' });
-      if (res.ok) {
-        setMessage({ type: 'success', text: t('vaccination.administered') });
-        fetchData();
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: t('vaccination.networkError') });
     }
   };
 
@@ -194,39 +139,53 @@ export default function MedicalRecordsPage() {
     e.preventDefault();
     setMessage(null);
 
-    const isVaccination = activeTab === 'vaccinations';
-    let url, payload;
+    const isEditingRecord = editingRecord && editingRecord.record_type !== undefined;
+    const url = isEditingRecord ? `/api/medical-records/${editingRecord.id}` : '/api/medical-records';
 
-    if (isVaccination) {
-      const isEditingVacc = editingRecord && editingRecord.vaccine_name !== undefined;
-      url = isEditingVacc ? `/api/vaccination-schedules/${editingRecord.id}` : '/api/vaccination-schedules';
-      payload = {
-        animal_id: formData.animal_id,
-        vaccine_name: formData.vaccine_name || formData.title,
-        vaccination_type: formData.vaccination_type || 'routine',
-        scheduled_date: formData.record_date,
-        veterinarian: formData.veterinarian,
-        status: formData.status || 'scheduled',
-        notes: formData.notes,
-      };
+    const hasFiles = newAttachments.length > 0 || deleteAttachmentIds.length > 0;
+    let payload, isFormData;
+
+    if (hasFiles) {
+      isFormData = true;
+      const fd = new FormData();
+      fd.append('animal_id', formData.animal_id);
+      fd.append('record_type', formData.record_type);
+      fd.append('title', formData.title);
+      fd.append('description', formData.description || '');
+      fd.append('record_date', formData.record_date);
+      fd.append('veterinarian', formData.veterinarian || '');
+      fd.append('medication', formData.medication || '');
+      fd.append('dosage', formData.dosage || '');
+      fd.append('status', formData.status);
+      fd.append('health_status', formData.health_status || '');
+      fd.append('notes', formData.notes || '');
+      fd.append('next_follow_up', formData.next_follow_up || '');
+      newAttachments.forEach((file) => fd.append('attachments[]', file));
+      deleteAttachmentIds.forEach((id) => fd.append('delete_attachment_ids[]', id));
+      if (isEditingRecord) fd.append('_method', 'PUT');
+      payload = fd;
     } else {
-      const isEditingRecord = editingRecord && editingRecord.record_type !== undefined;
-      url = isEditingRecord ? `/api/medical-records/${editingRecord.id}` : '/api/medical-records';
+      isFormData = false;
       payload = formData;
     }
 
     try {
-      const res = await apiFetch(url, {
-        method: editingRecord ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const options = { method: isFormData ? 'POST' : (editingRecord ? 'PUT' : 'POST') };
+      if (isFormData) {
+        options.body = payload;
+      } else {
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify(payload);
+      }
+      const res = await apiFetch(url, options);
 
       if (res.ok) {
         setMessage({ type: 'success', text: editingRecord ? 'Record updated!' : 'Record created!' });
         setShowModal(false);
         setEditingRecord(null);
         resetForm();
+        setNewAttachments([]);
+        setDeleteAttachmentIds([]);
         fetchData();
         fetchRecords();
       } else {
@@ -249,30 +208,29 @@ export default function MedicalRecordsPage() {
       medication: '',
       dosage: '',
       status: 'completed',
+      health_status: '',
       notes: '',
       next_follow_up: '',
-      vaccine_name: '',
-      vaccination_type: 'routine',
     });
+    setNewAttachments([]);
+    setDeleteAttachmentIds([]);
   };
 
   const openEditModal = (record) => {
     setEditingRecord(record);
-    const isVaccination = record.vaccine_name !== undefined;
     setFormData({
       animal_id: record.animal_id,
-      record_type: isVaccination ? 'vaccination' : (record.record_type || 'checkup'),
-      title: record.title || record.vaccine_name || '',
+      record_type: record.record_type || 'checkup',
+      title: record.title || '',
       description: record.description || '',
-      record_date: record.scheduled_date || record.record_date || new Date().toISOString().split('T')[0],
+      record_date: record.record_date || new Date().toISOString().split('T')[0],
       veterinarian: record.veterinarian || '',
       medication: record.medication || '',
       dosage: record.dosage || '',
       status: record.status,
+      health_status: record.health_status || '',
       notes: record.notes || '',
       next_follow_up: record.next_follow_up || '',
-      vaccine_name: record.vaccine_name || '',
-      vaccination_type: record.vaccination_type || 'routine',
     });
     setShowModal(true);
   };
@@ -281,10 +239,7 @@ export default function MedicalRecordsPage() {
     if (!confirm('Are you sure you want to delete this record?')) return;
 
     try {
-      const url = activeTab === 'vaccinations' 
-        ? `/api/vaccination-schedules/${id}` 
-        : `/api/medical-records/${id}`;
-      const res = await apiFetch(url, { method: 'DELETE' });
+      const res = await apiFetch(`/api/medical-records/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setMessage({ type: 'success', text: 'Record deleted!' });
         fetchData();
@@ -296,6 +251,8 @@ export default function MedicalRecordsPage() {
   };
 
   const getTypeIcon = (type) => {
+    const found = recordTypes.find(rt => rt.slug === type);
+    if (found?.icon) return found.icon;
     switch (type) {
       case 'vaccination': return 'vaccines';
       case 'checkup': return 'medical_services';
@@ -307,6 +264,8 @@ export default function MedicalRecordsPage() {
   };
 
   const getTypeColor = (type) => {
+    const found = recordTypes.find(rt => rt.slug === type);
+    if (found) return 'bg-gray-100 text-gray-700';
     switch (type) {
       case 'vaccination': return 'bg-emerald-100 text-emerald-700';
       case 'checkup': return 'bg-blue-100 text-blue-700';
@@ -326,6 +285,12 @@ export default function MedicalRecordsPage() {
       default: return 'bg-gray-100 text-gray-700';
     }
   };
+
+  const scheduledRecords = records.filter(r => r.status === 'scheduled');
+  const combinedScheduled = [
+    ...vaccinations,
+    ...scheduledRecords.map(r => ({ ...r, _isMedicalRecord: true }))
+  ].sort((a, b) => new Date(a.scheduled_date || a.record_date) - new Date(b.scheduled_date || b.record_date));
 
   if (loading) {
     return (
@@ -376,7 +341,7 @@ export default function MedicalRecordsPage() {
               className="px-6 py-3 bg-[#002819] text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#06402b] transition shadow-lg"
             >
               <MaterialSymbol icon="add" size={20} />
-              {activeTab === 'vaccinations' ? t('vaccination.add') : t('medicalRecords.addRecord')}
+              {t('medicalRecords.addRecord')}
             </button>
           )}
         </div>
@@ -414,10 +379,10 @@ export default function MedicalRecordsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">{t('vaccination.total')}</p>
-              <p className="text-2xl font-black text-[#002819]">{vaccinations.length}</p>
+              <p className="text-2xl font-black text-[#002819]">{vaccinations.length + scheduledRecords.length}</p>
             </div>
             <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
               <p className="text-xs text-emerald-600 uppercase tracking-wider font-bold">{t('vaccination.administered')}</p>
@@ -427,133 +392,47 @@ export default function MedicalRecordsPage() {
               <p className="text-xs text-amber-600 uppercase tracking-wider font-bold">{t('vaccination.scheduled')}</p>
               <p className="text-2xl font-black text-amber-700">{vaccinations.filter(v => v.status === 'scheduled').length}</p>
             </div>
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <p className="text-xs text-blue-600 uppercase tracking-wider font-bold">{t('medicalRecords.upcoming')}</p>
+              <p className="text-2xl font-black text-blue-700">{scheduledRecords.length}</p>
+            </div>
             <div className="bg-red-50 rounded-xl p-4 border border-red-200">
               <p className="text-xs text-red-600 uppercase tracking-wider font-bold">{t('vaccination.overdue')}</p>
               <p className="text-2xl font-black text-red-700">{vaccinations.filter(v => v.status === 'overdue' || (v.status === 'scheduled' && new Date(v.scheduled_date) < new Date())).length}</p>
             </div>
           </div>
-          {activeView === 'calendar' && (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigateCalendar(-1)}
-                    className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors"
-                  >
-                    <MaterialSymbol icon={isRtl ? 'chevron_right' : 'chevron_left'} size={24} />
-                  </button>
-                  <div className={isRtl ? 'text-right' : ''}>
-                    <h3 className="text-lg font-bold text-[#002819]">
-                      {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => navigateCalendar(1)}
-                    className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors"
-                  >
-                    <MaterialSymbol icon={isRtl ? 'chevron_left' : 'chevron_right'} size={24} />
-                  </button>
-                  <button
-                    onClick={goToToday}
-            className={`px-4 py-2 text-sm bg-[#002819] text-white rounded-lg font-medium hover:bg-[#06402b] transition-colors ${isRtl ? 'mr-2' : 'ml-2'}`}
-                  >
-                    {t('vaccination.today')}
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setActiveView('calendar')}
-                    className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                      activeView === 'calendar' ? 'bg-[#002819] text-white' : 'bg-[#eeeee9] text-[#404943] hover:bg-[#e8e8e3]'
-                    }`}
-                  >
-                    {t('vaccination.month')}
-                  </button>
-                  <button
-                    onClick={() => setActiveView('table')}
-                    className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                      activeView === 'table' ? 'bg-[#002819] text-white' : 'bg-[#eeeee9] text-[#404943] hover:bg-[#e8e8e3]'
-                    }`}
-                  >
-                    {t('common.list')}
-                  </button>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-4">
-                <div className="grid grid-cols-7 bg-[#002819] text-white text-center py-4">
-                  {[t('vaccination.sun'), t('vaccination.mon'), t('vaccination.tue'), t('vaccination.wed'), t('vaccination.thu'), t('vaccination.fri'), t('vaccination.sat')].map((day, idx) => (
-                    <div key={idx} className="text-xs font-bold uppercase tracking-widest">{day}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7">
-                  {calendarDays.map(({ date, isCurrentMonth }, index) => {
-                    const isToday = date.toDateString() === new Date().toDateString();
-                    const dayVaccinations = getVaccinationsForDate(date);
-                    const bgClass = isCurrentMonth ? 'bg-white' : 'bg-[#f4f4ef]';
-                    const todayClass = isToday ? 'bg-[#D4AF37]/10' : '';
-                    const spanClass = isToday ? 'bg-[#D4AF37] text-white px-2 py-0.5 rounded-full' : isCurrentMonth ? 'text-[#404943]' : 'text-[#404943]/40';
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`p-3 min-h-[100px] border-r border-b border-[#e8e8e3] ${bgClass} ${todayClass}`}
-                      >
-                        <span className={`text-sm font-semibold ${spanClass}`}>
-                          {date.getDate()}
-                        </span>
-                        <div className="mt-1 space-y-1">
-                          {dayVaccinations.slice(0, 2).map(vacc => {
-                            const colors = getEventColor(vacc);
-                            return (
-                              <div
-                                key={vacc.id}
-                    className={`${colors.bg} ${colors.text} text-[10px] p-1 rounded border-s-2 ${colors.border} font-bold truncate cursor-pointer hover:opacity-80`}
-                                onClick={() => openEditModal(vacc)}
-                                title={vacc.vaccine_name}
-                              >
-                                {vacc.vaccine_name}
-                              </div>
-                            );
-                          })}
-                          {dayVaccinations.length > 2 && (
-                            <div className="text-[10px] text-[#404943] font-medium">+{dayVaccinations.length - 2}</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-          {activeView === 'table' && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setActiveView('calendar')}
-                  className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                    activeView === 'calendar' ? 'bg-[#002819] text-white' : 'bg-[#eeeee9] text-[#404943] hover:bg-[#e8e8e3]'
-                  }`}
-                >
-                  {t('vaccination.month')}
-                </button>
-                <button
-                  onClick={() => setActiveView('table')}
-                  className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                    activeView === 'table' ? 'bg-[#002819] text-white' : 'bg-[#eeeee9] text-[#404943] hover:bg-[#e8e8e3]'
-                  }`}
-                >
-                  {t('common.list')}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="bg-[#F4F4EF] rounded-xl p-4 flex items-center justify-between">
+            <p className="text-sm text-[#404943]">{t('vaccination.manageInFullPage')}</p>
+            <Link
+              to="/vaccination-schedule"
+              className="px-4 py-2 bg-[#002819] text-white rounded-lg text-sm font-bold hover:bg-[#06402b] transition-colors flex items-center gap-2"
+            >
+              <MaterialSymbol icon="open_in_new" size={16} />
+              {t('vaccination.manageLink')}
+            </Link>
+          </div>
         </div>
       )}
 
       {/* Filters */}
       <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-[#E3E3DE]">
         <div className={`flex flex-wrap items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''} flex-1 min-w-[200px]`}>
+            <MaterialSymbol icon="search" size={18} className="text-[#002819]/60" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('common.search') || 'Search records...'}
+              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0 w-full"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="text-[#002819]/60 hover:text-[#002819]">
+                <MaterialSymbol icon="close" size={16} />
+              </button>
+            )}
+          </div>
+
           <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
             <MaterialSymbol icon="calendar_month" size={18} className="text-[#002819]/60" />
             <select
@@ -575,12 +454,25 @@ export default function MedicalRecordsPage() {
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
               className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
             >
-              <option value="all">{t('common.all')}</option>
-              <option value="vaccination">{t('medicalRecords.vaccination')}</option>
-              <option value="checkup">{t('medicalRecords.checkup')}</option>
-              <option value="surgery">{t('medicalRecords.surgery')}</option>
-              <option value="treatment">{t('medicalRecords.treatment')}</option>
-              <option value="emergency">{t('medicalRecords.emergency')}</option>
+              <option value="all">{t('common.allTypes') || 'All Types'}</option>
+              {recordTypes.filter(rt => rt.is_active !== false).map(rt => (
+                <option key={rt.slug} value={rt.slug}>{rt.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="checklist" size={18} className="text-[#002819]/60" />
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
+            >
+              <option value="all">{t('common.allStatuses')}</option>
+              <option value="completed">{t('medicalRecords.completed')}</option>
+              <option value="scheduled">{t('medicalRecords.scheduled')}</option>
+              <option value="in_progress">{t('medicalRecords.inProgress')}</option>
+              <option value="cancelled">{t('medicalRecords.cancelled')}</option>
             </select>
           </div>
 
@@ -591,7 +483,7 @@ export default function MedicalRecordsPage() {
               onChange={(e) => setFilters({ ...filters, animal_id: e.target.value })}
               className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
             >
-              <option value="all">{t('common.all')}</option>
+              <option value="all">{t('vaccination.allAnimals')}</option>
               {animals.map((animal) => (
                 <option key={animal.id} value={animal.id}>
                   {animal.name || animal.animal_id}
@@ -601,7 +493,7 @@ export default function MedicalRecordsPage() {
           </div>
 
           <button
-            onClick={() => setFilters({ type: 'all', status: 'all', animal_id: 'all', date_range: '30' })}
+            onClick={() => { setFilters({ type: 'all', status: 'all', animal_id: 'all', date_range: '30' }); setSearch(''); }}
             className={`ml-auto text-[#002819]/60 font-semibold hover:text-[#002819] transition-colors flex items-center gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}
           >
             <MaterialSymbol icon="filter_list_off" size={18} />
@@ -613,7 +505,7 @@ export default function MedicalRecordsPage() {
       {/* Records Table */}
       <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm">
         <div className="p-6 border-b border-[#E3E3DE] flex justify-between items-center">
-          <h3 className="text-xl font-bold text-[#002819]">{activeTab === 'records' ? t('medicalRecords.recentRecords') : t('vaccination.schedules')}</h3>
+          <h3 className="text-xl font-bold text-[#002819]">{activeTab === 'records' ? t('medicalRecords.recentRecords') : t('vaccination.upcomingAll')}</h3>
         </div>
 
         {activeTab === 'records' ? (
@@ -627,6 +519,7 @@ export default function MedicalRecordsPage() {
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.type')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('medicalRecords.title') || 'Title'}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('medicalRecords.veterinarian')}</th>
+                <th className="px-6 py-4 text-[#4f6357] font-bold text-sm text-center">{t('common.attachments') || 'Files'}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.status')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm text-right">{t('common.actions')}</th>
               </tr>
@@ -634,7 +527,7 @@ export default function MedicalRecordsPage() {
             <tbody className="divide-y divide-[#E3E3DE]">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center text-[#717973]">
+                  <td colSpan="9" className="px-6 py-12 text-center text-[#717973]">
                     <MaterialSymbol icon="medical_services" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('medicalRecords.noRecords')}</p>
                     {canAdd && (
@@ -672,6 +565,22 @@ export default function MedicalRecordsPage() {
                     </td>
                     <td className="px-6 py-5 text-[#404943]">{record.title}</td>
                     <td className="px-6 py-5 text-[#404943]">{record.veterinarian || '-'}</td>
+                    <td className="px-6 py-5 text-center">
+                      {record.attachments && record.attachments.length > 0 ? (
+                        <a
+                          href={record.attachments[0].file_path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[#002819] hover:text-[#06402b] transition-colors"
+                          title={record.attachments.map(a => a.original_name).join(', ')}
+                        >
+                          <MaterialSymbol icon="attach_file" size={18} />
+                          <span className="text-xs font-bold">{record.attachments.length}</span>
+                        </a>
+                      ) : (
+                        <span className="text-[#717973]/40">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${getStatusColor(record.status)}`}>
                         {record.status?.replace('_', ' ')}
@@ -710,17 +619,16 @@ export default function MedicalRecordsPage() {
               <tr className="bg-[#F4F4EF]">
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.date')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('nav.animals')}</th>
-                <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('vaccination.vaccine')}</th>
-                <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('vaccination.vaccinationType')}</th>
+                <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.type')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('medicalRecords.veterinarian')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.status')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm text-right">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E3E3DE]">
-              {vaccinations.length === 0 ? (
+              {combinedScheduled.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-[#717973]">
+                  <td colSpan="6" className="px-6 py-12 text-center text-[#717973]">
                     <MaterialSymbol icon="vaccines" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('vaccination.noRecords')}</p>
                     <button
@@ -732,52 +640,72 @@ export default function MedicalRecordsPage() {
                   </td>
                 </tr>
               ) : (
-                vaccinations.map((vacc) => (
-                  <tr key={vacc.id} className="hover:bg-[#F4F4EF]/50 transition-colors">
+                combinedScheduled.map((item) => {
+                  const isVacc = !item._isMedicalRecord;
+                  const date = item.scheduled_date || item.record_date;
+                  const vet = item.veterinarian || '-';
+                  const animalName = item.animal?.name || item.animal?.animal_id || 'Unknown';
+                  const isOverdue = item.status === 'overdue' || (item.status === 'scheduled' && new Date(date) < new Date());
+                  return (
+                  <tr key={item.id} className="hover:bg-[#F4F4EF]/50 transition-colors">
                     <td className="px-6 py-5 font-medium text-[#002819]">
-                      {new Date(vacc.scheduled_date).toLocaleDateString()}
+                      {new Date(date).toLocaleDateString()}
+                      <span className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${isVacc ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {isVacc ? 'Vaccination' : t('medicalRecords.title')}
+                      </span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#CFE5D6] flex items-center justify-center text-[#002819] font-black text-xs">
-                          {vacc.animal?.name?.charAt(0) || vacc.animal?.animal_id?.charAt(0) || 'A'}
+                          {animalName.charAt(0)}
                         </div>
-                        <span className="font-semibold">{vacc.animal?.name || vacc.animal?.animal_id || 'Unknown'}</span>
+                        <span className="font-semibold">{animalName}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-[#404943]">{vacc.vaccine_name}</td>
                     <td className="px-6 py-5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${vacc.vaccination_type === 'routine' ? 'bg-blue-100 text-blue-700' : vacc.vaccination_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
-                        {vacc.vaccination_type}
-                      </span>
+                      {isVacc ? (
+                        <div>
+                          <p className="font-medium text-[#002819]">{item.vaccine_name}</p>
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.vaccination_type === 'routine' ? 'bg-blue-100 text-blue-700' : item.vaccination_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
+                            {item.vaccination_type}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-medium text-[#002819]">{item.title || item.description || '-'}</p>
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.record_type === 'checkup' ? 'bg-blue-100 text-blue-700' : item.record_type === 'surgery' ? 'bg-purple-100 text-purple-700' : item.record_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                            {item.record_type || 'appointment'}
+                          </span>
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-5 text-[#404943]">{vacc.veterinarian || '-'}</td>
+                    <td className="px-6 py-5 text-[#404943]">{vet}</td>
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                        vacc.status === 'administered' ? 'bg-emerald-100 text-emerald-700' :
-                        vacc.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
-                        new Date(vacc.scheduled_date) < new Date() ? 'bg-red-100 text-red-700' :
+                        isVacc && item.status === 'administered' ? 'bg-emerald-100 text-emerald-700' :
+                        item.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
+                        isVacc && isOverdue ? 'bg-red-100 text-red-700' :
                         'bg-amber-100 text-amber-700'
                       }`}>
-                        {vacc.status === 'administered' ? t('vaccination.statusAdministered') :
-                         vacc.status === 'cancelled' ? t('vaccination.statusCancelled') :
-                         new Date(vacc.scheduled_date) < new Date() ? t('vaccination.statusOverdue') :
-                         t('vaccination.statusScheduled')}
+                        {item.status === 'administered' ? t('vaccination.statusAdministered') :
+                         item.status === 'cancelled' ? t('vaccination.statusCancelled') :
+                         isVacc && isOverdue ? t('vaccination.statusOverdue') :
+                         t('medicalRecords.scheduled') || 'Scheduled'}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end gap-2">
-                        {canEdit && (
+                        {canEdit && !isVacc && (
                           <button
-                            onClick={() => openEditModal(vacc)}
+                            onClick={() => openEditModal(item)}
                             className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
                           >
                             <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
                           </button>
                         )}
-                        {canEdit && (
+                        {canEdit && !isVacc && (
                           <button
-                            onClick={() => handleDelete(vacc.id)}
+                            onClick={() => handleDelete(item.id)}
                             className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                           >
                             <MaterialSymbol icon="delete" size={18} className="text-red-600" />
@@ -786,7 +714,8 @@ export default function MedicalRecordsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -841,15 +770,15 @@ export default function MedicalRecordsPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('vaccination.vaccinationType')}</label>
-                      <select
-                        value={formData.vaccination_type}
-                        onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
-                        className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
-                      >
-                        <option value="routine">{t('vaccination.routine')}</option>
-                        <option value="emergency">{t('vaccination.emergency')}</option>
-                        <option value="booster">{t('vaccination.booster')}</option>
-                      </select>
+                        <select
+                          value={formData.vaccination_type}
+                          onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
+                          className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                        >
+                          {vaccinationTypes.map((vt) => (
+                            <option key={vt.slug} value={vt.slug}>{vt.name}</option>
+                          ))}
+                        </select>
                     </div>
                   </>
                 ) : (
@@ -861,11 +790,9 @@ export default function MedicalRecordsPage() {
                         onChange={(e) => setFormData({ ...formData, record_type: e.target.value })}
                         className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
                       >
-                        <option value="checkup">{t('medicalRecords.checkup')}</option>
-                        <option value="vaccination">{t('medicalRecords.vaccination')}</option>
-                        <option value="surgery">{t('medicalRecords.surgery')}</option>
-                        <option value="treatment">{t('medicalRecords.treatment')}</option>
-                        <option value="emergency">{t('medicalRecords.emergency')}</option>
+                        {recordTypes.filter(rt => rt.is_active !== false).map(rt => (
+                          <option key={rt.slug} value={rt.slug}>{rt.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -932,7 +859,12 @@ export default function MedicalRecordsPage() {
                           <span className="text-[10px] font-bold text-[#717973] uppercase tracking-wider px-2">Internal Doctors</span>
                         </div>
                         {doctors
-                          .filter(d => !formData.veterinarian || d.name.toLowerCase().includes(formData.veterinarian.toLowerCase()))
+                          .filter(d => {
+                            const selectedAnimal = animals.find(a => a.id === parseInt(formData.animal_id));
+                            if (selectedAnimal?.owner_id && d.managed_by && d.managed_by !== selectedAnimal.owner_id) return false;
+                            if (formData.veterinarian && !d.name.toLowerCase().includes(formData.veterinarian.toLowerCase())) return false;
+                            return true;
+                          })
                           .map(d => (
                             <button
                               key={d.id}
@@ -949,7 +881,11 @@ export default function MedicalRecordsPage() {
                               {d.name}
                             </button>
                           ))}
-                        {formData.veterinarian && !doctors.some(d => d.name.toLowerCase() === formData.veterinarian.toLowerCase()) && (
+                        {formData.veterinarian && !doctors.filter(d => {
+                          const selectedAnimal = animals.find(a => a.id === parseInt(formData.animal_id));
+                          if (selectedAnimal?.owner_id && d.managed_by && d.managed_by !== selectedAnimal.owner_id) return false;
+                          return true;
+                        }).some(d => d.name.toLowerCase() === formData.veterinarian.toLowerCase()) && (
                           <div className="px-4 py-2 border-t border-stone-50">
                             <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">External</span>
                             <p className="text-xs text-[#717973] mt-0.5">Using external veterinarian: <strong>{formData.veterinarian}</strong></p>
@@ -974,16 +910,17 @@ export default function MedicalRecordsPage() {
               {activeTab !== 'vaccinations' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('common.status')}</label>
+                    <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.healthStatus')}</label>
                     <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      value={formData.health_status}
+                      onChange={(e) => setFormData({ ...formData, health_status: e.target.value })}
                       className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
                     >
-                      <option value="completed">{t('medicalRecords.completed')}</option>
-                      <option value="scheduled">{t('medicalRecords.scheduled')}</option>
-                      <option value="in_progress">{t('medicalRecords.inProgress')}</option>
-                      <option value="cancelled">{t('medicalRecords.cancelled')}</option>
+                      <option value="">{t('common.none') || '-'}</option>
+                      <option value="stable">{t('medicalRecords.stable')}</option>
+                      <option value="recovering">{t('medicalRecords.recovering')}</option>
+                      <option value="critical">{t('medicalRecords.critical')}</option>
+                      <option value="deceased">{t('medicalRecords.deceased')}</option>
                     </select>
                   </div>
                   <div>
@@ -998,6 +935,85 @@ export default function MedicalRecordsPage() {
                   </div>
                 </div>
               )}
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('common.attachments') || 'Attachments'}</label>
+
+                {/* Existing attachments in edit mode */}
+                {editingRecord && editingRecord.attachments && editingRecord.attachments.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {editingRecord.attachments
+                      .filter(a => !deleteAttachmentIds.includes(a.id))
+                      .map((att) => (
+                        <div key={att.id} className="flex items-center justify-between bg-[#F4F4EF] rounded-lg px-3 py-2">
+                          <a
+                            href={att.file_path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-[#002819] font-medium hover:underline"
+                          >
+                            <MaterialSymbol icon={att.mime_type?.startsWith('image/') ? 'image' : 'description'} size={18} />
+                            {att.original_name}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteAttachmentIds([...deleteAttachmentIds, att.id])}
+                            className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <MaterialSymbol icon="close" size={16} className="text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    {deleteAttachmentIds.length > 0 && editingRecord.attachments.filter(a => deleteAttachmentIds.includes(a.id)).length > 0 && (
+                      <div className="text-xs text-red-600 font-medium">
+                        {deleteAttachmentIds.length} file(s) marked for deletion
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* New file upload */}
+                <div className="flex flex-wrap gap-2">
+                  <label className="flex items-center gap-2 px-4 py-3 bg-[#F4F4EF] rounded-xl cursor-pointer hover:bg-[#E3E3DE] transition-colors border-2 border-dashed border-[#E3E3DE] text-[#404943] text-sm font-medium">
+                    <MaterialSymbol icon="upload_file" size={20} />
+                    {t('common.upload') || 'Upload files'}
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files);
+                        setNewAttachments([...newAttachments, ...files]);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Preview new files */}
+                {newAttachments.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {newAttachments.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-[#F4F4EF] rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-sm text-[#002819]">
+                          <MaterialSymbol icon={file.type?.startsWith('image/') ? 'image' : 'description'} size={18} />
+                          <span className="font-medium truncate max-w-[200px]">{file.name}</span>
+                          <span className="text-[#717973] text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewAttachments(newAttachments.filter((_, i) => i !== idx))}
+                          className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+                        >
+                          <MaterialSymbol icon="close" size={16} className="text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.description')}</label>

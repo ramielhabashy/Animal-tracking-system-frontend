@@ -23,6 +23,7 @@ export default function VaccinationSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
   const [teamMembers, setTeamMembers] = useState([]);
+  const [vaccinationTypes, setVaccinationTypes] = useState([]);
 
   const [formData, setFormData] = useState({
     animal_id: '',
@@ -48,11 +49,12 @@ export default function VaccinationSchedulePage() {
 
   const fetchData = async () => {
     try {
-      const [vaccRes, animalsRes, statsRes, teamRes] = await Promise.all([
+      const [vaccRes, animalsRes, statsRes, teamRes, vaccTypesRes] = await Promise.all([
         apiFetch('/api/vaccination-schedules?per_page=100'),
         apiFetch('/api/animals?per_page=100'),
         apiFetch('/api/vaccination-schedules/stats'),
         apiFetch('/api/users'),
+        apiFetch('/api/vaccination-types'),
       ]);
 
       if (vaccRes.ok) {
@@ -73,6 +75,11 @@ export default function VaccinationSchedulePage() {
       if (teamRes.ok) {
         const data = await teamRes.json();
         setTeamMembers(data.data || []);
+      }
+
+      if (vaccTypesRes.ok) {
+        const data = await vaccTypesRes.json();
+        setVaccinationTypes(data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -639,16 +646,15 @@ export default function VaccinationSchedulePage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.vaccinationType') || 'Vaccination Type'}</label>
-                  <select
-                    value={formData.vaccination_type}
-                    onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
-                  >
-                    <option value="routine">{t('vaccination.typeRoutine') || 'Routine'}</option>
-                    <option value="booster">{t('vaccination.typeBooster') || 'Booster'}</option>
-                    <option value="emergency">{t('vaccination.typeEmergency') || 'Emergency'}</option>
-                    <option value="seasonal">{t('vaccination.typeSeasonal') || 'Seasonal'}</option>
-                  </select>
+                    <select
+                      value={formData.vaccination_type}
+                      onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    >
+                      {vaccinationTypes.map((vt) => (
+                        <option key={vt.slug} value={vt.slug}>{vt.name}</option>
+                      ))}
+                    </select>
                 </div>
 
                 <div>

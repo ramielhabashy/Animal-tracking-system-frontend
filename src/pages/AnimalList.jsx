@@ -29,6 +29,7 @@ export default function AnimalList() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [deviceFilter, setDeviceFilter] = useState('all');
   const [ownerFilter, setOwnerFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('tiles');
   
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(100);
@@ -193,7 +194,7 @@ export default function AnimalList() {
   });
 
   const speciesOptions = [...new Set(animals.map(a => a.species).filter(Boolean))];
-  const ownerOptions = users.filter(u => u.role === 'Owner');
+  const ownerOptions = users.filter(u => u.role === 'Owner' || u.role === 'Admin');
   const assignedCount = stats.assigned;
   const unassignedCount = stats.unassigned;
 
@@ -346,6 +347,23 @@ export default function AnimalList() {
             <option key={owner.id} value={owner.id}>{owner.name}</option>
           ))}
         </select>
+
+        <div className="flex bg-gray-100 rounded-xl p-0.5">
+          <button
+            onClick={() => setViewMode('tiles')}
+            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            title={t('dashboard.regionalView')}
+          >
+            <MaterialSymbol icon="grid_view" size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            title={t('common.list')}
+          >
+            <MaterialSymbol icon="table_rows" size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -374,6 +392,88 @@ export default function AnimalList() {
         <div className="card p-12 text-center">
           <MaterialSymbol icon="pets" size={64} className="text-[#717973] mx-auto mb-4 opacity-50" />
           <p className="text-[#404943] font-medium text-lg">{t('animals.noAnimals')}</p>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.name')}</th>
+                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.species')}</th>
+                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.breed')}</th>
+                <th className="text-center py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.device')}</th>
+                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.owner')}</th>
+                <th className="text-center py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('common.status')}</th>
+                <th className="text-right py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAnimals.map((animal) => {
+                const animalDeviceId = animal.device?.device_id || animal.device_id;
+                const animalStatus = getAnimalStatus(animal);
+                return (
+                  <tr key={animal.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-5">
+                      <Link to={`/animals/${animal.id}`} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-base ${
+                          animalStatus === 'critical' ? 'bg-[#BA1A1A]/10' :
+                          animalStatus === 'warning' ? 'bg-[#D4AF37]/10' : 'bg-[#002819]/5'
+                        }`}>
+                          {animal.species === 'Camel' ? '🐪' : animal.species === 'Goat' ? '🐐' : '🐪'}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#002819]">{animal.animal_id}</p>
+                          {animal.name && <p className="text-xs text-[#717973]">{animal.name}</p>}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="py-3 px-4 text-[#404943]">{animal.species}</td>
+                    <td className="py-3 px-4 text-[#404943]">{animal.breed || '-'}</td>
+                    <td className="text-center py-3 px-4">
+                      {animalDeviceId ? (
+                        <span className="text-xs font-medium text-[#002819]">{animalDeviceId}</span>
+                      ) : (
+                        <span className="text-xs text-[#BA1A1A]">{t('animals.noDeviceAssigned')}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-[#404943]">{animal.owner?.name || '-'}</td>
+                    <td className="text-center py-3 px-4">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        animalStatus === 'critical' ? 'bg-[#BA1A1A]/10 text-[#BA1A1A]' :
+                        animalStatus === 'warning' ? 'bg-[#D4AF37]/10 text-[#735C00]' :
+                        'bg-[#10B981]/10 text-[#10B981]'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          animalStatus === 'critical' ? 'bg-[#BA1A1A]' :
+                          animalStatus === 'warning' ? 'bg-[#D4AF37]' : 'bg-[#10B981]'
+                        }`} />
+                        {animalStatus}
+                      </span>
+                    </td>
+                    <td className="text-right py-3 px-5">
+                      <div className={`flex items-center justify-end gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <Link to={`/animals/${animal.id}`} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.view')}>
+                          <MaterialSymbol icon="visibility" size={16} />
+                        </Link>
+                        {canModify && (
+                          <>
+                            <Link to={`/animals/${animal.id}/edit`} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.edit')}>
+                              <MaterialSymbol icon="edit" size={16} />
+                            </Link>
+                            {!animalDeviceId && (
+                              <button onClick={() => openAssignModal(animal)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('animals.assignDevice')}>
+                                <MaterialSymbol icon="sensors" size={16} />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -542,7 +642,7 @@ return (
                 >
                   <option value="">{t('common.selectDevice')}</option>
                   {availableDevices.map(d => (
-                    <option key={d.id} value={d.id}>
+                    <option key={d.id} value={d.device_id}>
                       {d.device_id} {t('common.separator')} {d.status}{d.battery ? ` (${d.battery}${t('common.percent')})` : ''}
                     </option>
                   ))}

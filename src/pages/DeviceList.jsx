@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
@@ -22,29 +21,35 @@ export default function DeviceList() {
   const [devices, setDevices] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState('all');
+  const [batteryFilter, setBatteryFilter] = useState('all');
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [totalDevices, setTotalDevices] = useState(0);
+  const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0, maintenance: 0 });
+
+  const isAdmin = user?.role === 'Admin';
+  const isOwner = user?.role === 'Owner';
+  const canManageDevices = isAdmin || isOwner;
+  const canRegisterDevice = isAdmin;
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-  
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, debouncedSearch]);
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [totalDevices, setTotalDevices] = useState(0);
-  const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0, maintenance: 0 });
-  
-  const isAdmin = user?.role === 'Admin';
-  const isOwner = user?.role === 'Owner';
-  const canManageDevices = isAdmin || isOwner;
+  }, [statusFilter, debouncedSearch, ownerFilter, deviceTypeFilter, batteryFilter, assignmentFilter]);
 
   useEffect(() => {
     fetchData();
@@ -53,7 +58,7 @@ export default function DeviceList() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter]);
+  }, [statusFilter]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -112,16 +117,39 @@ export default function DeviceList() {
     return animals.find(a => (a.device?.device_id || a.device_id) === deviceId);
   };
 
+  const ownerOptions = [...new Map(
+    devices.filter(d => d.owner?.id && d.owner?.name)
+      .map(d => [d.owner.id, d.owner])
+  ).values()];
+
+  const deviceTypeOptions = [...new Set(devices.map(d => d.type).filter(Boolean))];
+
   const filteredDevices = devices.filter((device) => {
-    const matchesFilter = filter === 'all' || device.status === filter;
-    if (!debouncedSearch) return matchesFilter;
-    const search = debouncedSearch.toLowerCase();
-    return matchesFilter && (
-      device.device_id?.toLowerCase().includes(search) ||
-      device.name?.toLowerCase().includes(search) ||
-      device.type?.toLowerCase().includes(search)
-    );
+    const matchesFilter = statusFilter === 'all' || device.status === statusFilter;
+    if (debouncedSearch) {
+      const search = debouncedSearch.toLowerCase();
+      if (!device.device_id?.toLowerCase().includes(search) &&
+          !device.name?.toLowerCase().includes(search) &&
+          !device.type?.toLowerCase().includes(search) &&
+          !device.owner?.name?.toLowerCase().includes(search)) {
+        return false;
+      }
+    }
+    const matchesOwner = ownerFilter === 'all' || String(device.owner?.id) === String(ownerFilter);
+    const matchesType = deviceTypeFilter === 'all' || device.type === deviceTypeFilter;
+    const matchesBattery = batteryFilter === 'all' ||
+      (batteryFilter === 'low' && (device.battery_level || 0) < 20) ||
+      (batteryFilter === 'medium' && (device.battery_level || 0) >= 20 && (device.battery_level || 0) <= 50) ||
+      (batteryFilter === 'good' && (device.battery_level || 0) > 50);
+    const assignedAnimal = getAssignedAnimal(device.device_id);
+    const matchesAssignment = assignmentFilter === 'all' ||
+      (assignmentFilter === 'assigned' && assignedAnimal) ||
+      (assignmentFilter === 'unassigned' && !assignedAnimal);
+
+    return matchesFilter && matchesOwner && matchesType && matchesBattery && matchesAssignment;
   });
+
+
 
   const totalPages = Math.ceil(totalDevices / perPage);
 
@@ -175,7 +203,7 @@ export default function DeviceList() {
               {exporting ? t('common.exporting') : t('common.export')}
             </button>
           )}
-          {canManageDevices && (
+          {canRegisterDevice && (
             <button
               onClick={() => navigate('/devices/new')}
               className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
@@ -220,184 +248,357 @@ export default function DeviceList() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex-1 min-w-[200px] relative">
-          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
-          <input 
-            type="text" 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            placeholder={t('common.search')}
-            className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
-          />
-        </div>
-        {['all', 'online', 'offline', 'low_signal'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter === status
-                ? 'bg-[#002819] text-white'
-                : 'bg-white text-[#404943] border border-[#c0c9c1]/20 hover:bg-[#f4f4ef]'
-            }`}
-          >
-            {status === 'all' ? t('devicesPage.allDevices') : status === 'low_signal' ? t('devicesPage.lowBattery') : status.charAt(0).toUpperCase() + status.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Device Table */}
-      <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#c0c9c1]/10">
-        <div className="overflow-x-auto">
-          <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
-            <thead>
-              <tr className="bg-[#eeeee9]/50 text-[#404943] text-xs uppercase tracking-widest font-bold">
-                <th className="px-8 py-5">{t('devices.deviceId')}</th>
-                <th className="px-8 py-5">Name</th>
-                <th className="px-8 py-5">{t('users.owner')}</th>
-                <th className="px-8 py-5">{t('devicesPage.assignedAnimal')}</th>
-                <th className="px-8 py-5">{t('devicesPage.batteryLevel')}</th>
-                <th className="px-8 py-5">{t('devicesPage.connection')}</th>
-                <th className="px-8 py-5">{t('devicesPage.lastUpdate')}</th>
-                <th className={`px-8 py-5 ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#c0c9c1]/10">
-              {filteredDevices.map((device) => {
-                const status = statusConfig[device.status] || statusConfig.offline;
-                const battery = device.battery_level || 0;
-                return (
-                  <tr key={device.id} className={`hover:bg-[#f4f4ef]/50 transition-colors group ${battery === 0 ? 'bg-[#ffdad6]/5' : ''}`}>
-                    <td className="px-8 py-5">
-                      <div className="font-['Manrope'] font-bold text-[#002819]">{device.device_id}</div>
-                      <div className="text-[10px] text-[#404943]">{device.firmware_version || 'v2.4'} {t('devicesPage.firmware')}</div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="font-medium text-[#002819]">{device.name || '-'}</div>
-                      <div className="text-[10px] text-[#404943]">{device.type || '-'}</div>
-                    </td>
-                    <td className="px-8 py-5">
-                      {device.owner ? (
-                        <div className="font-medium text-[#002819]">{device.owner.name}</div>
-                      ) : (
-                        <span className="text-[#404943]">-</span>
-                      )}
-                    </td>
-                    <td className="px-8 py-5">
-                      {(() => {
-                        const assignedAnimal = getAssignedAnimal(device.device_id);
-                        return assignedAnimal ? (
-                          <Link
-                            to={`/animals/${assignedAnimal.id}`}
-                            className="flex items-center gap-3 hover:bg-[#f4f4ef] rounded-lg p-2 -m-2 transition-colors"
-                          >
-                            <div className="w-10 h-10 rounded-full bg-[#eeeee9] flex items-center justify-center">
-                              <MaterialSymbol icon="pets" size={20} className="text-[#002819]" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-sm text-[#002819] hover:text-[#06402b]">{assignedAnimal.animal_id}</div>
-                              <div className="text-xs text-[#404943]">{assignedAnimal.species}</div>
-                            </div>
-                          </Link>
-                        ) : (
-                          <div>
-                            <div className="font-bold text-sm text-[#404943]">{t('devicesPage.unassigned')}</div>
-                            <div className="text-xs text-[#404943]/60">{t('devicesPage.noAssociation')}</div>
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-8 py-5">
-                        <div className="w-32">
-                          <div className="flex justify-between text-xs font-bold mb-1.5">
-                            <span className={
-                              battery > 50 ? 'text-[#002819]' :
-                              battery > 20 ? 'text-[#735c00]' : 'text-[#ba1a1a]'
-                            }>{battery}%</span>
-                            <span className="text-[#404943] font-medium">
-                              {battery > 50 ? t('devicesPage.optimal') : battery > 0 ? t('devicesPage.critical') : t('devicesPage.depleted')}
-                            </span>
-                          </div>
-                        <div className="h-2 w-full bg-[#e8e8e3] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              battery > 50 ? 'bg-[#002819]' :
-                              battery > 20 ? 'bg-[#735c00]' : 'bg-[#404943]'
-                            }`}
-                            style={{ width: `${battery}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className={`flex items-center gap-2 font-bold text-sm ${status.color}`}>
-                        <MaterialSymbol icon={status.icon} size={20} />
-                        {status.label}
-                      </div>
-                    </td>
-      <td className="px-8 py-5 text-sm text-[#404943] font-medium">
-                       {device.updated_at ? new Date(device.updated_at).toLocaleString() : t('devicesPage.na')}
-                     </td>
-                 <td className="px-8 py-5">
-                    <div className={`flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
-                     {canManageDevices && (
-                       <Link
-                         to={`/devices/${device.id}/edit`}
-                         className="p-2 hover:bg-[#e8e8e3] rounded-lg text-[#404943] transition-all"
-                       >
-                         <MaterialSymbol icon="edit" size={20} />
-                       </Link>
-                     )}
-                     {canManageDevices && (
-                       <button
-                         onClick={async () => {
-                           if (!window.confirm(`Are you sure you want to delete device ${device.device_id}?`)) return;
-                           try {
-                             const res = await apiFetch(`/api/devices/${device.id}`, { method: 'DELETE' });
-                             if (res.ok) {
-                               setMessage({ type: 'success', text: 'Device deleted successfully' });
-                               fetchData();
-                               setTimeout(() => setMessage(null), 3000);
-                             }
-                           } catch (err) { 
-                             setMessage({ type: 'error', text: 'Failed to delete device' }); 
-                           }
-                         }}
-                         className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-all"
-                       >
-                         <MaterialSymbol icon="delete" size={20} />
-                       </button>
-                     )}
-                   </div>
-                 </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredDevices.length === 0 && (
-          <div className="p-12 text-center">
-            <MaterialSymbol icon="sensors_off" size={48} className="mx-auto text-[#717973] mb-4" />
-            <p className="text-[#717973]">{t('devicesPage.noDevices')}</p>
+      {/* Search & Filters */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[240px] relative">
+            <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('common.search')}
+              className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
+            />
           </div>
-        )}
 
-        {/* Pagination */}
-        {filteredDevices.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            perPage={perPage}
-            total={totalDevices}
-            dir={dir}
-            onPageChange={setCurrentPage}
-            onPerPageChange={(value) => { setPerPage(value); setCurrentPage(1); }}
-          />
-        )}
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          >
+            <option value="all">All Owners</option>
+            {ownerOptions.map(owner => (
+              <option key={owner.id} value={owner.id}>{owner.name}</option>
+            ))}
+          </select>
+
+          {deviceTypeOptions.length > 0 && (
+            <select
+              value={deviceTypeFilter}
+              onChange={(e) => setDeviceTypeFilter(e.target.value)}
+              className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              {deviceTypeOptions.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          )}
+
+          <select
+            value={batteryFilter}
+            onChange={(e) => setBatteryFilter(e.target.value)}
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          >
+            <option value="all">All Battery</option>
+            <option value="good">{t('devicesPage.optimal') || 'Good (>50%)'}</option>
+            <option value="medium">Medium (20-50%)</option>
+            <option value="low">{t('devicesPage.critical') || 'Low (<20%)'}</option>
+          </select>
+
+          <select
+            value={assignmentFilter}
+            onChange={(e) => setAssignmentFilter(e.target.value)}
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          >
+            <option value="all">All Assignments</option>
+            <option value="assigned">{t('devices.assigned') || 'Assigned'}</option>
+            <option value="unassigned">{t('devicesPage.unassigned') || 'Unassigned'}</option>
+          </select>
+
+          <button
+            onClick={() => { setSearchQuery(''); setOwnerFilter('all'); setDeviceTypeFilter('all'); setBatteryFilter('all'); setAssignmentFilter('all'); setStatusFilter('all'); }}
+            className="px-4 py-3 text-sm font-semibold text-[#717973] hover:text-[#002819] transition-colors flex items-center gap-1"
+          >
+            <MaterialSymbol icon="filter_list_off" size={18} />
+            {t('common.clearFilters') || 'Clear'}
+          </button>
+        </div>
+
+        {/* Status Pills & View Toggle */}
+        <div className={`flex flex-wrap items-center justify-between gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            {['all', 'online', 'offline', 'low_signal'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  statusFilter === status
+                    ? 'bg-[#002819] text-white'
+                    : 'bg-white text-[#404943] border border-[#c0c9c1]/20 hover:bg-[#f4f4ef]'
+                }`}
+              >
+                {status === 'all' ? t('devicesPage.allDevices') : status === 'low_signal' ? t('devicesPage.lowBattery') : status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex bg-gray-100 rounded-xl p-0.5">
+            <button
+              onClick={() => setViewMode('tiles')}
+              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+              title={t('dashboard.regionalView') || 'Tile view'}
+            >
+              <MaterialSymbol icon="grid_view" size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+              title={t('common.list')}
+            >
+              <MaterialSymbol icon="table_rows" size={18} />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Content */}
+      {filteredDevices.length === 0 ? (
+        <div className="card p-12 text-center">
+          <MaterialSymbol icon="sensors_off" size={64} className="mx-auto text-[#717973] mb-4 opacity-50" />
+          <p className="text-[#404943] font-medium text-lg">{t('devicesPage.noDevices')}</p>
+        </div>
+      ) : viewMode === 'tiles' ? (
+        /* Tile View */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDevices.map((device) => {
+            const status = statusConfig[device.status] || statusConfig.offline;
+            const battery = device.battery_level || 0;
+            const assignedAnimal = getAssignedAnimal(device.device_id);
+            return (
+              <div key={device.id} className="card overflow-hidden group">
+                <div className="p-6">
+                  <div className={`flex items-start justify-between mb-4 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                        device.status === 'offline' ? 'bg-[#BA1A1A]/10' :
+                        device.status === 'low_signal' ? 'bg-[#D4AF37]/10' :
+                        'bg-[#002819]/5'
+                      }`}>
+                        <MaterialSymbol icon={status.icon} size={24} className={status.color} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-[#002819]">{device.device_id}</h3>
+                        {device.name && <p className="text-sm text-[#717973]">{device.name}</p>}
+                        <p className="text-sm text-[#717973]">{device.type || '-'}</p>
+                      </div>
+                    </div>
+                    <div className={`w-3 h-3 rounded-full ${
+                      device.status === 'online' ? 'bg-[#10B981]' :
+                      device.status === 'low_signal' ? 'bg-[#D4AF37]' :
+                      'bg-[#717973]'
+                    }`} />
+                  </div>
+
+                  <div className={`grid grid-cols-2 gap-3 text-sm ${isRtl ? 'text-right' : ''}`}>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('devicesPage.batteryLevel')}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 bg-[#e8e8e3] rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${
+                            battery > 50 ? 'bg-[#002819]' :
+                            battery > 20 ? 'bg-[#735c00]' : 'bg-[#BA1A1A]'
+                          }`} style={{ width: `${battery}%` }} />
+                        </div>
+                        <span className={`font-semibold text-xs ${
+                          battery > 50 ? 'text-[#002819]' :
+                          battery > 20 ? 'text-[#735c00]' : 'text-[#BA1A1A]'
+                        }`}>{battery}%</span>
+                      </div>
+                    </div>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('users.owner')}</p>
+                      <p className="font-semibold text-[#002819] truncate">{device.owner?.name || '-'}</p>
+                    </div>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('devicesPage.assignedAnimal')}</p>
+                      <p className="font-semibold text-[#002819] text-xs truncate">
+                        {assignedAnimal ? assignedAnimal.animal_id : t('devicesPage.unassigned')}
+                      </p>
+                    </div>
+                    <div className="bg-[#F4F4EF] rounded-xl p-3">
+                      <p className="text-xs text-[#717973]">{t('devicesPage.firmware')}</p>
+                      <p className="font-semibold text-[#002819] text-xs truncate">{device.firmware_version || '-'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-3 rounded-xl bg-[#F4F4EF]/50">
+                    <div className={`flex items-center justify-between text-xs text-[#717973] ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <span>{t('devicesPage.lastUpdate')}</span>
+                      <span>{device.updated_at ? new Date(device.updated_at).toLocaleDateString() : t('devicesPage.na')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`flex border-t border-[#F4F4EF] ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <Link
+                    to={`/devices/${device.id}/edit`}
+                    className="flex-1 py-3 text-center text-sm font-semibold text-[#002819] hover:bg-[#F4F4EF] transition-colors"
+                  >
+                    {t('common.view') || 'View'}
+                  </Link>
+                  {canManageDevices && (
+                    <>
+                      <Link
+                        to={`/devices/${device.id}/edit`}
+                        className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-[#F4F4EF] hover:text-[#002819] transition-colors border-x border-[#F4F4EF]"
+                      >
+                        {t('common.edit')}
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Are you sure you want to delete device ${device.device_id}?`)) return;
+                          try {
+                            const res = await apiFetch(`/api/devices/${device.id}`, { method: 'DELETE' });
+                            if (res.ok) {
+                              setMessage({ type: 'success', text: 'Device deleted successfully' });
+                              fetchData();
+                              setTimeout(() => setMessage(null), 3000);
+                            }
+                          } catch (err) {
+                            setMessage({ type: 'error', text: 'Failed to delete device' });
+                          }
+                        }}
+                        className="flex-1 py-3 text-center text-sm font-semibold text-[#BA1A1A] hover:bg-red-50 transition-colors"
+                      >
+                        {t('common.delete')}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* List / Table View */
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className={`w-full text-sm ${isRtl ? 'text-right' : 'text-left'}`}>
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devices.deviceId')}</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">Name</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('users.owner')}</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.assignedAnimal')}</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.batteryLevel')}</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.connection')}</th>
+                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.lastUpdate')}</th>
+                  <th className={`py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDevices.map((device) => {
+                  const status = statusConfig[device.status] || statusConfig.offline;
+                  const battery = device.battery_level || 0;
+                  return (
+                    <tr key={device.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${battery === 0 ? 'bg-[#ffdad6]/5' : ''}`}>
+                      <td className="py-3 px-5">
+                        <p className="font-semibold text-[#002819]">{device.device_id}</p>
+                        <p className="text-xs text-[#717973]">{device.firmware_version || 'v2.4'} {t('devicesPage.firmware')}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="text-[#404943]">{device.name || '-'}</p>
+                        <p className="text-xs text-[#717973]">{device.type || '-'}</p>
+                      </td>
+                      <td className="py-3 px-4 text-[#404943]">
+                        {device.owner ? device.owner.name : '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        {(() => {
+                          const assignedAnimal = getAssignedAnimal(device.device_id);
+                          return assignedAnimal ? (
+                            <Link to={`/animals/${assignedAnimal.id}`} className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-[#eeeee9] flex items-center justify-center">
+                                <MaterialSymbol icon="pets" size={14} className="text-[#002819]" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-[#002819]">{assignedAnimal.animal_id}</p>
+                                <p className="text-[10px] text-[#717973]">{assignedAnimal.species}</p>
+                              </div>
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-[#BA1A1A]">{t('devicesPage.unassigned')}</span>
+                          );
+                        })()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-12 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${
+                              battery > 50 ? 'bg-[#002819]' :
+                              battery > 20 ? 'bg-[#735c00]' : 'bg-[#BA1A1A]'
+                            }`} style={{ width: `${battery}%` }} />
+                          </div>
+                          <span className={`text-xs font-medium ${
+                            battery > 50 ? 'text-[#002819]' :
+                            battery > 20 ? 'text-[#735c00]' : 'text-[#BA1A1A]'
+                          }`}>{battery}%</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className={`flex items-center gap-1.5 text-xs font-medium ${status.color}`}>
+                          <MaterialSymbol icon={status.icon} size={16} />
+                          {status.label}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-xs text-[#717973]">
+                        {device.updated_at ? new Date(device.updated_at).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="py-3 px-5">
+                        <div className={`flex items-center gap-1 ${isRtl ? 'justify-start' : 'justify-end'}`}>
+                          <Link to={`/devices/${device.id}/edit`} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.view')}>
+                            <MaterialSymbol icon="visibility" size={16} />
+                          </Link>
+                          {canManageDevices && (
+                            <Link to={`/devices/${device.id}/edit`} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.edit')}>
+                              <MaterialSymbol icon="edit" size={16} />
+                            </Link>
+                          )}
+                          {canManageDevices && (
+                            <button
+                              onClick={async () => {
+                                if (!window.confirm(`Are you sure you want to delete device ${device.device_id}?`)) return;
+                                try {
+                                  const res = await apiFetch(`/api/devices/${device.id}`, { method: 'DELETE' });
+                                  if (res.ok) {
+                                    setMessage({ type: 'success', text: 'Device deleted successfully' });
+                                    fetchData();
+                                    setTimeout(() => setMessage(null), 3000);
+                                  }
+                                } catch (err) {
+                                  setMessage({ type: 'error', text: 'Failed to delete device' });
+                                }
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.delete')}
+                            >
+                              <MaterialSymbol icon="delete" size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filteredDevices.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          perPage={perPage}
+          total={totalDevices}
+          dir={dir}
+          onPageChange={setCurrentPage}
+          onPerPageChange={(value) => { setPerPage(value); setCurrentPage(1); }}
+        />
+      )}
     </div>
   );
 }

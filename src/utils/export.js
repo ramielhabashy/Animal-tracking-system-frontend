@@ -41,7 +41,7 @@ export const exportDatabase = async () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `oasis_database_${new Date().toISOString().split('T')[0]}.sqlite`;
+    a.download = `oasis_database_${new Date().toISOString().split('T')[0]}.sql`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -1,13 +1,26 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
 
+function getComputedStatus(auction) {
+  if (auction.status === 'sold') return 'sold';
+  if (auction.status === 'cancelled') return 'cancelled';
+  if (auction.status === 'ended') return 'ended';
+  if (auction.status === 'active' && auction.ends_at) {
+    const end = new Date(auction.ends_at);
+    const now = new Date();
+    if (end - now <= 0) return 'ended';
+  }
+  return auction.status;
+}
+
 export default function AuctionList() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
+  const navigate = useNavigate();
   const [auctions, setAuctions] = useState([]);
   const [myAuctions, setMyAuctions] = useState([]);
   const [enrolledAuctions, setEnrolledAuctions] = useState([]);
@@ -118,6 +131,11 @@ export default function AuctionList() {
     return `${hours}h ${minutes}m`;
   };
 
+  const filteredAuctions = React.useMemo(() => {
+    if (filter === 'all') return auctions;
+    return auctions.filter(a => getComputedStatus(a) === filter);
+  }, [auctions, filter]);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -130,7 +148,7 @@ export default function AuctionList() {
           <h2 className="text-4xl font-['Manrope'] font-extrabold text-[#002819] tracking-tight">
             {filter === 'all' ? t('auctions.allAuctions') : filter === 'active' ? t('auctionsPage.liveAuctions') : filter === 'sold' ? t('auctionsPage.sold') : t('auctionsPage.ended')}
           </h2>
-          <p className="text-[#404943] mt-1">{auctions.length} {filter === 'active' ? t('auctionsPage.live') : ''} {t('auctionsPage.auctions')}</p>
+          <p className="text-[#404943] mt-1">{filteredAuctions.length} {filter === 'active' ? t('auctionsPage.live') : ''} {t('auctionsPage.auctions')}</p>
         </div>
         <Link
           to="/auctions/new"
@@ -184,7 +202,7 @@ export default function AuctionList() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {myAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
+                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
                 ))}
               </div>
             </div>
@@ -198,7 +216,7 @@ export default function AuctionList() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {enrolledAuctions.map((auction) => (
-                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
+                  <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
                 ))}
               </div>
             </div>
@@ -206,13 +224,13 @@ export default function AuctionList() {
           
           {filter !== 'all' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {auctions.map((auction) => (
-                <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} isRtl={isRtl} />
+              {filteredAuctions.map((auction) => (
+                <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} navigate={navigate} isRtl={isRtl} />
               ))}
             </div>
           )}
           
-          {filter !== 'all' && auctions.length === 0 && (
+          {filter !== 'all' && filteredAuctions.length === 0 && (
             <div className="text-center py-16 bg-white rounded-[2rem] shadow-sm">
               <MaterialSymbol icon="gavel" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
               <p className="text-[#404943] text-lg font-semibold">{t('auctionsPage.noAuctions')}</p>
@@ -295,7 +313,9 @@ export default function AuctionList() {
   );
 }
 
-function AuctionCard({ auction, onBid, isRtl }) {
+function AuctionCard({ auction, onBid, navigate, isRtl }) {
+  const computedStatus = getComputedStatus(auction);
+
   const getTimeRemaining = (auction) => {
     if (!auction.ends_at) return 'No limit';
     const end = new Date(auction.ends_at);
@@ -337,23 +357,35 @@ function AuctionCard({ auction, onBid, isRtl }) {
           </div>
         )}
         
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${auction.status === 'active' ? 'bg-red-500 animate-pulse' : auction.status === 'sold' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
-          <span className="text-[10px] font-black text-white uppercase tracking-widest">
-            {auction.status === 'active' ? 'Live' : auction.status}
-          </span>
-        </div>
+        {computedStatus === 'active' && (
+          <div className="absolute top-4 left-4 bg-red-500/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">Live</span>
+          </div>
+        )}
+        {computedStatus === 'ended' && (
+          <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">Ended</span>
+          </div>
+        )}
+        {computedStatus === 'sold' && (
+          <div className="absolute top-4 left-4 bg-emerald-500/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-white"></span>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">Sold</span>
+          </div>
+        )}
         
         <div className="absolute top-4 right-4 bg-[#D4AF37] text-white px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-          {auction.status === 'active' ? (
+          {computedStatus === 'active' ? (
             <>
               <MaterialSymbol icon="schedule" size={16} />
               <span className="text-[11px] font-bold">{getTimeRemaining(auction)}</span>
             </>
           ) : (
             <>
-              <MaterialSymbol icon={auction.status === 'sold' ? 'check_circle' : 'cancel'} size={16} />
-              <span className="text-[11px] font-bold">{auction.status}</span>
+              <MaterialSymbol icon={computedStatus === 'sold' ? 'check_circle' : 'cancel'} size={16} />
+              <span className="text-[11px] font-bold">{computedStatus}</span>
             </>
           )}
         </div>
@@ -377,7 +409,7 @@ function AuctionCard({ auction, onBid, isRtl }) {
           </p>
         </div>
 
-        {auction.status === 'sold' && auction.winner ? (
+        {computedStatus === 'sold' && auction.winner ? (
           <div className="bg-emerald-50 rounded-2xl p-4 mb-4">
             <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Highest Bidder</p>
             <p className="text-lg font-bold text-emerald-700">{auction.winner.name}</p>
@@ -396,27 +428,29 @@ function AuctionCard({ auction, onBid, isRtl }) {
           </div>
         )}
 
-              <div className={`flex items-center gap-2 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="schedule" size={16} />
-                <span className="text-sm font-bold">{getTimeRemaining(auction)}</span>
-              </div>
+        {computedStatus === 'active' && (
+          <div className={`flex items-center gap-2 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="schedule" size={16} />
+            <span className="text-sm font-bold">{getTimeRemaining(auction)}</span>
+          </div>
+        )}
 
-            <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
-              <Link
-                to={`/auctions/${auction.id}`}
-                className="px-4 py-2 text-[#002819] hover:bg-[#eeeee9] rounded-xl font-medium text-sm transition-colors"
-              >
-                View Details
-              </Link>
-              {auction.status === 'active' && (
-                <button
-                  onClick={() => onBid(auction)}
-                  className="px-6 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] shadow-lg shadow-[#002819]/20 transition-all"
-                >
-                  Place Bid
-                </button>
-              )}
-            </div>
+        <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <button
+            onClick={() => navigate(`/auctions/${auction.id}`)}
+            className="px-4 py-2 text-[#002819] hover:bg-[#eeeee9] rounded-xl font-medium text-sm transition-colors"
+          >
+            View Details
+          </button>
+          {computedStatus === 'active' && (
+            <button
+              onClick={() => onBid(auction)}
+              className="px-6 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] shadow-lg shadow-[#002819]/20 transition-all"
+            >
+              Place Bid
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

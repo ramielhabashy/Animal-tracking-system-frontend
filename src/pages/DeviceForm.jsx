@@ -11,7 +11,7 @@ export default function DeviceForm() {
   const { t, dir } = useI18n();
   const { user } = useAuth();
   const isRtl = dir === 'rtl';
-  const canCreate = user?.role === 'Admin' || user?.role === 'Owner';
+  const canCreate = user?.role === 'Admin';
 
   useEffect(() => {
     if (!canCreate) {

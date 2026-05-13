@@ -272,9 +272,13 @@ export default function MapView() {
   }, []);
 
   const getAnimalStatus = (animal) => {
-    const temp = parseFloat(animal.baseline_temperature) || 38.5;
-    if (temp > 39.5) return 'critical';
-    if (temp > 39) return 'warning';
+    const device = animal.device;
+    if (!device) return 'healthy';
+    const lastPing = device.last_ping ? new Date(device.last_ping) : null;
+    const hoursSincePing = lastPing ? (Date.now() - lastPing) / 3600000 : Infinity;
+    const battery = parseInt(device.battery_level) || 100;
+    if (hoursSincePing > 24 || battery < 10) return 'critical';
+    if (hoursSincePing > 6 || battery < 30) return 'warning';
     return 'healthy';
   };
 
@@ -393,7 +397,7 @@ export default function MapView() {
     if (positions.length > 0) return positions[positions.length - 1];
     
     const animal = animals.find(a => a.id === animalId);
-    if (animal?.device?.gps_lat && animal?.device?.gps_lng) {
+    if (animal && hasGpsData(animal)) {
       return [parseFloat(animal.device.gps_lat), parseFloat(animal.device.gps_lng)];
     }
     return null;
@@ -440,14 +444,23 @@ export default function MapView() {
     return false;
   };
 
-  const hasAnyLocation = (animal) => {
-    const pathPositions = getPathPositions(animal.id);
-    if (pathPositions.length > 0) return true;
-    return animal.device?.gps_lat && animal.device?.gps_lng;
+  const hasGpsData = (animal) => {
+    const lat = parseFloat(animal.device?.gps_lat);
+    const lng = parseFloat(animal.device?.gps_lng);
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
   };
 
-  const animalsWithPaths = animals.filter(a => (a.device?.device_id || a.device_id) && (hasAnyLocation(a) || (a.device?.gps_lat && a.device?.gps_lng)));
-  const animalsWithoutPaths = animals.filter(a => !(a.device?.device_id || a.device_id) || (!hasAnyLocation(a) && (!a.device?.gps_lat || !a.device?.gps_lng)));
+  const hasPathData = (animal) => getPathPositions(animal.id).length > 0;
+
+  const roleFilteredAnimals = animals.filter(a => {
+    if (user?.role === 'Admin') return true;
+    if (user?.role === 'Owner') return a.owner_id === user?.id;
+    if (user?.role === 'Manager') return a.owner_id === user?.id || animals.some(x => x.owner_id === a.owner_id && x.owner?.managed_by === user?.id);
+    return true;
+  });
+
+  const animalsWithPaths = roleFilteredAnimals.filter(a => a.device?.device_id && (hasPathData(a) || hasGpsData(a)));
+  const animalsWithoutPaths = roleFilteredAnimals.filter(a => !a.device?.device_id);
 
   const filteredAnimals = [...animalsWithPaths, ...animalsWithoutPaths].filter(animal => {
     const matchesSearch = searchQuery === '' || 
@@ -905,9 +918,9 @@ export default function MapView() {
                 eventHandlers={{ click: () => { setSelectedAnimal(animal); setZoomPosition(position); } }}
               >
                 <Popup>
-                  <div className="p-3 min-w-[200px]">
+                  <div className="p-3 min-w-[220px]">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-[#002819]">{animal.animal_id}</h3>
+                      <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 ${
                         isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                       }`}>
@@ -915,20 +928,38 @@ export default function MapView() {
                         {isOnline(animal.id) ? 'Live' : 'Offline'}
                       </span>
                     </div>
-                    <p className="text-xs text-[#404943] mt-1">{animal.species} {animal.breed && `• ${animal.breed}`}</p>
-                    <p className="text-xs text-[#717973] mt-1">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
+                    <p className="text-[10px] text-[#717973] mt-0.5">{animal.animal_id}</p>
+                    <p className="text-xs text-[#404943] mt-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}</p>
+                    <p className="text-xs text-[#717973]">Owner: {animal.owner?.name || animal.owner_name || 'N/A'}</p>
+                    <p className="text-xs text-[#717973]">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Temp</span>
-                        <p className={`font-bold ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
-                          {animal.baseline_temperature || 'N/A'}°C
-                        </p>
+                        <span className="text-[#717973]">Device</span>
+                        <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
                       </div>
                       <div className="bg-gray-50 p-2 rounded">
-                        <span className="text-[#717973]">Points</span>
-                        <p className="font-bold text-[#002819]">{getPathPositions(animal.id).length || (getLastLocation(animal.id) ? 1 : 0)}</p>
+                        <span className="text-[#717973]">Battery</span>
+                        <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                          {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
+                        </p>
                       </div>
                     </div>
+                    <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-gray-50 p-2 rounded">
+                        <span className="text-[#717973]">Weight</span>
+                        <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded">
+                        <span className="text-[#717973]">Temp</span>
+                        <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
+                      </div>
+                    </div>
+                    {animal.geofences?.length > 0 && (
+                      <div className="mt-1.5 text-xs">
+                        <span className="text-[#717973]">Geofences: </span>
+                        <span className="text-[#002819] font-medium">{animal.geofences.map(g => g.name).join(', ')}</span>
+                      </div>
+                    )}
                     <div className="mt-2 flex gap-2">
                       <Link to={`/animals/${animal.id}`} className="flex-1 text-center text-xs bg-[#002819] text-white py-1.5 rounded font-bold hover:bg-[#06402b]">
                         View Details

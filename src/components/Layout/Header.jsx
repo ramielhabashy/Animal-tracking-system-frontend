@@ -67,12 +67,17 @@ export default function Header() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await apiFetch('/api/geofence-alerts?per_page=10');
-      if (res.ok) {
-        const data = await res.json();
-        const alerts = data.data || [];
-        setNotifications(alerts);
-        setUnreadCount(alerts.filter(a => !a.is_acknowledged).length);
+      const [notifRes, unreadRes] = await Promise.all([
+        apiFetch('/api/notifications?unread_only=true&per_page=10'),
+        apiFetch('/api/notifications/unread-count'),
+      ]);
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        setNotifications(data.data || []);
+      }
+      if (unreadRes.ok) {
+        const data = await unreadRes.json();
+        setUnreadCount(data.count || 0);
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -192,34 +197,62 @@ export default function Header() {
           {showNotifications && (
             <div className={`absolute mt-3 w-96 bg-white rounded-2xl shadow-[0_12px_32px_rgba(6,64,43,0.12)] p-5 ${isRtl ? 'left-0 origin-top-left' : 'right-0 origin-top-right'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-[#002819] text-lg">{t('alerts.title')}</h4>
-                <Link to="/alerts" onClick={() => setShowNotifications(false)} className="text-sm text-[#D4AF37] hover:underline">
-                  View All
-                </Link>
+                <h4 className="font-bold text-[#002819] text-lg">{t('common.notifications') || 'Notifications'}</h4>
+                <button onClick={async () => { await apiFetch('/api/notifications/read-all', { method: 'POST' }); fetchNotifications(); }} className="text-xs text-[#717973] hover:text-[#002819]">
+                  {t('common.markAllRead') || 'Mark all read'}
+                </button>
               </div>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <p className="text-sm text-[#717973] text-center py-4">No notifications</p>
-                ) : (
-                  notifications.slice(0, 5).map((alert) => (
-                    <div key={alert.id} className={`flex items-start gap-3 p-3 rounded-xl hover:bg-[#F4F4EF] transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${alert.type === 'exit' ? 'bg-[#BA1A1A]/10' : 'bg-[#D4AF37]/15'}`}>
-                        <MaterialSymbol icon={alert.type === 'exit' ? 'exit_to_app' : 'login'} size={18} className={alert.type === 'exit' ? 'text-[#BA1A1A]' : 'text-[#735C00]'} />
-                      </div>
-                      <div className={`flex-1 ${isRtl ? 'text-right' : ''}`}>
-                        <p className="text-sm font-semibold text-[#002819]">
-                          {alert.animal?.animal_id} - {alert.type === 'entry' ? 'Entered' : 'Exited'}
-                        </p>
-                        <p className="text-xs text-[#717973] mt-0.5">{alert.geofence?.name || 'Geofence'}</p>
-                        <p className="text-[10px] text-[#717973] mt-1">{new Date(alert.triggered_at).toLocaleString()}</p>
-                      </div>
-                      {!alert.is_acknowledged && (
-                        <span className="w-2 h-2 bg-[#D4AF37] rounded-full" />
-                      )}
-                    </div>
-                  ))
-                )}
+                  <p className="text-sm text-[#717973] text-center py-4">{t('common.noNotifications') || 'No notifications'}</p>
+                 ) : (
+                   notifications.slice(0, 5).map((n) => {
+                     const icons = { task_assigned: 'assignment', medical_record_added: 'vaccines', subscription_expiring: 'timer', task_completed: 'check_circle', geofence_alert: 'warning' };
+                     const colors = { 
+                       task_assigned: 'bg-blue-100 text-blue-600', 
+                       medical_record_added: 'bg-emerald-100 text-emerald-600', 
+                       subscription_expiring: 'bg-amber-100 text-amber-600',
+                       task_completed: 'bg-green-100 text-green-600',
+                       geofence_alert: 'bg-red-100 text-red-600'
+                     };
+                     const handleNotificationClick = () => {
+                       setShowNotifications(false);
+                       apiFetch(`/api/notifications/${n.id}/read`, { method: 'PATCH' }).then(fetchNotifications);
+                       if (n.data?.link) {
+                         navigate(n.data.link);
+                       }
+                     };
+                     return (
+                       <div key={n.id} 
+                         onClick={handleNotificationClick}
+                         className={`flex items-start gap-3 p-3 rounded-xl hover:bg-[#F4F4EF] transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse' : ''} ${n.read_at ? 'opacity-60' : ''}`}>
+                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[n.type] || 'bg-[#D4AF37]/15 text-[#735C00]'}`}>
+                           <MaterialSymbol icon={icons[n.type] || 'notifications'} size={18} />
+                         </div>
+                         <div className={`flex-1 min-w-0 ${isRtl ? 'text-right' : ''}`}>
+                           <p className="text-sm font-semibold text-[#002819]">{n.title}</p>
+                           <p className="text-xs text-[#717973] mt-0.5 line-clamp-2">{n.body}</p>
+                           <p className="text-[10px] text-[#717973] mt-1">{new Date(n.created_at).toLocaleDateString()}</p>
+                         </div>
+                         {!n.read_at && (
+                           <button
+                             onClick={async (e) => { e.stopPropagation(); await apiFetch(`/api/notifications/${n.id}/read`, { method: 'PATCH' }); fetchNotifications(); }}
+                             className="p-1 hover:bg-gray-100 rounded text-[#717973]"
+                             title="Mark read"
+                           >
+                             <MaterialSymbol icon="check" size={14} />
+                           </button>
+                         )}
+                       </div>
+                     );
+                   })
+                 )}
               </div>
+              {notifications.length > 5 && (
+                <Link to="/notifications" onClick={() => setShowNotifications(false)} className="block text-center text-sm text-[#D4AF37] hover:underline mt-3">
+                  {t('common.viewAll') || 'View all'}
+                </Link>
+              )}
             </div>
           )}
         </div>

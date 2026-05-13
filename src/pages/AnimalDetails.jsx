@@ -59,7 +59,7 @@ export default function AnimalDetails() {
       const res = await apiFetch('/api/users?per_page=100');
       if (res.ok) {
         const data = await res.json();
-        const owners = (data.data || []).filter(u => u.role === 'Owner');
+        const owners = (data.data || []).filter(u => u.role === 'Owner' || u.role === 'Admin');
         setUsers(owners);
       }
     } catch (error) {

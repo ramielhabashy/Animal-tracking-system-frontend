@@ -111,7 +111,7 @@ function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' 
 
 export default function SubscriptionsPage() {
   const { user } = useAuth();
-  const { t, dir } = useI18n();
+  const { t, dir, locale } = useI18n();
   const isRtl = dir === 'rtl';
   const [tiers, setTiers] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState(null);
@@ -126,6 +126,13 @@ export default function SubscriptionsPage() {
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
   const isAdmin = user?.role === 'Admin';
 
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [pendingTierChanges, setPendingTierChanges] = useState({});
+  const [editingSubscriber, setEditingSubscriber] = useState(null);
+  const [showSubscriberModal, setShowSubscriberModal] = useState(false);
+  const [paymentMethodInput, setPaymentMethodInput] = useState('');
+  const [paymentRefInput, setPaymentRefInput] = useState('');
+
   const [activeTab, setActiveTab] = useState('plans');
 
   const [statusFilter, setStatusFilter] = useState('All');
@@ -135,8 +142,32 @@ export default function SubscriptionsPage() {
   const [sortDir, setSortDir] = useState('asc');
 
   const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('All');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('All');
+  const [paymentDateFilter, setPaymentDateFilter] = useState('All');
+  const [paymentSortField, setPaymentSortField] = useState(null);
+  const [paymentSortDir, setPaymentSortDir] = useState('asc');
+  const [selectedSubs, setSelectedSubs] = useState([]);
+  const [selectedPayments, setSelectedPayments] = useState([]);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false);
+  const [bankTransferFile, setBankTransferFile] = useState(null);
+  const [bankTransferLoading, setBankTransferLoading] = useState(false);
+  const [ownerPaymentMethod, setOwnerPaymentMethod] = useState('');
+  const [ownerPaymentRef, setOwnerPaymentRef] = useState('');
+
+  const [showPlanPaymentModal, setShowPlanPaymentModal] = useState(false);
+  const [planTargetTier, setPlanTargetTier] = useState(null);
+  const [planAction, setPlanAction] = useState('upgrade');
+  const [planPaymentMethod, setPlanPaymentMethod] = useState('card');
+  const [planCardNumber, setPlanCardNumber] = useState('');
+  const [planCardExpiry, setPlanCardExpiry] = useState('');
+  const [planCardCvc, setPlanCardCvc] = useState('');
+  const [planTransferFile, setPlanTransferFile] = useState(null);
+  const [planProcessing, setPlanProcessing] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -147,7 +178,17 @@ export default function SubscriptionsPage() {
     if (isAdmin && activeTab === 'reports') {
       fetchStats();
     }
-  }, [activeTab]);
+    if (isAdmin && activeTab === 'subscribers') {
+      fetchPendingPayments();
+    }
+    if (!isAdmin && activeTab === 'billing') {
+      fetchPaymentHistory();
+      if (currentSubscription) {
+        setOwnerPaymentMethod(currentSubscription.payment_method || '');
+        setOwnerPaymentRef(currentSubscription.payment_reference || '');
+      }
+    }
+  }, [activeTab, currentSubscription]);
 
   const fetchStats = async () => {
     setStatsLoading(true);
@@ -233,6 +274,73 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const fetchPendingPayments = async () => {
+    try {
+      const res = await apiFetch('/api/subscription/admin/pending-payments');
+      if (res.ok) {
+        const data = await res.json();
+        setPendingPayments(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending payments:', error);
+    }
+  };
+
+  const handleApprovePayment = async (subscription) => {
+    if (!confirm(`Approve payment for ${subscription.user?.name || 'this user'}?`)) return;
+    try {
+      const res = await apiFetch(`/api/subscription/admin/approve-payment/${subscription.id}`, { method: 'POST' });
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Payment approved, subscription activated' });
+        fetchData();
+        fetchPendingPayments();
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to approve payment' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to approve payment' });
+    }
+  };
+
+  const handleRejectPayment = async (subscription) => {
+    if (!confirm(`Reject payment from ${subscription.user?.name || 'this user'}?`)) return;
+    try {
+      const res = await apiFetch(`/api/subscription/admin/reject-payment/${subscription.id}`, { method: 'POST' });
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Payment rejected' });
+        fetchData();
+        fetchPendingPayments();
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to reject payment' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to reject payment' });
+    }
+  };
+
+  const handleAdminSetTier = async (userId, tierId) => {
+    if (!confirm('Change this user\'s subscription tier?')) return;
+
+    try {
+      const response = await apiFetch(`/api/subscription/admin/set-tier/${userId}/${tierId}`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Subscription tier updated successfully' });
+        setPendingTierChanges(prev => ({ ...prev, [userId]: null }));
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to update tier' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update tier' });
+    }
+  };
+
   const handleSubscribe = async (tier) => {
     if (!confirm(`Subscribe to ${tier.name} plan?`)) return;
 
@@ -255,6 +363,198 @@ export default function SubscriptionsPage() {
       setMessage({ type: 'error', text: 'Failed to subscribe' });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const fetchPaymentHistory = async () => {
+    setPaymentHistoryLoading(true);
+    try {
+      const res = await apiFetch('/api/subscription/history');
+      if (res.ok) {
+        const data = await res.json();
+        setPaymentHistory(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment history:', error);
+    } finally {
+      setPaymentHistoryLoading(false);
+    }
+  };
+
+  const handleRenew = async () => {
+    if (!confirm('Renew your subscription for the next billing period?')) return;
+    setActionLoading('renew');
+    setMessage(null);
+    try {
+      const response = await apiFetch('/api/subscription/renew', { method: 'POST' });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Subscription renewed successfully' });
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to renew' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to renew subscription' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleOwnerReactivate = async () => {
+    if (!confirm('Reactivate your subscription?')) return;
+    setActionLoading('reactivate');
+    setMessage(null);
+    try {
+      const response = await apiFetch('/api/subscription/reactivate', { method: 'POST' });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Subscription reactivated successfully' });
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to reactivate' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to reactivate subscription' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBankTransferUpload = async () => {
+    if (!bankTransferFile) {
+      setMessage({ type: 'error', text: 'Please select a PDF file to upload' });
+      return;
+    }
+    if (!currentSubscription?.tier?.id) {
+      setMessage({ type: 'error', text: 'No active subscription found' });
+      return;
+    }
+    setBankTransferLoading(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append('tier_id', currentSubscription.tier.id);
+      formData.append('payment_proof', bankTransferFile);
+      const response = await apiFetch('/api/subscription/bank-transfer', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Bank transfer proof uploaded. Awaiting admin approval.' });
+        setBankTransferFile(null);
+        fetchData();
+        fetchPaymentHistory();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Upload failed' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to upload bank transfer proof' });
+    } finally {
+      setBankTransferLoading(false);
+    }
+  };
+
+  const handleOwnerUpdatePaymentInfo = async () => {
+    if (!currentSubscription?.id) {
+      setMessage({ type: 'error', text: 'No subscription record found' });
+      return;
+    }
+    try {
+      const response = await apiFetch(`/api/subscription/admin/update/${currentSubscription.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_method: ownerPaymentMethod || null,
+          payment_reference: ownerPaymentRef || null,
+        }),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Payment info updated successfully' });
+        fetchData();
+      } else {
+        const d = await response.json();
+        setMessage({ type: 'error', text: d.message || 'Failed to update' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to update payment info' });
+    }
+  };
+
+  const openPlanPaymentModal = (tier, action) => {
+    setPlanTargetTier(tier);
+    setPlanAction(action);
+    setPlanPaymentMethod('card');
+    setPlanCardNumber('');
+    setPlanCardExpiry('');
+    setPlanCardCvc('');
+    setPlanTransferFile(null);
+    setMessage(null);
+    setShowPlanPaymentModal(true);
+  };
+
+  const handlePlanCardPayment = async () => {
+    if (!planCardNumber || !planCardExpiry || !planCardCvc) {
+      setMessage({ type: 'error', text: 'Please fill all card details' });
+      return;
+    }
+    setPlanProcessing(true);
+    setMessage(null);
+    try {
+      const paymentRes = await apiFetch('/api/subscription/process-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier_id: planTargetTier.id,
+          card_number: planCardNumber,
+          expiry: planCardExpiry,
+          cvc: planCardCvc,
+        }),
+      });
+      if (paymentRes.ok) {
+        setMessage({ type: 'success', text: `Payment successful! ${planAction === 'upgrade' ? 'Upgraded' : 'Downgraded'} to ${planTargetTier.name}.` });
+        setShowPlanPaymentModal(false);
+        fetchData();
+      } else {
+        const d = await paymentRes.json();
+        setMessage({ type: 'error', text: d.message || 'Payment failed' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Payment processing error' });
+    } finally {
+      setPlanProcessing(false);
+    }
+  };
+
+  const handlePlanBankTransfer = async () => {
+    if (!planTransferFile) {
+      setMessage({ type: 'error', text: 'Please select a PDF proof of payment' });
+      return;
+    }
+    setPlanProcessing(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append('tier_id', planTargetTier.id);
+      formData.append('payment_proof', planTransferFile);
+      formData.append('payment_method', 'bank_transfer');
+      const btRes = await apiFetch('/api/subscription/bank-transfer', {
+        method: 'POST',
+        body: formData,
+      });
+      if (btRes.ok) {
+        setMessage({ type: 'success', text: `Bank transfer proof submitted. Awaiting admin approval for ${planAction} to ${planTargetTier.name}.` });
+        setShowPlanPaymentModal(false);
+        fetchData();
+      } else {
+        const d = await btRes.json();
+        setMessage({ type: 'error', text: d.message || 'Bank transfer upload failed' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Upload error' });
+    } finally {
+      setPlanProcessing(false);
     }
   };
 
@@ -333,23 +633,95 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const handleAdminSetTier = async (userId, tierId) => {
-    if (!confirm('Change this user\'s subscription tier?')) return;
-
+  const handlePauseSubscription = async (userId) => {
+    if (!confirm('Pause this subscription?')) return;
     try {
-      const response = await apiFetch(`/api/subscription/admin/set-tier/${userId}/${tierId}`, {
-        method: 'POST',
-      });
-
+      const response = await apiFetch(`/api/subscription/admin/pause/${userId}`, { method: 'POST' });
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Subscription tier updated successfully' });
+        setMessage({ type: 'success', text: 'Subscription paused successfully' });
         fetchData();
       } else {
         const data = await response.json();
-        setMessage({ type: 'error', text: data.message || 'Failed to update tier' });
+        setMessage({ type: 'error', text: data.message || 'Failed to pause' });
       }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update tier' });
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to pause subscription' });
+    }
+  };
+
+  const handleReactivateSubscription = async (userId) => {
+    if (!confirm('Reactivate this subscription?')) return;
+    try {
+      const response = await apiFetch(`/api/subscription/admin/reactivate/${userId}`, { method: 'POST' });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Subscription reactivated successfully' });
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to reactivate' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to reactivate subscription' });
+    }
+  };
+
+  const handleCancelSubscription = async (userId) => {
+    if (!confirm('Cancel this subscription? User will be moved to Free tier.')) return;
+    try {
+      const response = await apiFetch(`/api/subscription/admin/cancel/${userId}`, { method: 'POST' });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Subscription cancelled successfully' });
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to cancel' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to cancel subscription' });
+    }
+  };
+
+  const handleUpdatePaymentInfo = async (subscriptionId, data) => {
+    if (!subscriptionId) {
+      setMessage({ type: 'error', text: 'No subscription record found for this user' });
+      return;
+    }
+    try {
+      const response = await apiFetch(`/api/subscription/admin/update/${subscriptionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Payment info updated successfully' });
+        fetchData();
+      } else {
+        const d = await response.json();
+        setMessage({ type: 'error', text: d.message || 'Failed to update payment info' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to update payment info' });
+    }
+  };
+
+  const handleChangeBillingCycle = async (subId, currentCycle) => {
+    const newCycle = currentCycle === 'yearly' ? 'monthly' : 'yearly';
+    if (!confirm(`Change billing cycle to ${newCycle}?`)) return;
+    try {
+      const response = await apiFetch(`/api/subscription/admin/billing-cycle/${subId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billing_cycle: newCycle }),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: `Billing cycle changed to ${newCycle}` });
+        fetchData();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to change billing cycle' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to change billing cycle' });
     }
   };
 
@@ -451,6 +823,111 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const handlePaymentSort = (field) => {
+    if (paymentSortField === field) {
+      setPaymentSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setPaymentSortField(field);
+      setPaymentSortDir('asc');
+    }
+  };
+
+  const exportToCsv = (data, filename, columns) => {
+    const header = columns.map(c => `"${c.label}"`).join(',');
+    const rows = data.map(row =>
+      columns.map(c => `"${(c.accessor(row) ?? '').toString().replace(/"/g, '""')}"`).join(',')
+    );
+    const csv = [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleBulkCancel = async () => {
+    if (!confirm(`Cancel subscriptions for ${selectedSubs.length} selected user(s)?`)) return;
+    for (const userId of selectedSubs) {
+      await apiFetch(`/api/subscription/admin/cancel/${userId}`, { method: 'POST' });
+    }
+    setMessage({ type: 'success', text: `${selectedSubs.length} subscription(s) cancelled` });
+    setSelectedSubs([]);
+    fetchData();
+  };
+
+  const handleBulkPause = async () => {
+    if (!confirm(`Pause subscriptions for ${selectedSubs.length} selected user(s)?`)) return;
+    for (const userId of selectedSubs) {
+      await apiFetch(`/api/subscription/admin/pause/${userId}`, { method: 'POST' });
+    }
+    setMessage({ type: 'success', text: `${selectedSubs.length} subscription(s) paused` });
+    setSelectedSubs([]);
+    fetchData();
+  };
+
+  const handleBulkReactivate = async () => {
+    if (!confirm(`Reactivate subscriptions for ${selectedSubs.length} selected user(s)?`)) return;
+    for (const userId of selectedSubs) {
+      await apiFetch(`/api/subscription/admin/reactivate/${userId}`, { method: 'POST' });
+    }
+    setMessage({ type: 'success', text: `${selectedSubs.length} subscription(s) reactivated` });
+    setSelectedSubs([]);
+    fetchData();
+  };
+
+  const handleBulkExportSubs = () => {
+    exportToCsv(sortedSubscriptions, 'subscribers-export.csv', [
+      { label: 'Name', accessor: r => r.user?.name || '' },
+      { label: 'Email', accessor: r => r.user?.email || '' },
+      { label: 'Tier', accessor: r => r.tier?.name || '' },
+      { label: 'Status', accessor: r => r.status || '' },
+      { label: 'Billing Cycle', accessor: r => r.billing_cycle || '' },
+      { label: 'Payment Method', accessor: r => r.payment_method || '' },
+      { label: 'Start Date', accessor: r => formatDate(r.started_at || r.created_at) },
+      { label: 'Renewal Date', accessor: r => formatDate(r.ends_at || r.renewal_at || r.next_billing_date) },
+      { label: 'Animals Used', accessor: r => r.usage?.animals?.used ?? 0 },
+      { label: 'Animals Max', accessor: r => r.usage?.animals?.max ?? 0 },
+      { label: 'Devices Used', accessor: r => r.usage?.devices?.used ?? 0 },
+      { label: 'Devices Max', accessor: r => r.usage?.devices?.max ?? 0 },
+      { label: 'Team Used', accessor: r => r.usage?.team?.used ?? 0 },
+      { label: 'Team Max', accessor: r => r.usage?.team?.max ?? 0 },
+    ]);
+  };
+
+  const handleBulkExportPayments = () => {
+    const filtered = allSubscriptions.filter(sub => {
+      if (paymentMethodFilter !== 'All' && sub.payment_method !== paymentMethodFilter) return false;
+      if (paymentStatusFilter !== 'All' && sub.status !== paymentStatusFilter) return false;
+      if (paymentDateFilter !== 'All') {
+        const days = parseInt(paymentDateFilter);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const subDate = new Date(sub.created_at || sub.started_at);
+        if (subDate < cutoff) return false;
+      }
+      if (paymentSearch) {
+        const q = paymentSearch.toLowerCase();
+        const name = sub.user?.name?.toLowerCase() || '';
+        const email = sub.user?.email?.toLowerCase() || '';
+        if (!name.includes(q) && !email.includes(q)) return false;
+      }
+      return true;
+    });
+    exportToCsv(filtered, 'payments-export.csv', [
+      { label: 'Owner', accessor: r => r.user?.name || '' },
+      { label: 'Email', accessor: r => r.user?.email || '' },
+      { label: 'Plan', accessor: r => r.tier?.name || '' },
+      { label: 'Amount', accessor: r => r.tier?.price_monthly ? formatCurrency(r.tier.price_monthly) : '' },
+      { label: 'Payment Method', accessor: r => r.payment_method || '' },
+      { label: 'Reference', accessor: r => r.payment_reference || '' },
+      { label: 'Status', accessor: r => r.status || '' },
+      { label: 'Start Date', accessor: r => formatDate(r.started_at || r.created_at) },
+      { label: 'Renewal Date', accessor: r => formatDate(r.ends_at || r.renewal_at || r.next_billing_date) },
+    ]);
+  };
+
   const getDateRangeStart = () => {
     if (dateRangeFilter === 'All') return null;
     const days = parseInt(dateRangeFilter);
@@ -463,8 +940,9 @@ export default function SubscriptionsPage() {
     if (statusFilter !== 'All' && sub.status !== statusFilter) return false;
     if (tierFilter !== 'All' && sub.tier?.name !== tierFilter && sub.tier?.slug !== tierFilter) return false;
     const rangeStart = getDateRangeStart();
-    if (rangeStart && sub.created_at) {
-      const subDate = new Date(sub.created_at);
+    const subDateVal = sub.created_at || sub.started_at;
+    if (rangeStart && subDateVal) {
+      const subDate = new Date(subDateVal);
       if (subDate < rangeStart) return false;
     }
     if (subscriberSearch) {
@@ -493,12 +971,12 @@ export default function SubscriptionsPage() {
         bVal = b.status || '';
         break;
       case 'start_date':
-        aVal = a.created_at || '';
-        bVal = b.created_at || '';
+        aVal = a.created_at || a.started_at || '';
+        bVal = b.created_at || b.started_at || '';
         break;
       case 'renewal_date':
-        aVal = a.renewal_at || '';
-        bVal = b.renewal_at || '';
+        aVal = a.renewal_at || a.ends_at || '';
+        bVal = b.renewal_at || b.ends_at || '';
         break;
       case 'billing_cycle':
         aVal = a.billing_cycle || '';
@@ -523,10 +1001,17 @@ export default function SubscriptionsPage() {
     );
   };
 
+  const normalizeStatus = (status) => {
+    if (status === 'changed_by_admin') return 'cancelled';
+    return status;
+  };
+
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'active': return 'bg-emerald-100 text-emerald-700';
-      case 'cancelled': return 'bg-red-100 text-red-700';
+      case 'paused': return 'bg-sky-100 text-sky-700';
+      case 'cancelled':
+      case 'changed_by_admin': return 'bg-red-100 text-red-700';
       case 'pending_payment': return 'bg-amber-100 text-amber-700';
       case 'past_due': return 'bg-orange-100 text-orange-700';
       default: return 'bg-gray-100 text-gray-700';
@@ -546,6 +1031,15 @@ export default function SubscriptionsPage() {
   const formatCurrency = (amount) => {
     if (amount == null) return '-';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      return new Date(dateStr).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US');
+    } catch {
+      return '-';
+    }
   };
 
   if (loading) {
@@ -598,6 +1092,18 @@ export default function SubscriptionsPage() {
         >
           Plans
         </button>
+        {!isAdmin && (
+          <button
+            onClick={() => setActiveTab('billing')}
+            className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
+              activeTab === 'billing'
+                ? 'border-[#002819] text-[#002819]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Billing
+          </button>
+        )}
         {isAdmin && (
           <button
             onClick={() => setActiveTab('subscribers')}
@@ -608,6 +1114,18 @@ export default function SubscriptionsPage() {
             }`}
           >
             Subscribers
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('payments')}
+            className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
+              activeTab === 'payments'
+                ? 'border-[#002819] text-[#002819]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Payments
           </button>
         )}
         {isAdmin && (
@@ -628,7 +1146,7 @@ export default function SubscriptionsPage() {
       {activeTab === 'plans' && (
         <>
           {/* Current Usage */}
-          {currentSubscription && limits && (
+          {!isAdmin && currentSubscription && limits && (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-bold text-[#002819] mb-4">Current Usage</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -662,7 +1180,7 @@ export default function SubscriptionsPage() {
                 <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-sm text-amber-800">
                     <MaterialSymbol icon="info" size={16} className="inline mr-1" />
-                    Trial period ends on {new Date(currentSubscription.trial_ends_at).toLocaleDateString()}
+                    Trial period ends on {formatDate(currentSubscription.trial_ends_at)}
                   </p>
                 </div>
               )}
@@ -670,6 +1188,7 @@ export default function SubscriptionsPage() {
           )}
 
           {/* Pricing Cards */}
+          {!isAdmin && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tiers.map((tier, index) => {
               const isCurrentTier = currentSubscription?.tier?.id === tier.id;
@@ -739,19 +1258,7 @@ export default function SubscriptionsPage() {
                   </ul>
 
                   <div className="space-y-2">
-                    {isCurrentTier ? (
-                      <>
-                        {currentSubscription && !isFree && (
-                          <button
-                            onClick={handleCancel}
-                            disabled={actionLoading === 'cancel'}
-                            className="w-full py-3 border border-red-200 text-red-600 rounded-xl font-bold text-sm hover:bg-red-50 transition-colors disabled:opacity-50"
-                          >
-                            {actionLoading === 'cancel' ? 'Cancelling...' : 'Cancel Subscription'}
-                          </button>
-                        )}
-                      </>
-                    ) : isLowerTier ? (
+                    {isCurrentTier ? null : isLowerTier ? (
                       <button
                         onClick={() => handleDowngrade(tier)}
                         disabled={actionLoading === tier.id}
@@ -761,7 +1268,7 @@ export default function SubscriptionsPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => isCurrentTier ? null : handleUpgrade(tier)}
+                        onClick={() => isCurrentTier ? null : (isFree || !currentSubscription ? handleUpgrade(tier) : openPlanPaymentModal(tier, 'upgrade'))}
                         disabled={actionLoading === tier.id}
                         className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
                       >
@@ -773,6 +1280,7 @@ export default function SubscriptionsPage() {
               );
             })}
           </div>
+          )}
 
           {/* Admin Section - Tier Management only on Plans tab */}
           {isAdmin && (
@@ -854,11 +1362,93 @@ export default function SubscriptionsPage() {
       {/* Subscribers Tab */}
       {activeTab === 'subscribers' && isAdmin && (
         <div className="space-y-6">
+          {/* Pending Payments Section */}
+          {pendingPayments.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <MaterialSymbol icon="hourglass_bottom" size={20} className="text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-amber-800">Pending Payment Approvals</h3>
+                  <p className="text-sm text-amber-600">{pendingPayments.length} subscription{pendingPayments.length !== 1 ? 's' : ''} awaiting review</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-amber-200">
+                      <th className="text-start py-2 px-3 text-xs font-bold text-amber-700 uppercase">User</th>
+                      <th className="text-start py-2 px-3 text-xs font-bold text-amber-700 uppercase">Tier</th>
+                      <th className="text-start py-2 px-3 text-xs font-bold text-amber-700 uppercase">Proof</th>
+                      <th className="text-start py-2 px-3 text-xs font-bold text-amber-700 uppercase">Date</th>
+                      <th className="text-start py-2 px-3 text-xs font-bold text-amber-700 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingPayments.map((sub) => (
+                      <tr key={sub.id} className="border-b border-amber-100 hover:bg-amber-50/50">
+                        <td className="py-2 px-3">
+                          <span className="font-medium text-amber-900 text-sm">{sub.user?.name || 'Unknown'}</span>
+                          <span className="text-xs text-amber-600 block">{sub.user?.email}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className="text-sm font-semibold text-amber-800">{sub.tier?.name || 'N/A'}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          {sub.payment_reference ? (
+                            <a
+                              href={sub.payment_reference}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              <MaterialSymbol icon="description" size={14} />
+                              View Proof
+                            </a>
+                          ) : <span className="text-xs text-amber-500">No file</span>}
+                        </td>
+                        <td className="py-2 px-3 text-xs text-amber-700">
+                          {formatDate(sub.created_at)}
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleApprovePayment(sub)}
+                              className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors"
+                            >
+                              <MaterialSymbol icon="check" size={14} className="inline mr-1" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectPayment(sub)}
+                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition-colors"
+                            >
+                              <MaterialSymbol icon="close" size={14} className="inline mr-1" />
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Summary Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Owners</p>
-              <p className="text-2xl font-bold text-[#002819]">{allSubscriptions.length}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {sortedSubscriptions.length === allSubscriptions.length ? 'Total Owners' : 'Showing'}
+              </p>
+              <p className="text-2xl font-bold text-[#002819]">
+                {sortedSubscriptions.length}
+                {sortedSubscriptions.length !== allSubscriptions.length && (
+                  <span className="text-sm font-normal text-gray-400 ml-1">/ {allSubscriptions.length}</span>
+                )}
+              </p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Devices</p>
@@ -871,6 +1461,12 @@ export default function SubscriptionsPage() {
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Team</p>
               <p className="text-2xl font-bold text-purple-600">{allSubscriptions.reduce((s, sub) => s + (sub.usage?.team?.used || 0), 0)}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending</p>
+              <p className={`text-2xl font-bold ${pendingPayments.length > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                {pendingPayments.length}
+              </p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">MRR</p>
@@ -893,17 +1489,18 @@ export default function SubscriptionsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-gray-600 uppercase">Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
-                >
-                  <option value="All">All</option>
-                  <option value="active">Active</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="pending_payment">Pending Payment</option>
-                  <option value="past_due">Past Due</option>
-                </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                  >
+                    <option value="All">All</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="pending_payment">Pending Payment</option>
+                    <option value="past_due">Past Due</option>
+                  </select>
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-gray-600 uppercase">Tier</label>
@@ -939,10 +1536,33 @@ export default function SubscriptionsPage() {
 
           {/* Data Table */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#002819]">All Subscribers</h3>
+              <div className="flex items-center gap-2">
+                {selectedSubs.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500 mr-2">{selectedSubs.length} selected</span>
+                    <button onClick={handleBulkPause} className="px-2 py-1 text-xs font-bold text-sky-600 border border-sky-200 rounded-lg hover:bg-sky-50">Pause</button>
+                    <button onClick={handleBulkReactivate} className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50">Reactivate</button>
+                    <button onClick={handleBulkCancel} className="px-2 py-1 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-50">Cancel</button>
+                  </div>
+                )}
+                <button onClick={handleBulkExportSubs} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+                  <MaterialSymbol icon="download" size={14} />
+                  Export CSV
+                </button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
+                    <th className="text-start py-3 px-2 text-sm">
+                      <input type="checkbox"
+                        checked={selectedSubs.length > 0 && selectedSubs.length === sortedSubscriptions.length}
+                        onChange={(e) => { if (e.target.checked) { setSelectedSubs(sortedSubscriptions.map(s => s.user_id)); } else { setSelectedSubs([]); } }}
+                        className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]" />
+                    </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('user')}>
                       <div className="flex items-center">
                         User
@@ -951,39 +1571,39 @@ export default function SubscriptionsPage() {
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('tier')}>
                       <div className="flex items-center">
-                        Tier
+                        {t('team.tier') || 'Tier'}
                         <SortIcon field="tier" />
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('status')}>
                       <div className="flex items-center">
-                        Status
+                        {t('common.status') || 'Status'}
                         <SortIcon field="status" />
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('start_date')}>
                       <div className="flex items-center">
-                        Start Date
+                        {t('subscription.startDate')}
                         <SortIcon field="start_date" />
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('renewal_date')}>
                       <div className="flex items-center">
-                        Renewal Date
+                        {t('subscription.renewalDate')}
                         <SortIcon field="renewal_date" />
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('billing_cycle')}>
                       <div className="flex items-center">
-                        Billing
+                        {t('subscription.billing')}
                         <SortIcon field="billing_cycle" />
                       </div>
                     </th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Devices</th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Animals</th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Team</th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Payment</th>
-                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Actions</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">{t('subscription.devices')}</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">{t('subscription.animals')}</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">{t('subscription.team')}</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">{t('subscription.payment')}</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">{t('subscription.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -994,6 +1614,12 @@ export default function SubscriptionsPage() {
                     const team = usage.team || {};
                     return (
                     <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-2">
+                        <input type="checkbox"
+                          checked={selectedSubs.includes(sub.user_id)}
+                          onChange={(e) => { if (e.target.checked) { setSelectedSubs(prev => [...prev, sub.user_id]); } else { setSelectedSubs(prev => prev.filter(id => id !== sub.user_id)); } }}
+                          className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]" />
+                      </td>
                       <td className="py-3 px-4">
                         <div className="font-medium text-[#002819]">{sub.user?.name || 'Unknown'}</div>
                         <div className="text-sm text-gray-500">{sub.user?.email}</div>
@@ -1005,17 +1631,17 @@ export default function SubscriptionsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(sub.status)}`}>
-                          {sub.status?.replace('_', ' ')}
+                          {sub.status === 'paused' ? t('subscription.statusPaused') : normalizeStatus(sub.status)?.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
-                        {sub.created_at ? new Date(sub.created_at).toLocaleDateString() : '-'}
+                        {formatDate(sub.started_at || sub.created_at)}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
-                        {sub.renewal_at ? new Date(sub.renewal_at).toLocaleDateString() : '-'}
+                        {formatDate(sub.ends_at || sub.renewal_at || sub.next_billing_date)}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
-                        {sub.billing_cycle || '-'}
+                        {sub.billing_cycle ? sub.billing_cycle.charAt(0).toUpperCase() + sub.billing_cycle.slice(1) : '-'}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm">
@@ -1069,24 +1695,46 @@ export default function SubscriptionsPage() {
                         {sub.payment_method || '-'}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <select
-                            onChange={(e) => e.target.value && handleAdminSetTier(sub.user_id, e.target.value)}
-                            value={sub.tier_id}
-                            className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#002819]/20"
-                          >
-                            <option value="">Change tier...</option>
-                            {tiers.map((tier) => (
-                              <option key={tier.id} value={tier.id}>{tier.name}</option>
-                            ))}
-                          </select>
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <button
-                            onClick={() => handleAdminSetTier(sub.user_id, tiers.find(t => t.slug === 'free')?.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                            title="Cancel subscription"
+                            onClick={() => {
+                              setEditingSubscriber(sub);
+                              setPaymentMethodInput(sub.payment_method || '');
+                              setPaymentRefInput(sub.payment_reference || '');
+                              setShowSubscriberModal(true);
+                            }}
+                            className="px-2 py-1 border border-gray-200 rounded-lg text-xs font-bold text-[#002819] hover:bg-gray-50 transition-colors"
                           >
-                            <MaterialSymbol icon="cancel" size={16} />
+                            <MaterialSymbol icon="edit_square" size={14} className="inline mr-1" />
+                            Edit
                           </button>
+                          {sub.status === 'active' && (
+                            <button
+                              onClick={() => handlePauseSubscription(sub.user_id)}
+                              className="px-2 py-1 text-xs font-bold text-sky-600 border border-sky-200 rounded-lg hover:bg-sky-50 whitespace-nowrap"
+                            >
+                              <MaterialSymbol icon="pause_circle" size={14} className="inline mr-1" />
+                              Pause
+                            </button>
+                          )}
+                          {sub.status === 'paused' && (
+                            <button
+                              onClick={() => handleReactivateSubscription(sub.user_id)}
+                              className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 whitespace-nowrap"
+                            >
+                              <MaterialSymbol icon="play_circle" size={14} className="inline mr-1" />
+                              Reactivate
+                            </button>
+                          )}
+                          {sub.status === 'cancelled' && (
+                            <button
+                              onClick={() => handleReactivateSubscription(sub.user_id)}
+                              className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 whitespace-nowrap"
+                            >
+                              <MaterialSymbol icon="play_circle" size={14} className="inline mr-1" />
+                              Reactivate
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1094,12 +1742,545 @@ export default function SubscriptionsPage() {
                   })}
                   {sortedSubscriptions.length === 0 && (
                     <tr>
-                      <td colSpan={11} className="py-8 text-center text-gray-500">No owners found</td>
+                      <td colSpan={12} className="py-8 text-center text-gray-500">
+                        {allSubscriptions.length === 0 ? 'No owners with subscriptions yet' : 'No owners match the current filters'}
+                      </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payments Tab */}
+      {activeTab === 'payments' && isAdmin && (
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Payments</p>
+              <p className="text-2xl font-bold text-[#002819]">{allSubscriptions.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Revenue</p>
+              <p className="text-2xl font-bold text-emerald-600">
+                {formatCurrency(allSubscriptions.reduce((sum, sub) => sum + (parseFloat(sub.tier?.price_monthly) || 0), 0))}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active</p>
+              <p className="text-2xl font-bold text-emerald-600">{allSubscriptions.filter(s => s.status === 'active').length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending</p>
+              <p className="text-2xl font-bold text-amber-600">{allSubscriptions.filter(s => s.status === 'pending_payment').length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cancelled</p>
+              <p className="text-2xl font-bold text-red-600">{allSubscriptions.filter(s => s.status === 'cancelled').length}</p>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <MaterialSymbol icon="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={paymentSearch}
+                  onChange={(e) => setPaymentSearch(e.target.value)}
+                  placeholder="Search by owner name or email..."
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-600 uppercase">Method</label>
+                <select
+                  value={paymentMethodFilter}
+                  onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                >
+                  <option value="All">All</option>
+                  <option value="card">Credit Card</option>
+                  <option value="stripe">Stripe</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-600 uppercase">Status</label>
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                >
+                  <option value="All">All</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="pending_payment">Pending Payment</option>
+                  <option value="past_due">Past Due</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-600 uppercase">Date</label>
+                <select
+                  value={paymentDateFilter}
+                  onChange={(e) => setPaymentDateFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                >
+                  <option value="All">All Time</option>
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Payments Table */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#002819]">Payment Records</h3>
+              <div className="flex items-center gap-2">
+                {selectedPayments.length > 0 && (
+                  <span className="text-xs text-gray-500">{selectedPayments.length} selected</span>
+                )}
+                <button
+                  onClick={handleBulkExportPayments}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1"
+                >
+                  <MaterialSymbol icon="download" size={14} />
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-start py-3 px-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedPayments.length > 0 && selectedPayments.length === allSubscriptions.filter(sub => {
+                          if (paymentMethodFilter !== 'All' && sub.payment_method !== paymentMethodFilter) return false;
+                          if (paymentStatusFilter !== 'All' && sub.status !== paymentStatusFilter) return false;
+                          if (paymentDateFilter !== 'All') {
+                            const days = parseInt(paymentDateFilter);
+                            const cutoff = new Date();
+                            cutoff.setDate(cutoff.getDate() - days);
+                            const subDate = new Date(sub.created_at || sub.started_at);
+                            if (subDate < cutoff) return false;
+                          }
+                          if (paymentSearch) {
+                            const q = paymentSearch.toLowerCase();
+                            const name = sub.user?.name?.toLowerCase() || '';
+                            const email = sub.user?.email?.toLowerCase() || '';
+                            if (!name.includes(q) && !email.includes(q)) return false;
+                          }
+                          return true;
+                        }).length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPayments(allSubscriptions.map(s => s.user_id));
+                          } else {
+                            setSelectedPayments([]);
+                          }
+                        }}
+                        className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                      />
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('owner')}>
+                      <div className="flex items-center">
+                        Owner
+                        {paymentSortField === 'owner' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('amount')}>
+                      <div className="flex items-center">
+                        Plan / Amount
+                        {paymentSortField === 'amount' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('method')}>
+                      <div className="flex items-center">
+                        Payment Method
+                        {paymentSortField === 'method' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Reference</th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('start_date')}>
+                      <div className="flex items-center">
+                        Start Date
+                        {paymentSortField === 'start_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('renewal_date')}>
+                      <div className="flex items-center">
+                        Renewal Date
+                        {paymentSortField === 'renewal_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('status')}>
+                      <div className="flex items-center">
+                        Status
+                        {paymentSortField === 'status' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const filtered = allSubscriptions.filter(sub => {
+                      if (paymentMethodFilter !== 'All' && sub.payment_method !== paymentMethodFilter) return false;
+                      if (paymentStatusFilter !== 'All' && sub.status !== paymentStatusFilter) return false;
+                      if (paymentDateFilter !== 'All') {
+                        const days = parseInt(paymentDateFilter);
+                        const cutoff = new Date();
+                        cutoff.setDate(cutoff.getDate() - days);
+                        const subDate = new Date(sub.created_at || sub.started_at);
+                        if (subDate < cutoff) return false;
+                      }
+                      if (paymentSearch) {
+                        const q = paymentSearch.toLowerCase();
+                        const name = sub.user?.name?.toLowerCase() || '';
+                        const email = sub.user?.email?.toLowerCase() || '';
+                        if (!name.includes(q) && !email.includes(q)) return false;
+                      }
+                      return true;
+                    });
+                    const sorted = [...filtered].sort((a, b) => {
+                      if (!paymentSortField) return 0;
+                      let aVal, bVal;
+                      switch (paymentSortField) {
+                        case 'owner': aVal = a.user?.name || ''; bVal = b.user?.name || ''; break;
+                        case 'amount': aVal = parseFloat(a.tier?.price_monthly) || 0; bVal = parseFloat(b.tier?.price_monthly) || 0; break;
+                        case 'method': aVal = a.payment_method || ''; bVal = b.payment_method || ''; break;
+                        case 'start_date': aVal = a.started_at || a.created_at || ''; bVal = b.started_at || b.created_at || ''; break;
+                        case 'renewal_date': aVal = a.ends_at || a.renewal_at || a.next_billing_date || ''; bVal = b.ends_at || b.renewal_at || b.next_billing_date || ''; break;
+                        case 'status': aVal = a.status || ''; bVal = b.status || ''; break;
+                        default: return 0;
+                      }
+                      if (aVal < bVal) return paymentSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return paymentSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    });
+                    return sorted.map((sub) => (
+                      <tr key={sub.user_id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPayments.includes(sub.user_id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPayments(prev => [...prev, sub.user_id]);
+                              } else {
+                                setSelectedPayments(prev => prev.filter(id => id !== sub.user_id));
+                              }
+                            }}
+                            className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-[#002819]">{sub.user?.name || 'Unknown'}</div>
+                          <div className="text-sm text-gray-500">{sub.user?.email}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-[#002819]">{sub.tier?.name || 'N/A'}</div>
+                          <div className="text-sm text-emerald-600 font-medium">
+                            {sub.tier?.price_monthly ? formatCurrency(sub.tier.price_monthly) + '/mo' : '-'}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="capitalize text-sm text-gray-700">
+                            {sub.payment_method ? sub.payment_method.replace('_', ' ') : <span className="text-gray-400 italic">Not set</span>}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-xs text-gray-500 font-mono max-w-[120px] block truncate" title={sub.payment_reference || ''}>
+                            {sub.payment_reference || '-'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {formatDate(sub.started_at || sub.created_at)}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {formatDate(sub.ends_at || sub.renewal_at || sub.next_billing_date)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(sub.status)}`}>
+                            {normalizeStatus(sub.status)?.replace('_', ' ')}
+                          </span>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                  {(() => {
+                    const filtered = allSubscriptions.filter(sub => {
+                      if (paymentMethodFilter !== 'All' && sub.payment_method !== paymentMethodFilter) return false;
+                      if (paymentStatusFilter !== 'All' && sub.status !== paymentStatusFilter) return false;
+                      if (paymentDateFilter !== 'All') {
+                        const days = parseInt(paymentDateFilter);
+                        const cutoff = new Date();
+                        cutoff.setDate(cutoff.getDate() - days);
+                        const subDate = new Date(sub.created_at || sub.started_at);
+                        if (subDate < cutoff) return false;
+                      }
+                      if (paymentSearch) {
+                        const q = paymentSearch.toLowerCase();
+                        const name = sub.user?.name?.toLowerCase() || '';
+                        const email = sub.user?.email?.toLowerCase() || '';
+                        if (!name.includes(q) && !email.includes(q)) return false;
+                      }
+                      return true;
+                    });
+                    return filtered.length === 0 && (
+                      <tr><td colSpan={8} className="py-8 text-center text-gray-500">No payment records found</td></tr>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 text-xs text-gray-400 text-center">
+              {(() => {
+                const filtered = allSubscriptions.filter(sub => {
+                  if (paymentMethodFilter !== 'All' && sub.payment_method !== paymentMethodFilter) return false;
+                  if (paymentStatusFilter !== 'All' && sub.status !== paymentStatusFilter) return false;
+                  if (paymentDateFilter !== 'All') {
+                    const days = parseInt(paymentDateFilter);
+                    const cutoff = new Date();
+                    cutoff.setDate(cutoff.getDate() - days);
+                    const subDate = new Date(sub.created_at || sub.started_at);
+                    if (subDate < cutoff) return false;
+                  }
+                  if (paymentSearch) {
+                    const q = paymentSearch.toLowerCase();
+                    const name = sub.user?.name?.toLowerCase() || '';
+                    const email = sub.user?.email?.toLowerCase() || '';
+                    if (!name.includes(q) && !email.includes(q)) return false;
+                  }
+                  return true;
+                });
+                return `Showing ${filtered.length} of ${allSubscriptions.length} records`;
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Billing Tab (Owner) */}
+      {activeTab === 'billing' && !isAdmin && (
+        <div className="space-y-6">
+          {/* Current Plan & Payment Method */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-[#002819] mb-4">Current Plan</h3>
+              {currentSubscription ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Plan</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTierBadgeColor(currentSubscription.tier?.slug)}`}>
+                      {currentSubscription.tier?.name || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Status</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(currentSubscription.status)}`}>
+                      {normalizeStatus(currentSubscription.status)?.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Billing Cycle</span>
+                    <span className="text-sm font-medium text-[#002819] capitalize">{currentSubscription.billing_cycle || 'Monthly'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Started</span>
+                    <span className="text-sm font-medium text-[#002819]">{formatDate(currentSubscription.started_at || currentSubscription.created_at)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Renewal</span>
+                    <span className="text-sm font-medium text-[#002819]">{formatDate(currentSubscription.ends_at || currentSubscription.renewal_at || currentSubscription.next_billing_date)}</span>
+                  </div>
+                  {currentSubscription.tier?.price_monthly > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                      <span className="text-sm font-bold text-gray-700">Amount</span>
+                      <span className="text-lg font-bold text-[#002819]">{formatCurrency(currentSubscription.tier.price_monthly)}<span className="text-sm font-normal text-gray-500">/{currentSubscription.billing_cycle === 'yearly' ? 'yr' : 'mo'}</span></span>
+                    </div>
+                  )}
+                  <div className="pt-4 space-y-2">
+                    {currentSubscription.status === 'active' && (
+                      <button
+                        onClick={handleRenew}
+                        disabled={actionLoading === 'renew'}
+                        className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading === 'renew' ? 'Renewing...' : 'Renew Subscription'}
+                      </button>
+                    )}
+                    {(currentSubscription.status === 'paused' || currentSubscription.status === 'cancelled') && (
+                      <button
+                        onClick={handleOwnerReactivate}
+                        disabled={actionLoading === 'reactivate'}
+                        className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading === 'reactivate' ? 'Reactivating...' : 'Reactivate Subscription'}
+                      </button>
+                    )}
+                    {(currentSubscription.status === 'none' || !currentSubscription.status || currentSubscription.status === 'pending') && (
+                      <button
+                        onClick={() => setActiveTab('plans')}
+                        className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors"
+                      >
+                        Subscribe to a Plan
+                      </button>
+                    )}
+                    {currentSubscription.status === 'pending_payment' && (
+                      <button
+                        disabled
+                        className="w-full py-3 bg-amber-100 text-amber-700 rounded-xl font-bold text-sm cursor-not-allowed"
+                      >
+                        Payment Pending Approval
+                      </button>
+                    )}
+                    {currentSubscription.status === 'past_due' && (
+                      <button
+                        onClick={() => setActiveTab('plans')}
+                        className="w-full py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors"
+                      >
+                        Update Payment
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  <MaterialSymbol icon="credit_card_off" size={32} className="mx-auto mb-2 text-gray-300" />
+                  <p>No active subscription</p>
+                  <button onClick={() => setActiveTab('plans')} className="mt-4 px-4 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b]">
+                    Subscribe Now
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-[#002819] mb-4">Payment Method</h3>
+              {currentSubscription ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <label className="text-xs font-semibold text-gray-600 w-24">Method:</label>
+                    <select
+                      value={ownerPaymentMethod}
+                      onChange={(e) => setOwnerPaymentMethod(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                    >
+                      <option value="">Not set</option>
+                      <option value="card">Credit Card</option>
+                      <option value="stripe">Stripe</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="manual">Manual</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <label className="text-xs font-semibold text-gray-600 w-24">Reference:</label>
+                    <input
+                      type="text"
+                      value={ownerPaymentRef}
+                      onChange={(e) => setOwnerPaymentRef(e.target.value)}
+                      placeholder="Transaction ID or receipt"
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                    />
+                  </div>
+                  <button
+                    onClick={handleOwnerUpdatePaymentInfo}
+                    className="px-4 py-2 bg-[#002819] text-white rounded-lg text-xs font-bold hover:bg-[#06402b]"
+                  >
+                    Save Payment Info
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 text-sm">No subscription to configure</div>
+              )}
+            </div>
+          </div>
+
+          {/* Bank Transfer Upload */}
+          {currentSubscription && currentSubscription.tier?.price_monthly > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-[#002819] mb-4">Bank Transfer Payment</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Upload your bank transfer receipt (PDF) to complete payment for the current plan.
+                An admin will review and approve your payment.
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setBankTransferFile(e.target.files[0] || null)}
+                  className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#002819] file:text-white hover:file:bg-[#06402b]"
+                />
+                <button
+                  onClick={handleBankTransferUpload}
+                  disabled={bankTransferLoading || !bankTransferFile}
+                  className="px-6 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  {bankTransferLoading ? 'Uploading...' : 'Upload Proof'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Payment History */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-[#002819] mb-4">Payment History</h3>
+            {paymentHistoryLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin w-6 h-6 border-4 border-[#002819] border-t-transparent rounded-full" />
+              </div>
+            ) : paymentHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Plan</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Status</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Method</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Amount</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Start Date</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">End Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((sub, i) => (
+                      <tr key={sub.id || i} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTierBadgeColor(sub.tier_slug)}`}>
+                            {sub.tier_name || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(sub.status)}`}>
+                            {normalizeStatus(sub.status)?.replace('_', ' ') || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 capitalize">{sub.payment_method || '-'}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-[#002819]">{sub.amount ? formatCurrency(sub.amount) : '-'}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">{formatDate(sub.started_at || sub.created_at)}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">{formatDate(sub.ended_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                <MaterialSymbol icon="receipt_long" size={32} className="mx-auto mb-2 text-gray-300" />
+                No payment history
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1113,7 +2294,6 @@ export default function SubscriptionsPage() {
             </div>
           ) : stats ? (
             <>
-              {/* Summary Metric Cards */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
@@ -1152,9 +2332,7 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
 
-              {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Tier Distribution - Donut */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-bold text-[#002819] mb-4">Tier Distribution</h3>
                   {stats.tier_distribution && stats.tier_distribution.length > 0 ? (
@@ -1183,7 +2361,6 @@ export default function SubscriptionsPage() {
                   )}
                 </div>
 
-                {/* Subscription Growth - Trend Line */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-bold text-[#002819] mb-4">Subscription Growth</h3>
                   {stats.growth_over_time && stats.growth_over_time.length > 0 ? (
@@ -1212,7 +2389,6 @@ export default function SubscriptionsPage() {
                   )}
                 </div>
 
-                {/* Revenue Over Time - Bar Chart */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-bold text-[#002819] mb-4">Revenue Over Time</h3>
                   {stats.revenue_over_time && stats.revenue_over_time.length > 0 ? (
@@ -1232,7 +2408,6 @@ export default function SubscriptionsPage() {
                   )}
                 </div>
 
-                {/* Payment Methods */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-bold text-[#002819] mb-4">Payment Methods</h3>
                   {stats.payment_methods && stats.payment_methods.length > 0 ? (
@@ -1259,13 +2434,8 @@ export default function SubscriptionsPage() {
                             const total = stats.payment_methods.reduce((s, p) => s + (p.count || p.subscribers || 0), 0);
                             const pct = ((pm.count || pm.subscribers || 0) / total) * 100;
                             return (
-                              <div
-                                key={i}
-                                className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
-                                style={{
-                                  width: `${pct}%`,
-                                  backgroundColor: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981'][i % 5],
-                                }}
+                              <div key={i} className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                style={{ width: `${pct}%`, backgroundColor: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981'][i % 5] }}
                               />
                             );
                           })}
@@ -1278,7 +2448,6 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
 
-              {/* Recent Subscriptions */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-[#002819] mb-4">Recent Subscriptions</h3>
                 <div className="overflow-x-auto">
@@ -1305,11 +2474,11 @@ export default function SubscriptionsPage() {
                           </td>
                           <td className="py-3 px-4">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(sub.status)}`}>
-                              {sub.status?.replace('_', ' ') || 'N/A'}
+                              {normalizeStatus(sub.status)?.replace('_', ' ') || 'N/A'}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-sm text-gray-600">
-                            {sub.created_at || sub.date ? new Date(sub.created_at || sub.date).toLocaleDateString() : '-'}
+                            {formatDate(sub.created_at || sub.started_at || sub.date)}
                           </td>
                           <td className="py-3 px-4 text-sm font-medium text-[#002819]">
                             {sub.amount ? formatCurrency(sub.amount) : sub.tier?.price_monthly ? formatCurrency(sub.tier.price_monthly) : '-'}
@@ -1329,6 +2498,330 @@ export default function SubscriptionsPage() {
           ) : (
             <div className="text-center py-12 text-gray-500">No report data available</div>
           )}
+        </div>
+      )}
+
+      {/* Subscriber Edit Modal */}
+      {showSubscriberModal && editingSubscriber && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSubscriberModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-[#002819]">{editingSubscriber.user?.name || 'Unknown'}</h2>
+                <p className="text-sm text-gray-500">{editingSubscriber.user?.email}</p>
+              </div>
+              <button onClick={() => setShowSubscriberModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <MaterialSymbol icon="close" size={24} />
+              </button>
+            </div>
+
+            {/* Status & Plan */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Status</p>
+                <span className={`px-3 py-1 rounded-lg text-sm font-bold ${getStatusBadgeClass(editingSubscriber.status)}`}>
+                  {normalizeStatus(editingSubscriber.status)?.replace('_', ' ')}
+                </span>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Current Plan</p>
+                <span className={`px-3 py-1 rounded-lg text-sm font-bold ${getTierBadgeColor(editingSubscriber.tier?.slug)}`}>
+                  {editingSubscriber.tier?.name || 'No Tier'}
+                </span>
+              </div>
+            </div>
+
+            {/* Usage */}
+            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <h3 className="text-sm font-bold text-[#002819] mb-3">Resource Usage</h3>
+              <div className="space-y-3">
+                {['animals', 'devices', 'team'].map(key => {
+                  const u = editingSubscriber.usage?.[key] || {};
+                  const pct = u.max > 0 ? Math.min((u.used / u.max) * 100, 100) : 0;
+                  return (
+                    <div key={key}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="capitalize text-gray-600">{key}</span>
+                        <span className="font-semibold text-[#002819]">{u.used ?? 0} / {u.max === 0 ? '∞' : u.max}</span>
+                      </div>
+                      {u.max > 0 && (
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${pct > 90 ? 'bg-red-500' : pct > 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Started</p>
+                <p className="text-sm font-medium text-[#002819]">{formatDate(editingSubscriber.started_at || editingSubscriber.created_at)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Renewal</p>
+                <p className="text-sm font-medium text-[#002819]">{formatDate(editingSubscriber.ends_at || editingSubscriber.renewal_at || editingSubscriber.next_billing_date)}</p>
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div className="border-t border-gray-200 pt-4 mb-6">
+              <h3 className="text-sm font-bold text-[#002819] mb-3">Payment</h3>
+              <div className="flex items-center gap-3 mb-3">
+                <label className="text-xs font-semibold text-gray-600 w-20">Method:</label>
+                <select
+                  value={paymentMethodInput}
+                  onChange={(e) => setPaymentMethodInput(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                >
+                  <option value="">Not set</option>
+                  <option value="card">Credit Card</option>
+                  <option value="stripe">Stripe</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 mb-3">
+                <label className="text-xs font-semibold text-gray-600 w-20">Reference:</label>
+                <input
+                  type="text"
+                  value={paymentRefInput}
+                  onChange={(e) => setPaymentRefInput(e.target.value)}
+                  placeholder="Transaction ID, receipt #, or notes"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  handleUpdatePaymentInfo(editingSubscriber.subscription_id, {
+                    payment_method: paymentMethodInput || null,
+                    payment_reference: paymentRefInput || null,
+                  });
+                  setShowSubscriberModal(false);
+                }}
+                className="px-4 py-2 bg-[#002819] text-white rounded-lg text-xs font-bold hover:bg-[#06402b]"
+              >
+                Save Payment Info
+              </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="border-t border-gray-200 pt-4 space-y-3">
+              <h3 className="text-sm font-bold text-[#002819]">Quick Actions</h3>
+
+              {/* Change Tier */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-gray-600 w-20">Change Tier:</label>
+                <select
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
+                  value={pendingTierChanges[editingSubscriber.user_id] || editingSubscriber.tier_id}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value) : null;
+                    setPendingTierChanges(prev => {
+                      const next = { ...prev };
+                      if (val === null || val === editingSubscriber.tier_id) {
+                        delete next[editingSubscriber.user_id];
+                      } else {
+                        next[editingSubscriber.user_id] = val;
+                      }
+                      return next;
+                    });
+                  }}
+                >
+                  {tiers.map(tier => (
+                    <option key={tier.id} value={tier.id}>{tier.name}</option>
+                  ))}
+                </select>
+                {pendingTierChanges[editingSubscriber.user_id] && (
+                  <button
+                    onClick={() => handleAdminSetTier(editingSubscriber.user_id, pendingTierChanges[editingSubscriber.user_id])}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"
+                  >
+                    Save
+                  </button>
+                )}
+              </div>
+
+              {/* Change Billing */}
+              {editingSubscriber.billing_cycle && (
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-semibold text-gray-600 w-20">Billing:</label>
+                  <span className="text-sm font-medium text-[#002819] capitalize">{editingSubscriber.billing_cycle}</span>
+                  <button
+                    onClick={() => handleChangeBillingCycle(editingSubscriber.id, editingSubscriber.billing_cycle)}
+                    className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    Change to {editingSubscriber.billing_cycle === 'yearly' ? 'Monthly' : 'Yearly'}
+                  </button>
+                </div>
+              )}
+
+              {/* Status Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <label className="text-xs font-semibold text-gray-600 w-20">Status:</label>
+                {editingSubscriber.status === 'active' && (
+                  <>
+                    <button
+                      onClick={() => { handlePauseSubscription(editingSubscriber.user_id); setShowSubscriberModal(false); }}
+                      className="px-4 py-2 bg-sky-500 text-white rounded-lg text-xs font-bold hover:bg-sky-600"
+                    >
+                      <MaterialSymbol icon="pause_circle" size={16} className="inline mr-1" />
+                      Pause Subscription
+                    </button>
+                    <button
+                      onClick={() => { handleCancelSubscription(editingSubscriber.user_id); setShowSubscriberModal(false); }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600"
+                    >
+                      <MaterialSymbol icon="cancel" size={16} className="inline mr-1" />
+                      Cancel Subscription
+                    </button>
+                  </>
+                )}
+                {(editingSubscriber.status === 'paused' || editingSubscriber.status === 'cancelled') && (
+                  <button
+                    onClick={() => { handleReactivateSubscription(editingSubscriber.user_id); setShowSubscriberModal(false); }}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"
+                  >
+                    <MaterialSymbol icon="play_circle" size={16} className="inline mr-1" />
+                    Reactivate Subscription
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Upgrade/Downgrade Payment Modal */}
+      {showPlanPaymentModal && planTargetTier && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPlanPaymentModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#002819]">
+                {planAction === 'upgrade' ? 'Upgrade' : 'Downgrade'} to {planTargetTier.name}
+              </h2>
+              <button onClick={() => setShowPlanPaymentModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <MaterialSymbol icon="close" size={24} />
+              </button>
+            </div>
+
+            {/* Plan Comparison */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {currentSubscription?.tier && (
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-1">Current</p>
+                  <p className="text-sm font-bold text-[#002819]">{currentSubscription.tier.name}</p>
+                  {currentSubscription.tier.price_monthly > 0 && (
+                    <p className="text-xs text-gray-500">{formatCurrency(currentSubscription.tier.price_monthly)}/mo</p>
+                  )}
+                </div>
+              )}
+              <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+                <p className="text-xs font-bold text-emerald-600 uppercase mb-1">New</p>
+                <p className="text-sm font-bold text-emerald-700">{planTargetTier.name}</p>
+                {planTargetTier.price_monthly > 0 && (
+                  <p className="text-xs text-emerald-600">{formatCurrency(planTargetTier.price_monthly)}/mo</p>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Method Selection */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setPlanPaymentMethod('card')}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${
+                  planPaymentMethod === 'card' ? 'bg-[#002819] text-white' : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <MaterialSymbol icon="credit_card" size={18} className="inline mr-1" />
+                Credit Card
+              </button>
+              <button
+                onClick={() => setPlanPaymentMethod('bank')}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${
+                  planPaymentMethod === 'bank' ? 'bg-[#002819] text-white' : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <MaterialSymbol icon="account_balance" size={18} className="inline mr-1" />
+                Bank Transfer
+              </button>
+            </div>
+
+            {planPaymentMethod === 'card' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Card Number</label>
+                  <input
+                    type="text"
+                    value={planCardNumber}
+                    onChange={e => setPlanCardNumber(e.target.value)}
+                    placeholder="4242 4242 4242 4242"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#002819]/20"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Expiry</label>
+                    <input
+                      type="text"
+                      value={planCardExpiry}
+                      onChange={e => setPlanCardExpiry(e.target.value)}
+                      placeholder="MM/YY"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#002819]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">CVC</label>
+                    <input
+                      type="text"
+                      value={planCardCvc}
+                      onChange={e => setPlanCardCvc(e.target.value)}
+                      placeholder="123"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#002819]/20"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handlePlanCardPayment}
+                  disabled={planProcessing}
+                  className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
+                >
+                  {planProcessing ? 'Processing...' : `Pay ${formatCurrency(planTargetTier.price_monthly)} & ${planAction === 'upgrade' ? 'Upgrade' : 'Downgrade'}`}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <p className="text-sm text-blue-700 mb-2 font-bold">Bank Transfer Details</p>
+                  <p className="text-xs text-blue-600">Bank: First Abu Dhabi Bank</p>
+                  <p className="text-xs text-blue-600">Account: 1234567890</p>
+                  <p className="text-xs text-blue-600">IBAN: AE123456789012345678901</p>
+                  <p className="text-xs text-blue-600 mt-2">Reference: SUBS-{planTargetTier.id}-{Date.now()}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-2">Upload Payment Proof (PDF)</label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={e => setPlanTransferFile(e.target.files[0] || null)}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#002819] file:text-white hover:file:bg-[#06402b]"
+                  />
+                </div>
+                <button
+                  onClick={handlePlanBankTransfer}
+                  disabled={planProcessing || !planTransferFile}
+                  className="w-full py-3 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  {planProcessing ? 'Uploading...' : 'Upload Proof & Request Upgrade'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

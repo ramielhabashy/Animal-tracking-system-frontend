@@ -92,6 +92,7 @@ const router = createBrowserRouter([
           { path: 'animals/:id/edit', element: <Suspense fallback={<SuspenseFallback />}><AnimalEdit /></Suspense> },
           { path: 'devices', element: <Suspense fallback={<SuspenseFallback />}><DeviceList /></Suspense> },
           { path: 'devices/new', element: <Suspense fallback={<SuspenseFallback />}><DeviceForm /></Suspense> },
+          { path: 'devices/:id', element: <Suspense fallback={<SuspenseFallback />}><DeviceEdit /></Suspense> },
           { path: 'devices/:id/edit', element: <Suspense fallback={<SuspenseFallback />}><DeviceEdit /></Suspense> },
           { path: 'users', element: <Suspense fallback={<SuspenseFallback />}><UserList /></Suspense> },
           { path: 'users/new', element: <Suspense fallback={<SuspenseFallback />}><UserCreate /></Suspense> },

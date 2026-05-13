@@ -4,11 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
+import { useAuth } from '../hooks/useAuth';
 import { getPendingSubscription, setPendingSubscription } from '../utils/cookies';
 
 export default function SubscriptionPage() {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const navigate = useNavigate();
   
   const [tiers, setTiers] = useState([]);
@@ -184,7 +187,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="space-y-8">
-      {(isFromRegistration || isNewUser) && currentSubscription?.status !== 'active' && currentSubscription?.status !== 'pending_payment' && (
+      {!isAdmin && (isFromRegistration || isNewUser) && currentSubscription?.status !== 'active' && currentSubscription?.status !== 'pending_payment' && (
         <div className="bg-gradient-to-r from-[#D4AF37]/20 to-[#002819]/10 border border-[#D4AF37] rounded-2xl p-6 text-center">
           <MaterialSymbol icon="celebration" size={48} className="text-[#D4AF37] mx-auto mb-3" weight="fill" />
           <h2 className="text-2xl font-bold text-[#002819] mb-2">Welcome to The Oasis!</h2>
@@ -196,10 +199,12 @@ export default function SubscriptionPage() {
         </div>
       )}
 
+      {!isAdmin && (
       <div>
         <h2 className="text-3xl font-bold text-[#002819]">Subscription Plans</h2>
         <p className="text-[#404943] mt-1">Choose the perfect plan for your livestock management needs</p>
       </div>
+      )}
 
       {message && (
         <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
@@ -207,7 +212,7 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {limits && currentSubscription?.status === 'active' && (
+      {!isAdmin && limits && currentSubscription?.status === 'active' && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <h3 className="font-bold text-[#002819] mb-4">Current Usage</h3>
           <div className="grid grid-cols-3 gap-4">
@@ -227,6 +232,7 @@ export default function SubscriptionPage() {
         </div>
       )}
 
+      {!isAdmin && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {tiers.map((tier) => {
           const isCurrent = currentSubscription?.tier_id === tier.id && currentSubscription?.status === 'active';
@@ -282,6 +288,7 @@ export default function SubscriptionPage() {
           );
         })}
       </div>
+      )}
 
       {showPaymentModal && selectedTier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

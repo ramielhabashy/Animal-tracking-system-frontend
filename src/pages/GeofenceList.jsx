@@ -155,14 +155,27 @@ export default function GeofenceList() {
   const [availableGroups, setAvailableGroups] = useState([]);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState(null);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [viewMode, setViewMode] = useState('tiles');
+  const [users, setUsers] = useState([]);
+
   const canModify = ['Admin', 'Owner', 'Manager'].includes(user?.role);
   const canDelete = ['Admin', 'Owner'].includes(user?.role);
   const isAdmin = user?.role === 'Admin';
 
+  const filteredGeofences = geofences.filter(g => {
+    const matchesSearch = !searchTerm ||
+      g.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.owner?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesOwner = !ownerFilter || g.owner_id === parseInt(ownerFilter);
+    return matchesSearch && matchesOwner;
+  });
+
   useEffect(() => {
     fetchGeofences();
     fetchAnimals();
+    fetchUsers();
   }, []);
 
   const fetchAnimals = async () => {
@@ -181,6 +194,18 @@ export default function GeofenceList() {
       }
     } catch (error) {
       console.error('Failed to fetch animals:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await apiFetch('/api/users?per_page=100');
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.data?.filter(u => u.role === 'Owner' || u.role === 'Admin') || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
     }
   };
 
@@ -419,6 +444,46 @@ export default function GeofenceList() {
         </div>
       </div>
 
+      <div className={`flex flex-wrap items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <MaterialSymbol icon="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder={t('common.search')}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+          />
+        </div>
+        <select
+          value={ownerFilter}
+          onChange={e => setOwnerFilter(e.target.value)}
+          className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white min-w-[160px]"
+        >
+          <option value="">{isAdmin ? t('groupsPage.allOwners') : t('common.all')}</option>
+          {users.map(u => (
+            <option key={u.id} value={u.id}>{u.name}</option>
+          ))}
+        </select>
+        <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode('tiles')}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <MaterialSymbol icon="grid_view" size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <MaterialSymbol icon="table_rows" size={18} />
+          </button>
+        </div>
+        <span className="text-sm text-gray-400">
+          {filteredGeofences.length} {t('geofences.title')}
+        </span>
+      </div>
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">{t('geofencesPage.loading')}</div>
       ) : geofences.length === 0 ? (
@@ -432,9 +497,77 @@ export default function GeofenceList() {
             {t('geofencesPage.createFirst')}
           </button>
         </div>
+      ) : filteredGeofences.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <MaterialSymbol icon="search_off" size={48} className="text-gray-300 mb-3" />
+          <p className="text-gray-500">{t('common.noData')}</p>
+          <button onClick={() => { setSearchTerm(''); setOwnerFilter(''); }} className="mt-4 text-amber-600 hover:text-amber-700 font-medium">
+            {t('common.clearFilters')}
+          </button>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('geofences.name')}</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('users.owner')}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('geofencesPage.alertType') || 'Alert'}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('animals.title')}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('common.status')}</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-700">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredGeofences.map(geofence => (
+                <tr key={geofence.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: geofence.color }} />
+                      <span className="font-medium text-gray-900">{geofence.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">{geofence.owner?.name || '-'}</td>
+                  <td className="text-center py-3 px-4">{alertTypeBadge(geofence.alert_type)}</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                      {geofence.animals?.length || 0}
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      geofence.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${geofence.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      {geofence.is_active ? t('geofences.active') : t('geofences.inactive')}
+                    </span>
+                  </td>
+                  <td className="text-right py-3 px-4">
+                    <div className={`flex items-center justify-end gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <button onClick={() => openEditModal(geofence)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.edit')}>
+                        <MaterialSymbol icon="edit" size={16} />
+                      </button>
+                      <button onClick={() => openAssignModal(geofence)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('geofencesPage.assignAnimals')}>
+                        <MaterialSymbol icon="person_add" size={16} />
+                      </button>
+                      <button onClick={() => openGroupAssignModal(geofence)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('geofencesPage.assignGroups')}>
+                        <MaterialSymbol icon="groups" size={16} />
+                      </button>
+                      {canDelete && (
+                        <button onClick={() => deleteGeofence(geofence)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600" title={t('common.delete')}>
+                          <MaterialSymbol icon="delete" size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {geofences.map((geofence) => (
+          {filteredGeofences.map((geofence) => (
             <div
               key={geofence.id}
               className={`bg-white rounded-xl border border-gray-200 p-5 ${
@@ -469,92 +602,40 @@ export default function GeofenceList() {
                 <p className="text-xs text-gray-500 mb-3">{t('geofencesPage.owner')}: {geofence.owner.name}</p>
               )}
 
-              {geofence.animals && geofence.animals.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-xs text-gray-500 mb-1">{t('geofencesPage.animals')}:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {geofence.animals.slice(0, 2).map((animal) => (
-                      <span key={animal.id} className="text-xs px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1">
-                        {animal.animal_id}
-                        {canModify && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemoveAnimal(geofence, animal.id); }}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <MaterialSymbol icon="close" size={12} />
-                          </button>
-                        )}
-                      </span>
-                    ))}
-                    {geofence.animals.length > 2 && (
-                      <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
-                        +{geofence.animals.length - 2}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {geofence.groups && geofence.groups.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-xs text-gray-500 mb-1">{t('geofencesPage.groups')}:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {geofence.groups.map((group) => (
-                      <span key={group.id} className="text-xs px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: group.color + '30' }}>
-                        {group.name}
-                        {canModify && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemoveGroup(geofence, group.id); }}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <MaterialSymbol icon="close" size={12} />
-                          </button>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className={`flex gap-1 mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  {geofence.animals?.length || 0} {t('animals.title')}
+                </span>
+              </div>
 
               <div className={`flex gap-1 mt-4 pt-4 border-t border-gray-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                {canModify && (
-                  <button
-                    onClick={() => openAssignModal(geofence)}
-                    className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                  >
-                    <MaterialSymbol icon="pets" size={14} />
-                  </button>
-                )}
-                {canModify && (
-                  <button
-                    onClick={() => openGroupAssignModal(geofence)}
-                    className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                  >
-                    <MaterialSymbol icon="folder" size={14} />
-                  </button>
-                )}
-                {canModify && (
-                  <>
-                    <button
-                      onClick={() => toggleActive(geofence)}
-                      className={`flex items-center justify-center gap-1 px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                    >
-                      <MaterialSymbol icon={geofence.is_active ? 'pause' : 'play_arrow'} size={14} />
-                    </button>
-                    <button
-                      onClick={() => openEditModal(geofence)}
-                      className={`flex items-center justify-center px-2 py-2 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-                    >
-                      <MaterialSymbol icon="edit" size={14} />
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={() => openEditModal(geofence)}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                >
+                  <MaterialSymbol icon="edit" size={16} />
+                  {t('common.edit')}
+                </button>
+                <button
+                  onClick={() => openAssignModal(geofence)}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                >
+                  <MaterialSymbol icon="person_add" size={16} />
+                  {t('geofencesPage.assignAnimals')}
+                </button>
+                <button
+                  onClick={() => openGroupAssignModal(geofence)}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                >
+                  <MaterialSymbol icon="groups" size={16} />
+                  {t('geofencesPage.assignGroups')}
+                </button>
                 {canDelete && (
                   <button
                     onClick={() => deleteGeofence(geofence)}
-                    className={`flex items-center justify-center px-2 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                    className={`flex items-center justify-center px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
                   >
-                    <MaterialSymbol icon="delete" size={14} />
+                    <MaterialSymbol icon="delete" size={16} />
                   </button>
                 )}
               </div>

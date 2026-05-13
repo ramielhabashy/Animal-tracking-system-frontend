@@ -65,6 +65,10 @@ export default {
     last6Months: 'آخر 6 مہینے',
     thisYear: 'اس سال',
     clearFilters: 'فلٹرز صاف کریں',
+    allTypes: 'تمام اقسام',
+    allStatuses: 'تمام حالتیں',
+    attachments: 'منسلکات',
+    upload: 'فائلیں اپ لوڈ کریں',
   },
   nav: {
     dashboard: 'ڈیش بورڈ',
@@ -390,8 +394,10 @@ export default {
     noRecords: 'کوئی میڈیکل ریکارڈز نہیں',
     addFirst: 'اپنا پہلا ریکارڈ شامل کریں',
     description: 'تفصیل',
+    titlePlaceholder: 'ریکارڈ کا عنوان درج کریں',
     total: 'کل ریکارڈز',
     recentRecords: 'حالیہ ریکارڈز',
+    upcoming: 'آنے والی اپائنٹمنٹس',
   },
   vaccination: {
     title: 'ویکسینیشن شیڈول',
@@ -504,6 +510,10 @@ export default {
     assignTo: 'ٹیم رکن کو سونپیں',
     selectTeamMember: 'ٹیم رکن انتخاب کریں (اختیاری)',
     taskWillBeCreated: 'اس رکن کے لیے ایک کام بنائیں گے',
+    careSchedule: 'ویکسینیشن شیڈول',
+    manageInFullPage: 'کیلنڈر، یاد دہانیوں اور خوراک سے باخبر رہنے کے ساتھ ویکسینیشن کا نظم کریں',
+    manageLink: 'ویکسینیشن شیڈول کھولیں',
+    upcomingAll: 'آنے والی ویکسینیشن اور اپائنٹمنٹس',
   },
   reports: {
     title: 'رپورٹس',
