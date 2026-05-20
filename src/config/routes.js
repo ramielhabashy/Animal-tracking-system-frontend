@@ -36,6 +36,14 @@ const VaccinationSchedulePage = lazy(() => import('../pages/VaccinationScheduleP
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const LanguageSettingsPage = lazy(() => import('../pages/LanguageSettingsPage'));
 const RolesPage = lazy(() => import('../pages/RolesPage'));
+const CheckoutPage = lazy(() => import('../pages/CheckoutPage'));
+const OrdersPage = lazy(() => import('../pages/OrdersPage'));
+const ActivateDevicePage = lazy(() => import('../pages/ActivateDevicePage'));
+const MessagesPage = lazy(() => import('../pages/MessagesPage'));
+const TicketDetail = lazy(() => import('../pages/TicketDetail'));
+const TransfersPage = lazy(() => import('../pages/TransfersPage'));
+const TransferDetail = lazy(() => import('../pages/TransferDetail'));
+
 
 export const routeConfig = {
   public: [
@@ -62,7 +70,7 @@ export const routeConfig = {
     { path: '/auctions/:id/edit', component: AuctionEdit, roles: ['Admin', 'Owner', 'Manager'] },
     { path: '/alerts', component: AlertsPage, roles: ['Admin', 'Owner', 'Manager'] },
     { path: '/geofences', component: GeofenceList, roles: ['Admin', 'Owner', 'Manager', 'Shepherd'] },
-    { path: '/animal-groups', component: AnimalGroupList, roles: ['Admin', 'Owner', 'Manager'] },
+    { path: '/animal-groups', component: AnimalGroupList, roles: ['Admin', 'Owner', 'Manager', 'Shepherd'] },
     { path: '/subscription', component: SubscriptionsPage, roles: ['Admin', 'Owner'] },
     { path: '/subscription/tiers', component: SubscriptionsPage, roles: ['Admin', 'Owner'] },
     { path: '/subscription/select', component: SubscriptionPage, roles: ['Admin', 'Owner'] },
@@ -78,6 +86,16 @@ export const routeConfig = {
     { path: '/task-logs-archive', component: TaskLogsArchive, roles: ['Admin', 'Owner'] },
     { path: '/payments', component: PaymentManagement, roles: ['Admin'] },
     { path: '/my-payments', component: MyPayments, roles: ['Admin', 'Owner'] },
+    { path: '/checkout', component: CheckoutPage, roles: ['Admin', 'Owner'] },
+    { path: '/checkout/confirm', component: CheckoutPage, roles: ['Admin', 'Owner'] },
+    { path: '/orders', component: OrdersPage, roles: ['Admin'] },
+    { path: '/activate-device', component: ActivateDevicePage, roles: ['Admin', 'Owner'] },
+    { path: '/messages', component: MessagesPage, roles: ['Admin', 'Owner', 'Manager', 'Shepherd', 'Doctor'] },
+    { path: '/messages/:id', component: MessagesPage, roles: ['Admin', 'Owner', 'Manager', 'Shepherd', 'Doctor'] },
+    { path: '/tickets/:id', component: TicketDetail, roles: ['Admin', 'Owner', 'Manager', 'Shepherd', 'Doctor'] },
+    { path: '/transfers', component: TransfersPage, roles: ['Admin', 'Owner', 'Manager'] },
+    { path: '/transfers/:id', component: TransferDetail, roles: ['Admin', 'Owner', 'Manager'] },
+
   ],
   error: [
     { path: '/403', component: Forbidden },

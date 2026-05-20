@@ -8,10 +8,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const priorityColors = {
-  low: 'bg-[#F4F4EF]',
-  medium: 'bg-[#D4AF37]',
+  low: 'bg-surface-light',
+  medium: 'bg-brand-accent',
   high: 'bg-[#F59E0B]',
-  urgent: 'bg-[#BA1A1A]',
+  urgent: 'bg-danger',
 };
 
 export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
@@ -105,19 +105,19 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
     <div>
       <div className={`flex items-center justify-between mb-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <button onClick={prevMonth} className="p-2 hover:bg-[#F4F4EF] rounded-xl transition">
-            <MaterialSymbol icon={isRtl ? 'chevron_right' : 'chevron_left'} size={20} className="text-[#717973]" />
+          <button onClick={prevMonth} className="p-2 hover:bg-surface-light rounded-xl transition">
+            <MaterialSymbol icon={isRtl ? 'chevron_right' : 'chevron_left'} size={20} className="text-on-surface-subtle" />
           </button>
-          <h4 className="font-bold text-[#002819]">
+          <h4 className="font-bold text-brand-primary">
             {t(`common.${MONTHS[currentMonth].toLowerCase()}`) || MONTHS[currentMonth]} {currentYear}
           </h4>
-          <button onClick={nextMonth} className="p-2 hover:bg-[#F4F4EF] rounded-xl transition">
-            <MaterialSymbol icon={isRtl ? 'chevron_left' : 'chevron_right'} size={20} className="text-[#717973]" />
+          <button onClick={nextMonth} className="p-2 hover:bg-surface-light rounded-xl transition">
+            <MaterialSymbol icon={isRtl ? 'chevron_left' : 'chevron_right'} size={20} className="text-on-surface-subtle" />
           </button>
         </div>
         <button
           onClick={goToday}
-          className="text-xs font-semibold text-[#D4AF37] hover:underline"
+          className="text-xs font-semibold text-brand-accent hover:underline"
         >
           {t('common.today')}
         </button>
@@ -125,7 +125,7 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
 
       <div className="grid grid-cols-7 gap-1">
         {DAYS.map(d => (
-          <div key={d} className={`text-center text-[10px] font-bold text-[#717973] uppercase py-1 ${isRtl ? 'text-right' : ''}`}>
+          <div key={d} className={`text-center text-[10px] font-bold text-on-surface-subtle uppercase py-1 ${isRtl ? 'text-right' : ''}`}>
             {compact ? d[0] : t(`common.${d.toLowerCase()}`) || d}
           </div>
         ))}
@@ -137,15 +137,15 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
               onClick={() => handleDateClick(cell.dateStr, cell.day)}
               className={`
                 relative min-h-[60px] rounded-xl p-1.5 cursor-pointer transition-all
-                ${cell.isToday ? 'ring-2 ring-[#D4AF37]' : ''}
-                ${cell.isSelected ? 'bg-[#D4AF37]/15' : 'hover:bg-[#F4F4EF]/50'}
-                ${cell.count > 0 ? 'bg-[#F4F4EF]' : ''}
+                ${cell.isToday ? 'ring-2 ring-brand-accent' : ''}
+                ${cell.isSelected ? 'bg-brand-accent/15' : 'hover:bg-surface-light/50'}
+                ${cell.count > 0 ? 'bg-surface-light' : ''}
               `}
             >
               <span className={`
                 text-xs font-bold
-                ${cell.isToday ? 'text-[#D4AF37]' : 'text-[#404943]'}
-                ${cell.isSelected ? 'text-[#D4AF37]' : ''}
+                ${cell.isToday ? 'text-brand-accent' : 'text-on-surface-variant'}
+                ${cell.isSelected ? 'text-brand-accent' : ''}
               `}>
                 {cell.day}
               </span>
@@ -156,20 +156,20 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
                       key={task.id}
                       className={`
                         text-[8px] leading-tight truncate rounded px-0.5
-                        ${task.status === 'completed' ? 'text-[#10B981] line-through' : task.status === 'in_progress' ? 'text-[#3B82F6]' : 'text-[#404943]'}
+                        ${task.status === 'completed' ? 'text-[#10B981] line-through' : task.status === 'in_progress' ? 'text-[#3B82F6]' : 'text-on-surface-variant'}
                       `}
                     >
                       {task.title}
                     </div>
                   ))}
                   {cell.count > 3 && (
-                    <div className="text-[8px] text-[#717973] font-semibold">+{cell.count - 3} more</div>
+                    <div className="text-[8px] text-on-surface-subtle font-semibold">+{cell.count - 3} more</div>
                   )}
                 </div>
               )}
               {cell.count > 0 && compact && (
                 <div className="flex gap-0.5 mt-1">
-                  <div className={`w-1.5 h-1.5 rounded-full ${cell.hasOverdue ? 'bg-[#BA1A1A]' : 'bg-[#D4AF37]'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full ${cell.hasOverdue ? 'bg-danger' : 'bg-brand-accent'}`} />
                 </div>
               )}
             </div>
@@ -179,7 +179,7 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
 
       {selectedDate && selectedDateTasks.length > 0 && !compact && (
         <div className="mt-4 space-y-2">
-          <h5 className="text-xs font-bold text-[#717973] uppercase tracking-wider">
+          <h5 className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">
             {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
           </h5>
           {selectedDateTasks.map(task => (
@@ -188,19 +188,19 @@ export default function TaskCalendar({ tasks, compact = false, onDateClick }) {
               onClick={() => navigate(`/tasks?task=${task.id}`)}
               className="flex items-center gap-3 p-3 bg-white rounded-xl cursor-pointer hover:shadow-sm transition-shadow"
             >
-              <div className={`w-2 h-2 rounded-full ${priorityColors[task.priority] || 'bg-[#717973]'}`} />
+              <div className={`w-2 h-2 rounded-full ${priorityColors[task.priority] || 'bg-on-surface-subtle'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#002819] truncate">{task.title}</p>
-                <p className="text-xs text-[#717973]">
+                <p className="text-sm font-bold text-brand-primary truncate">{task.title}</p>
+                <p className="text-xs text-on-surface-subtle">
                   {task.assignee_name && `${task.assignee_name}`}
                   {task.animal_name && ` - ${task.animal_name}`}
                 </p>
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                task.status === 'completed' ? 'bg-[#10B981]/15 text-[#059669]' :
+                task.status === 'completed' ? 'bg-[#10B981]/15 text-success' :
                 task.status === 'in_progress' ? 'bg-[#3B82F6]/15 text-[#2563EB]' :
-                task.status === 'cancelled' ? 'bg-[#F4F4EF] text-[#717973]' :
-                'bg-[#F59E0B]/15 text-[#735C00]'
+                task.status === 'cancelled' ? 'bg-surface-light text-on-surface-subtle' :
+                'bg-[#F59E0B]/15 text-tertiary-container'
               }`}>
                 {t(`tasks.${task.status === 'in_progress' ? 'inProgress' : task.status}`)}
               </span>

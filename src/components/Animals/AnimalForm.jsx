@@ -204,23 +204,23 @@ export default function AnimalForm() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={handleCancel} className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors">
-            <MaterialSymbol icon="arrow_back" size={24} className="text-[#404943]" />
+          <button onClick={handleCancel} className="p-2 hover:bg-surface-dim rounded-lg transition-colors">
+            <MaterialSymbol icon="arrow_back" size={24} className="text-on-surface-variant" />
           </button>
           <div>
-            <h2 className="text-3xl font-extrabold font-['Manrope'] text-[#002819] tracking-tight">
+            <h2 className="text-3xl font-extrabold font-['Manrope'] text-brand-primary tracking-tight">
               {isEditMode ? 'Edit Animal' : 'Add New Animal'}
             </h2>
-            <p className="text-[#404943] mt-1">
+            <p className="text-on-surface-variant mt-1">
               {isEditMode ? 'Update animal information' : 'Establish a new digital identity'}
             </p>
           </div>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleCancel} className="px-6 py-2.5 rounded-xl border border-[#c0c9c1] text-[#1a1c19] hover:bg-[#e8e8e3] transition-colors font-semibold text-sm">
+          <button onClick={handleCancel} className="px-6 py-2.5 rounded-xl border border-outline text-on-surface hover:bg-surface-dim transition-colors font-semibold text-sm">
             Cancel
           </button>
-          <button onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-2.5 rounded-xl bg-gradient-to-br from-[#002819] to-[#06402B] text-white shadow-xl shadow-[#002819]/20 hover:scale-[1.02] active:scale-95 transition-all font-bold text-sm flex items-center gap-2 disabled:opacity-50">
+          <button onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-2.5 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary text-white shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all font-bold text-sm flex items-center gap-2 disabled:opacity-50">
             <MaterialSymbol icon="save" size={18} />
             {isSubmitting ? 'Saving...' : isEditMode ? 'Update Animal' : 'Save Animal'}
           </button>
@@ -228,7 +228,7 @@ export default function AnimalForm() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
@@ -237,27 +237,27 @@ export default function AnimalForm() {
         <div className="lg:col-span-2 space-y-6">
           {/* Animal Info */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-6">Animal Information</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-6">Animal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Species</label>
-                <select name="species" value={formData.species} onChange={handleChange} className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Species</label>
+                <select name="species" value={formData.species} onChange={handleChange} className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
                   <option value="Camel">Camel</option>
                   <option value="Goat">Goat</option>
                   <option value="Sheep">Sheep</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Breed</label>
-                <input name="breed" value={formData.breed} onChange={handleChange} placeholder="e.g. Majaheem, Wadhah" className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Breed</label>
+                <input name="breed" value={formData.breed} onChange={handleChange} placeholder="e.g. Majaheem, Wadhah" className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Date of Birth</label>
-                <input name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} type="date" className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Date of Birth</label>
+                <input name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} type="date" className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Gender</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
@@ -267,30 +267,30 @@ export default function AnimalForm() {
 
           {/* Physical Characteristics */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-6">Physical Characteristics</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-6">Physical Characteristics</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Color/Markings</label>
-                <textarea name="color_markings" value={formData.color_markings} onChange={handleChange} rows="3" placeholder="Describe distinctive markings..." className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20 resize-none" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Color/Markings</label>
+                <textarea name="color_markings" value={formData.color_markings} onChange={handleChange} rows="3" placeholder="Describe distinctive markings..." className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20 resize-none" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Current Weight (kg)</label>
-                <input name="current_weight" value={formData.current_weight} onChange={handleChange} type="number" step="0.01" placeholder="0.00" className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Current Weight (kg)</label>
+                <input name="current_weight" value={formData.current_weight} onChange={handleChange} type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
               </div>
             </div>
           </div>
 
           {/* Health Benchmarks */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-6">Health Benchmarks</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-6">Health Benchmarks</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Baseline Temperature (°C)</label>
-                <input name="baseline_temperature" value={formData.baseline_temperature} onChange={handleChange} type="number" step="0.1" placeholder="38.5" className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Baseline Temperature (°C)</label>
+                <input name="baseline_temperature" value={formData.baseline_temperature} onChange={handleChange} type="number" step="0.1" placeholder="38.5" className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#717973] uppercase tracking-wider">Normal Heart Rate (BPM)</label>
-                <input name="normal_heart_rate" value={formData.normal_heart_rate} onChange={handleChange} type="number" placeholder="45" className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
+                <label className="text-xs font-bold text-on-surface-subtle uppercase tracking-wider">Normal Heart Rate (BPM)</label>
+                <input name="normal_heart_rate" value={formData.normal_heart_rate} onChange={handleChange} type="number" placeholder="45" className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20" />
               </div>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function AnimalForm() {
         <div className="space-y-6">
           {/* Image Upload */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-4">Identification Photo</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-4">Identification Photo</h3>
             <div className="space-y-4">
               {imagePreview ? (
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
@@ -310,14 +310,14 @@ export default function AnimalForm() {
                   </button>
                 </div>
               ) : (
-                <div className="relative aspect-[4/3] rounded-xl bg-[#f4f4ef] border-2 border-dashed border-[#c0c9c1] flex flex-col items-center justify-center cursor-pointer hover:bg-[#e8e8e3] transition-colors">
+                <div className="relative aspect-[4/3] rounded-xl bg-surface-light border-2 border-dashed border-outline flex flex-col items-center justify-center cursor-pointer hover:bg-surface-dim transition-colors">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                  <MaterialSymbol icon="add_a_photo" size={40} className="text-[#717973] mb-2" />
-                  <p className="text-xs text-[#717973] text-center px-4">Click to upload photo<br />PNG, JPG up to 10MB</p>
+                  <MaterialSymbol icon="add_a_photo" size={40} className="text-on-surface-subtle mb-2" />
+                  <p className="text-xs text-on-surface-subtle text-center px-4">Click to upload photo<br />PNG, JPG up to 10MB</p>
                 </div>
               )}
               {imagePreview && (
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full py-2 bg-[#eeeee9] text-[#002819] rounded-lg text-sm font-semibold hover:bg-[#e8e8e3] flex items-center justify-center gap-2">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full py-2 bg-surface-dim text-brand-primary rounded-lg text-sm font-semibold hover:bg-surface-dim flex items-center justify-center gap-2">
                   <MaterialSymbol icon="refresh" size={18} />
                   Change Photo
                 </button>
@@ -327,14 +327,14 @@ export default function AnimalForm() {
 
           {/* Device Assignment */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-4">Device Assignment</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-4">Device Assignment</h3>
             {devicesLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-6 h-6 border-2 border-[#002819] border-t-transparent rounded-full" />
+                <div className="animate-spin w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full" />
               </div>
             ) : (
               <>
-                <select name="device_id" value={formData.device_id} onChange={handleChange} className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
+                <select name="device_id" value={formData.device_id} onChange={handleChange} className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
                   <option value="">No Device</option>
                   {availableDevices.map(device => (
                     <option key={device.id} value={device.device_id}>
@@ -342,7 +342,7 @@ export default function AnimalForm() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-[#717973] mt-2">
+                <p className="text-xs text-on-surface-subtle mt-2">
                   {availableDevices.length} device(s) available
                 </p>
               </>
@@ -351,15 +351,15 @@ export default function AnimalForm() {
 
           {/* Owner Assignment */}
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-4">Owner Assignment</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-4">Owner Assignment</h3>
             {devicesLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-6 h-6 border-2 border-[#002819] border-t-transparent rounded-full" />
+                <div className="animate-spin w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full" />
               </div>
             ) : (
               <>
                 {!isOwner && !isManager ? (
-                  <select name="owner_id" value={formData.owner_id} onChange={handleChange} className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
+                  <select name="owner_id" value={formData.owner_id} onChange={handleChange} className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#002819]/20">
                     <option value="">Select Owner</option>
                     {owners.map(owner => (
                       <option key={owner.id} value={owner.id}>
@@ -372,17 +372,17 @@ export default function AnimalForm() {
                 )}
                 {currentOwner && (
                   <div className="flex items-center gap-3 mt-3">
-                    <div className="w-10 h-10 rounded-full bg-[#06402b]/10 overflow-hidden flex items-center justify-center text-xs font-bold text-[#002819]">
+                    <div className="w-10 h-10 rounded-full bg-brand-secondary/10 overflow-hidden flex items-center justify-center text-xs font-bold text-brand-primary">
                       {currentOwner.name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[#002819]">{currentOwner.name}</p>
-                      <p className="text-[10px] text-[#717973]">Primary Owner</p>
+                      <p className="text-sm font-bold text-brand-primary">{currentOwner.name}</p>
+                      <p className="text-[10px] text-on-surface-subtle">Primary Owner</p>
                     </div>
                   </div>
                 )}
                 {!isOwner && !isManager && (
-                  <p className="text-xs text-[#717973] mt-2">
+                  <p className="text-xs text-on-surface-subtle mt-2">
                     {owners.length} owner(s) available
                   </p>
                 )}
@@ -394,7 +394,7 @@ export default function AnimalForm() {
           {isEditMode && (
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-red-200">
               <h3 className="text-lg font-bold text-red-600 mb-4">Danger Zone</h3>
-              <p className="text-xs text-[#717973] mb-4">This action cannot be undone.</p>
+              <p className="text-xs text-on-surface-subtle mb-4">This action cannot be undone.</p>
               <button type="button" onClick={async () => {
                 if (!confirm('Are you sure you want to delete this animal?')) return;
                 try {

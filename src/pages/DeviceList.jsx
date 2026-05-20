@@ -8,9 +8,9 @@ import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
 
 const statusConfig = {
-  online: { icon: 'wifi', label: 'Online', color: 'text-[#002819]' },
-  low_signal: { icon: 'signal_cellular_alt_1_bar', label: 'Low Signal', color: 'text-[#735c00]' },
-  offline: { icon: 'wifi_off', label: 'Offline', color: 'text-[#717973]' },
+  online: { icon: 'wifi', label: 'Online', color: 'text-brand-primary' },
+  low_signal: { icon: 'signal_cellular_alt_1_bar', label: 'Low Signal', color: 'text-tertiary-container' },
+  offline: { icon: 'wifi_off', label: 'Offline', color: 'text-on-surface-subtle' },
 };
 
 export default function DeviceList() {
@@ -207,8 +207,8 @@ export default function DeviceList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
-        <span className="ml-3 text-[#404943]">Loading devices...</span>
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
+        <span className="ml-3 text-on-surface-variant">Loading devices...</span>
       </div>
     );
   }
@@ -218,10 +218,10 @@ export default function DeviceList() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold font-['Manrope'] text-[#002819] tracking-tight">
+          <h2 className="text-3xl font-extrabold font-['Manrope'] text-brand-primary tracking-tight">
             {t('devices.deviceManagement')}
           </h2>
-          <p className="text-[#404943] mt-1">
+          <p className="text-on-surface-variant mt-1">
             {t('devicesPage.monitoring')}
           </p>
         </div>
@@ -230,7 +230,7 @@ export default function DeviceList() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="px-4 py-2 bg-[#D4AF37] text-white rounded-xl font-bold hover:bg-[#c9a030] transition flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-accent text-white rounded-xl font-bold hover:bg-brand-accent transition flex items-center gap-2 disabled:opacity-50"
             >
               <MaterialSymbol icon="download" size={20} />
               {exporting ? t('common.exporting') : t('common.export')}
@@ -240,14 +240,14 @@ export default function DeviceList() {
             <>
               <button
                 onClick={() => navigate('/devices/new')}
-                className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
+                className="flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:shadow-lg transition-all active:scale-95"
               >
                 <MaterialSymbol icon="add_circle" size={20} />
                 {t('devicesPage.registerNew')}
               </button>
               <button
                 onClick={() => { setBatchCount(10); setBatchAssign(false); setShowBatchModal(true); }}
-                className="flex items-center gap-2 bg-[#735C00] text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:bg-[#5c4900] transition-all"
+                className="flex items-center gap-2 bg-tertiary-container text-white px-6 py-3 rounded-xl font-['Manrope'] font-bold hover:bg-tertiary-container transition-all"
               >
                 <MaterialSymbol icon="layers" size={20} />
                 Batch Create
@@ -260,30 +260,30 @@ export default function DeviceList() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <span className="text-[#717973] text-xs font-bold uppercase">{t('devices.title')}</span>
-          <p className="text-3xl font-black text-[#002819] mt-1">{totalDevices}</p>
+          <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devices.title')}</span>
+          <p className="text-3xl font-black text-brand-primary mt-1">{totalDevices}</p>
         </div>
-        <div className="bg-[#002819] p-5 rounded-2xl">
+        <div className="bg-brand-primary p-5 rounded-2xl">
           <span className="text-white/60 text-xs font-bold uppercase">{t('devicesPage.totalActive')}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-black text-white">{totalActive}</span>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border-s-4 border-[#002819]">
-          <span className="text-[#717973] text-xs font-bold uppercase">{t('devicesPage.onlineStatus')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border-s-4 border-brand-primary">
+          <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devicesPage.onlineStatus')}</span>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-3xl font-black text-[#002819]">{onlineCount}</span>
-            <MaterialSymbol icon="wifi" size={18} className="text-[#002819]" />
+            <span className="text-3xl font-black text-brand-primary">{onlineCount}</span>
+            <MaterialSymbol icon="wifi" size={18} className="text-brand-primary" />
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border-s-4 border-[#735c00]">
-          <span className="text-[#717973] text-xs font-bold uppercase">{t('devicesPage.lowBatteryAlerts')}</span>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border-s-4 border-tertiary-container">
+          <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devicesPage.lowBatteryAlerts')}</span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-black text-[#735c00]">{lowBatteryCount}</span>
+            <span className="text-3xl font-black text-tertiary-container">{lowBatteryCount}</span>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <span className="text-[#717973] text-xs font-bold uppercase">{t('devicesPage.maintenanceDue')}</span>
+          <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devicesPage.maintenanceDue')}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-black text-[#4f6357]">{maintenanceCount}</span>
           </div>
@@ -294,20 +294,20 @@ export default function DeviceList() {
       <div className="space-y-4">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[240px] relative">
-            <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+            <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('common.search')}
-              className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
+              className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
             />
           </div>
 
           <select
             value={ownerFilter}
             onChange={(e) => setOwnerFilter(e.target.value)}
-            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
           >
             <option value="all">All Owners</option>
             {ownerOptions.map(owner => (
@@ -319,7 +319,7 @@ export default function DeviceList() {
             <select
               value={deviceTypeFilter}
               onChange={(e) => setDeviceTypeFilter(e.target.value)}
-              className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+              className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
             >
               <option value="all">All Types</option>
               {deviceTypeOptions.map(type => (
@@ -331,7 +331,7 @@ export default function DeviceList() {
           <select
             value={batteryFilter}
             onChange={(e) => setBatteryFilter(e.target.value)}
-            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
           >
             <option value="all">All Battery</option>
             <option value="good">{t('devicesPage.optimal') || 'Good (>50%)'}</option>
@@ -342,7 +342,7 @@ export default function DeviceList() {
           <select
             value={assignmentFilter}
             onChange={(e) => setAssignmentFilter(e.target.value)}
-            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+            className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
           >
             <option value="all">All Assignments</option>
             <option value="assigned">{t('devices.assigned') || 'Assigned'}</option>
@@ -351,7 +351,7 @@ export default function DeviceList() {
 
           <button
             onClick={() => { setSearchQuery(''); setOwnerFilter('all'); setDeviceTypeFilter('all'); setBatteryFilter('all'); setAssignmentFilter('all'); setStatusFilter('all'); }}
-            className="px-4 py-3 text-sm font-semibold text-[#717973] hover:text-[#002819] transition-colors flex items-center gap-1"
+            className="px-4 py-3 text-sm font-semibold text-on-surface-subtle hover:text-brand-primary transition-colors flex items-center gap-1"
           >
             <MaterialSymbol icon="filter_list_off" size={18} />
             {t('common.clearFilters') || 'Clear'}
@@ -367,8 +367,8 @@ export default function DeviceList() {
                 onClick={() => setStatusFilter(status)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   statusFilter === status
-                    ? 'bg-[#002819] text-white'
-                    : 'bg-white text-[#404943] border border-[#c0c9c1]/20 hover:bg-[#f4f4ef]'
+                    ? 'bg-brand-primary text-white'
+                    : 'bg-white text-on-surface-variant border border-outline/20 hover:bg-surface-light'
                 }`}
               >
                 {status === 'all' ? t('devicesPage.allDevices') : status === 'low_signal' ? t('devicesPage.lowBattery') : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -379,14 +379,14 @@ export default function DeviceList() {
           <div className="flex bg-gray-100 rounded-xl p-0.5">
             <button
               onClick={() => setViewMode('tiles')}
-              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
               title={t('dashboard.regionalView') || 'Tile view'}
             >
               <MaterialSymbol icon="grid_view" size={18} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
               title={t('common.list')}
             >
               <MaterialSymbol icon="table_rows" size={18} />
@@ -398,8 +398,8 @@ export default function DeviceList() {
       {/* Content */}
       {filteredDevices.length === 0 ? (
         <div className="card p-12 text-center">
-          <MaterialSymbol icon="sensors_off" size={64} className="mx-auto text-[#717973] mb-4 opacity-50" />
-          <p className="text-[#404943] font-medium text-lg">{t('devicesPage.noDevices')}</p>
+          <MaterialSymbol icon="sensors_off" size={64} className="mx-auto text-on-surface-subtle mb-4 opacity-50" />
+          <p className="text-on-surface-variant font-medium text-lg">{t('devicesPage.noDevices')}</p>
         </div>
       ) : viewMode === 'tiles' ? (
         /* Tile View */
@@ -414,59 +414,66 @@ export default function DeviceList() {
                   <div className={`flex items-start justify-between mb-4 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                        device.status === 'offline' ? 'bg-[#BA1A1A]/10' :
-                        device.status === 'low_signal' ? 'bg-[#D4AF37]/10' :
-                        'bg-[#002819]/5'
+                        device.status === 'offline' ? 'bg-danger/10' :
+                        device.status === 'low_signal' ? 'bg-brand-accent/10' :
+                        'bg-brand-primary/5'
                       }`}>
                         <MaterialSymbol icon={status.icon} size={24} className={status.color} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-[#002819]">{device.device_id}</h3>
-                        {device.name && <p className="text-sm text-[#717973]">{device.name}</p>}
-                        <p className="text-sm text-[#717973]">{device.type || '-'}</p>
+                        <h3 className="text-lg font-bold text-brand-primary">{device.device_id}</h3>
+                        {device.name && <p className="text-sm text-on-surface-subtle">{device.name}</p>}
+                        <p className="text-sm text-on-surface-subtle">{device.type || '-'}</p>
+                        <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                          device.data_source === 'real'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {device.data_source === 'real' ? 'LIVE' : 'SIM'}
+                        </span>
                       </div>
                     </div>
                     <div className={`w-3 h-3 rounded-full ${
                       device.status === 'online' ? 'bg-[#10B981]' :
-                      device.status === 'low_signal' ? 'bg-[#D4AF37]' :
-                      'bg-[#717973]'
+                      device.status === 'low_signal' ? 'bg-brand-accent' :
+                      'bg-on-surface-subtle'
                     }`} />
                   </div>
 
                   <div className={`grid grid-cols-2 gap-3 text-sm ${isRtl ? 'text-right' : ''}`}>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('devicesPage.batteryLevel')}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('devicesPage.batteryLevel')}</p>
                       <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-16 bg-[#e8e8e3] rounded-full overflow-hidden">
+                        <div className="h-1.5 w-16 bg-surface-dim rounded-full overflow-hidden">
                           <div className={`h-full rounded-full ${
-                            battery > 50 ? 'bg-[#002819]' :
-                            battery > 20 ? 'bg-[#735c00]' : 'bg-[#BA1A1A]'
+                            battery > 50 ? 'bg-brand-primary' :
+                            battery > 20 ? 'bg-tertiary-container' : 'bg-danger'
                           }`} style={{ width: `${battery}%` }} />
                         </div>
                         <span className={`font-semibold text-xs ${
-                          battery > 50 ? 'text-[#002819]' :
-                          battery > 20 ? 'text-[#735c00]' : 'text-[#BA1A1A]'
+                          battery > 50 ? 'text-brand-primary' :
+                          battery > 20 ? 'text-tertiary-container' : 'text-danger'
                         }`}>{battery}%</span>
                       </div>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('users.owner')}</p>
-                      <p className="font-semibold text-[#002819] truncate">{device.owner?.name || '-'}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('users.owner')}</p>
+                      <p className="font-semibold text-brand-primary truncate">{device.owner?.name || '-'}</p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('devicesPage.assignedAnimal')}</p>
-                      <p className="font-semibold text-[#002819] text-xs truncate">
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('devicesPage.assignedAnimal')}</p>
+                      <p className="font-semibold text-brand-primary text-xs truncate">
                         {assignedAnimal ? assignedAnimal.animal_id : t('devicesPage.unassigned')}
                       </p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('devicesPage.firmware')}</p>
-                      <p className="font-semibold text-[#002819] text-xs truncate">{device.firmware_version || '-'}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('devicesPage.firmware')}</p>
+                      <p className="font-semibold text-brand-primary text-xs truncate">{device.firmware_version || '-'}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 rounded-xl bg-[#F4F4EF]/50">
-                    <div className={`flex items-center justify-between text-xs text-[#717973] ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <div className="mt-4 p-3 rounded-xl bg-surface-light/50">
+                    <div className={`flex items-center justify-between text-xs text-on-surface-subtle ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <span>{t('devicesPage.lastUpdate')}</span>
                       <span>{device.updated_at ? new Date(device.updated_at).toLocaleDateString() : t('devicesPage.na')}</span>
                     </div>
@@ -476,7 +483,7 @@ export default function DeviceList() {
                 <div className={`flex border-t border-[#F4F4EF] ${isRtl ? 'flex-row-reverse' : ''}`}>
                   <Link
                     to={`/devices/${device.id}/edit`}
-                    className="flex-1 py-3 text-center text-sm font-semibold text-[#002819] hover:bg-[#F4F4EF] transition-colors"
+                    className="flex-1 py-3 text-center text-sm font-semibold text-brand-primary hover:bg-surface-light transition-colors"
                   >
                     {t('common.view') || 'View'}
                   </Link>
@@ -484,7 +491,7 @@ export default function DeviceList() {
                     <>
                       <Link
                         to={`/devices/${device.id}/edit`}
-                        className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-[#F4F4EF] hover:text-[#002819] transition-colors border-x border-[#F4F4EF]"
+                        className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-surface-light hover:text-brand-primary transition-colors border-x border-[#F4F4EF]"
                       >
                         {t('common.edit')}
                       </Link>
@@ -502,7 +509,7 @@ export default function DeviceList() {
                             setMessage({ type: 'error', text: 'Failed to delete device' });
                           }
                         }}
-                        className="flex-1 py-3 text-center text-sm font-semibold text-[#BA1A1A] hover:bg-red-50 transition-colors"
+                        className="flex-1 py-3 text-center text-sm font-semibold text-danger hover:bg-red-50 transition-colors"
                       >
                         {t('common.delete')}
                       </button>
@@ -520,14 +527,14 @@ export default function DeviceList() {
             <table className={`w-full text-sm ${isRtl ? 'text-right' : 'text-left'}`}>
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devices.deviceId')}</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">Name</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('users.owner')}</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.assignedAnimal')}</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.batteryLevel')}</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.connection')}</th>
-                  <th className="py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('devicesPage.lastUpdate')}</th>
-                  <th className={`py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
+                  <th className="py-3 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('devices.deviceId')}</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">Name</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('users.owner')}</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('devicesPage.assignedAnimal')}</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('devicesPage.batteryLevel')}</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('devicesPage.connection')}</th>
+                  <th className="py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('devicesPage.lastUpdate')}</th>
+                  <th className={`py-3 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -537,14 +544,25 @@ export default function DeviceList() {
                   return (
                     <tr key={device.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${battery === 0 ? 'bg-[#ffdad6]/5' : ''}`}>
                       <td className="py-3 px-5">
-                        <p className="font-semibold text-[#002819]">{device.device_id}</p>
-                        <p className="text-xs text-[#717973]">{device.firmware_version || 'v2.4'} {t('devicesPage.firmware')}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-semibold text-brand-primary">{device.device_id}</p>
+                            <p className="text-xs text-on-surface-subtle">{device.firmware_version || 'v2.4'} {t('devicesPage.firmware')}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                            device.data_source === 'real'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {device.data_source === 'real' ? 'LIVE' : 'SIM'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-4">
-                        <p className="text-[#404943]">{device.name || '-'}</p>
-                        <p className="text-xs text-[#717973]">{device.type || '-'}</p>
+                        <p className="text-on-surface-variant">{device.name || '-'}</p>
+                        <p className="text-xs text-on-surface-subtle">{device.type || '-'}</p>
                       </td>
-                      <td className="py-3 px-4 text-[#404943]">
+                      <td className="py-3 px-4 text-on-surface-variant">
                         {device.owner ? device.owner.name : '-'}
                       </td>
                       <td className="py-3 px-4">
@@ -552,16 +570,16 @@ export default function DeviceList() {
                           const assignedAnimal = getAssignedAnimal(device.device_id);
                           return assignedAnimal ? (
                             <Link to={`/animals/${assignedAnimal.id}`} className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-[#eeeee9] flex items-center justify-center">
-                                <MaterialSymbol icon="pets" size={14} className="text-[#002819]" />
+                              <div className="w-7 h-7 rounded-full bg-surface-dim flex items-center justify-center">
+                                <MaterialSymbol icon="pets" size={14} className="text-brand-primary" />
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-[#002819]">{assignedAnimal.animal_id}</p>
-                                <p className="text-[10px] text-[#717973]">{assignedAnimal.species}</p>
+                                <p className="text-xs font-semibold text-brand-primary">{assignedAnimal.animal_id}</p>
+                                <p className="text-[10px] text-on-surface-subtle">{assignedAnimal.species}</p>
                               </div>
                             </Link>
                           ) : (
-                            <span className="text-xs text-[#BA1A1A]">{t('devicesPage.unassigned')}</span>
+                            <span className="text-xs text-danger">{t('devicesPage.unassigned')}</span>
                           );
                         })()}
                       </td>
@@ -569,13 +587,13 @@ export default function DeviceList() {
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-12 bg-gray-100 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full ${
-                              battery > 50 ? 'bg-[#002819]' :
-                              battery > 20 ? 'bg-[#735c00]' : 'bg-[#BA1A1A]'
+                              battery > 50 ? 'bg-brand-primary' :
+                              battery > 20 ? 'bg-tertiary-container' : 'bg-danger'
                             }`} style={{ width: `${battery}%` }} />
                           </div>
                           <span className={`text-xs font-medium ${
-                            battery > 50 ? 'text-[#002819]' :
-                            battery > 20 ? 'text-[#735c00]' : 'text-[#BA1A1A]'
+                            battery > 50 ? 'text-brand-primary' :
+                            battery > 20 ? 'text-tertiary-container' : 'text-danger'
                           }`}>{battery}%</span>
                         </div>
                       </td>
@@ -585,7 +603,7 @@ export default function DeviceList() {
                           {status.label}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-xs text-[#717973]">
+                      <td className="py-3 px-4 text-xs text-on-surface-subtle">
                         {device.updated_at ? new Date(device.updated_at).toLocaleDateString() : '-'}
                       </td>
                       <td className="py-3 px-5">
@@ -646,23 +664,23 @@ export default function DeviceList() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowBatchModal(false)}>
           <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-[#002819]">Batch Create Devices</h3>
-              <button onClick={() => setShowBatchModal(false)} className="p-1 hover:bg-[#F4F4EF] rounded-lg transition">
-                <MaterialSymbol icon="close" size={20} className="text-[#717973]" />
+              <h3 className="text-xl font-bold text-brand-primary">Batch Create Devices</h3>
+              <button onClick={() => setShowBatchModal(false)} className="p-1 hover:bg-surface-light rounded-lg transition">
+                <MaterialSymbol icon="close" size={20} className="text-on-surface-subtle" />
               </button>
             </div>
             {batchMessage && (
-              <div className={`p-3 rounded-xl mb-4 text-sm font-medium ${batchMessage.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+              <div className={`p-3 rounded-xl mb-4 text-sm font-medium ${batchMessage.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
                 {batchMessage.text}
               </div>
             )}
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">Number of Devices</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">Number of Devices</label>
                 <select
                   value={batchCount}
                   onChange={e => setBatchCount(parseInt(e.target.value))}
-                  className="w-full bg-[#F4F4EF] border-none rounded-xl px-4 py-3 mt-1 appearance-none focus:ring-2 focus:ring-[#06402b]"
+                  className="w-full bg-surface-light border-none rounded-xl px-4 py-3 mt-1 appearance-none focus:ring-2 focus:ring-brand-secondary"
                 >
                   <option value={5}>5 Devices</option>
                   <option value={10}>10 Devices</option>
@@ -673,22 +691,22 @@ export default function DeviceList() {
               <div className="flex items-center gap-3 py-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={batchAssign} onChange={e => setBatchAssign(e.target.checked)} className="sr-only peer" />
-                  <div className="w-14 h-7 bg-[#E3E3DE] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-[#002819]" />
+                  <div className="w-14 h-7 bg-surface-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-brand-primary" />
                 </label>
-                <span className="text-sm text-[#404943]">Auto-assign to animals without devices</span>
+                <span className="text-sm text-on-surface-variant">Auto-assign to animals without devices</span>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowBatchModal(false)}
-                className="flex-1 py-3 bg-[#F4F4EF] text-[#404943] rounded-xl font-bold text-sm hover:bg-[#E3E3DE] transition"
+                className="flex-1 py-3 bg-surface-light text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-high transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBatchCreate}
                 disabled={batchLoading}
-                className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition disabled:opacity-50"
+                className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition disabled:opacity-50"
               >
                 {batchLoading ? 'Creating...' : `Create ${batchCount} Devices`}
               </button>

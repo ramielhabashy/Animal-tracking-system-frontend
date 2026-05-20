@@ -16,12 +16,12 @@ export default function QuickActionsWidget({ dashboardData }) {
   const { stats } = dashboardData;
 
   const items = [
-    { to: '/animals', icon: 'pets', title: t('dashboard.manageAnimals'), subtitle: `${stats?.totalAnimals || 0} total`, color: 'from-[#002819] to-[#06402B]', roles: true },
-    { to: '/devices', icon: 'sensors', title: t('nav.devices'), subtitle: `${stats?.activeDevices || 0} active`, color: 'from-[#06402B] to-[#002819]', roles: isAdmin || isOwner || isManager },
+    { to: '/animals', icon: 'pets', title: t('dashboard.manageAnimals'), subtitle: `${stats?.totalAnimals || 0} total`, color: 'from-brand-primary to-brand-secondary', roles: true },
+    { to: '/devices', icon: 'sensors', title: t('nav.devices'), subtitle: `${stats?.activeDevices || 0} active`, color: 'from-brand-secondary to-brand-primary', roles: isAdmin || isOwner || isManager },
     { to: '/map', icon: 'map', title: t('nav.mapView'), subtitle: t('dashboard.fullTracker'), color: 'from-[#735C00] to-[#D4AF37]', roles: isAdmin || isOwner || isManager },
-    { to: '/users', icon: 'groups', title: t('nav.team'), subtitle: t('team.teamMembers'), color: 'from-[#D4AF37] to-[#735C00]', roles: canManageUsers },
-    { to: '/tasks', icon: 'task', title: t('nav.tasks'), subtitle: t('tasks.title'), color: 'from-[#06402B] to-[#735C00]', roles: true },
-    { to: '/medical-records', icon: 'medical_services', title: t('nav.medicalRecords'), subtitle: t('medicalRecords.records'), color: 'from-[#735C00] to-[#06402B]', roles: isAdmin || isOwner || isManager || userRole === 'Doctor' },
+    { to: '/users', icon: 'groups', title: t('nav.team'), subtitle: t('team.teamMembers'), color: 'from-brand-accent to-[#735C00]', roles: canManageUsers },
+    { to: '/tasks', icon: 'task', title: t('nav.tasks'), subtitle: t('tasks.title'), color: 'from-brand-secondary to-[#735C00]', roles: true },
+    { to: '/medical-records', icon: 'medical_services', title: t('nav.medicalRecords'), subtitle: t('medicalRecords.records'), color: 'from-[#735C00] to-brand-secondary', roles: isAdmin || isOwner || isManager || userRole === 'Doctor' },
   ];
 
   const visible = items.filter(item => item.roles);

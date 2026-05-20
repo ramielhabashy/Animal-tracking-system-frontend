@@ -71,6 +71,16 @@ export default function AnimalEdit() {
   const [currentOwner, setCurrentOwner] = useState(null);
   const [devicesLoading, setDevicesLoading] = useState(true);
 
+  const [existingDocuments, setExistingDocuments] = useState([]);
+  const [newDocuments, setNewDocuments] = useState([]);
+  const [deleteDocumentIds, setDeleteDocumentIds] = useState([]);
+
+  const DOCUMENT_TYPES = [
+    { value: 'registration_proof', label: 'Registration Proof' },
+    { value: 'health_certificate', label: 'Health Certificate' },
+    { value: 'other', label: 'Other' },
+  ];
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -173,6 +183,9 @@ export default function AnimalEdit() {
           const owner = users.find(u => u.id === currentAnimal.owner_id);
           if (owner) setCurrentOwner(owner);
         }
+        if (currentAnimal.documents) {
+          setExistingDocuments(currentAnimal.documents);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -229,6 +242,56 @@ export default function AnimalEdit() {
     }
   };
 
+  const addDocument = () => {
+    setNewDocuments(prev => [...prev, { file: null, type: 'other', notes: '', preview: null }]);
+  };
+
+  const removeNewDocument = (index) => {
+    setNewDocuments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleNewDocumentFile = (index, file) => {
+    setNewDocuments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], file };
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewDocuments(docs => {
+            const d = [...docs];
+            d[index] = { ...d[index], preview: reader.result };
+            return d;
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        updated[index] = { ...updated[index], preview: null };
+      }
+      return updated;
+    });
+  };
+
+  const handleNewDocumentType = (index, type) => {
+    setNewDocuments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], type };
+      return updated;
+    });
+  };
+
+  const handleNewDocumentNotes = (index, notes) => {
+    setNewDocuments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], notes };
+      return updated;
+    });
+  };
+
+  const markDeleteDocument = (docId) => {
+    setDeleteDocumentIds(prev => [...prev, docId]);
+    setExistingDocuments(prev => prev.filter(d => d.id !== docId));
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.species && !formData.custom_species) newErrors.species = 'Species is required';
@@ -278,6 +341,22 @@ export default function AnimalEdit() {
         submitData.append('identification_photo', formData.identification_photo);
       }
 
+      newDocuments.forEach((doc, index) => {
+        if (doc.file) {
+          submitData.append(`documents[${index}][file]`, doc.file);
+          submitData.append(`documents[${index}][type]`, doc.type);
+          if (doc.notes) {
+            submitData.append(`documents[${index}][notes]`, doc.notes);
+          }
+        }
+      });
+
+      if (!isNewAnimal && deleteDocumentIds.length > 0) {
+        deleteDocumentIds.forEach(id => {
+          submitData.append('delete_document_ids[]', id);
+        });
+      }
+
       const response = await apiFetch(url, {
         method: 'POST',
         body: submitData,
@@ -313,7 +392,7 @@ export default function AnimalEdit() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -340,7 +419,7 @@ export default function AnimalEdit() {
             <MaterialSymbol icon={isRtl ? "arrow_forward" : "arrow_back"} />
           </button>
           <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 bg-[#06402b] rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-brand-secondary rounded-xl flex items-center justify-center">
               <MaterialSymbol icon="pets" className="text-white" />
             </div>
             <div className={isRtl ? 'text-right' : ''}>
@@ -355,7 +434,7 @@ export default function AnimalEdit() {
           <button type="button" onClick={() => navigate('/animals')} className="px-6 py-2.5 rounded-xl border border-stone-200 text-stone-600 font-bold hover:bg-stone-100 transition-colors text-sm">
             {t('common.cancel')}
           </button>
-          <button type="submit" disabled={isSubmitting} className={`px-8 py-2.5 rounded-xl bg-[#002819] text-white font-bold hover:bg-[#06402b] shadow-lg shadow-[#002819]/20 transition-all text-sm flex items-center gap-2 disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <button type="submit" disabled={isSubmitting} className={`px-8 py-2.5 rounded-xl bg-brand-primary text-white font-bold hover:bg-brand-secondary shadow-lg shadow-brand-primary/20 transition-all text-sm flex items-center gap-2 disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}>
             <MaterialSymbol icon="save" size={18} />
             {isSubmitting ? t('common.loading') : t('common.save')}
           </button>
@@ -368,7 +447,7 @@ export default function AnimalEdit() {
         <div
           className={`mb-6 p-4 rounded-xl ${
             message.type === 'success'
-              ? 'bg-[#cfe5d6] text-[#002819]'
+              ? 'bg-[#cfe5d6] text-brand-primary'
               : 'bg-[#ffdad6] text-[#93000a]'
           } ${isRtl ? 'text-right' : ''}`}
         >
@@ -383,7 +462,7 @@ export default function AnimalEdit() {
              {/* Animal Information */}
             <section className="bg-white p-8 rounded-xl shadow-sm">
               <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="info" className="text-[#735c00]" />
+                <MaterialSymbol icon="info" className="text-tertiary-container" />
                 <h3 className="text-xl font-bold text-emerald-900">{t('animals.animalDetails')}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -394,14 +473,14 @@ export default function AnimalEdit() {
                   value={formData.name} 
                   onChange={handleChange} 
                   placeholder={t('animals.namePlaceholder')}
-                  className={`w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10 ${errors.name ? 'ring-2 ring-red-500' : ''}`}
+                  className={`w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10 ${errors.name ? 'ring-2 ring-red-500' : ''}`}
                   required
                 />
                 {errors.name && <p className="text-red-600 text-xs">{errors.name}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">Species *</label>
-                <select name="species" value={formData.species} onChange={handleChange} disabled={isShepherd} className={`w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10 ${isShepherd ? 'opacity-50 cursor-not-allowed' : ''} ${errors.species ? 'ring-2 ring-red-500' : ''}`}>
+                <select name="species" value={formData.species} onChange={handleChange} disabled={isShepherd} className={`w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10 ${isShepherd ? 'opacity-50 cursor-not-allowed' : ''} ${errors.species ? 'ring-2 ring-red-500' : ''}`}>
                   {getSpeciesOptions().map(species => (
                     <option key={species} value={species}>{species}</option>
                   ))}
@@ -414,7 +493,7 @@ export default function AnimalEdit() {
                     value={formData.custom_species} 
                     onChange={handleChange} 
                     placeholder={t('animals.enterCustomSpecies')}
-                    className={`w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10 mt-2 ${errors.custom_species ? 'ring-2 ring-red-500' : ''}`}
+                    className={`w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10 mt-2 ${errors.custom_species ? 'ring-2 ring-red-500' : ''}`}
                     required
                   />
                 )}
@@ -427,7 +506,7 @@ export default function AnimalEdit() {
                   value={formData.breed} 
                   onChange={handleChange} 
                   disabled={isShepherd}
-                  className={`w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10 ${isShepherd ? 'opacity-50 cursor-not-allowed' : ''} ${errors.breed ? 'ring-2 ring-red-500' : ''}`}
+                  className={`w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10 ${isShepherd ? 'opacity-50 cursor-not-allowed' : ''} ${errors.breed ? 'ring-2 ring-red-500' : ''}`}
                 >
                   <option value="">{t('common.select')} {t('animals.breed')}</option>
                   {getBreedOptions().map(breed => (
@@ -441,25 +520,25 @@ export default function AnimalEdit() {
                     value={formData.custom_breed} 
                     onChange={handleChange} 
                     placeholder={t('animals.enterCustomBreed')} 
-                    className={`w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10 mt-2 ${errors.custom_breed ? 'ring-2 ring-red-500' : ''}`}
+                    className={`w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10 mt-2 ${errors.custom_breed ? 'ring-2 ring-red-500' : ''}`}
                   />
                 )}
                 {errors.custom_breed && <p className="text-red-600 text-xs">{errors.custom_breed}</p>}
               </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animalDetailsPage.dateOfBirth')}</label>
-                  <input name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} type="date" className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10" />
+                  <input name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} type="date" className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animals.gender')}</label>
-                  <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10">
+                  <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10">
                     <option value="Male">{t('common.male')}</option>
                     <option value="Female">{t('common.female')}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animals.weight')} (kg)</label>
-                  <input name="current_weight" value={formData.current_weight} onChange={handleChange} type="number" step="0.01" placeholder="0.00" className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10" />
+                  <input name="current_weight" value={formData.current_weight} onChange={handleChange} type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10" />
                 </div>
               </div>
             </section>
@@ -467,7 +546,7 @@ export default function AnimalEdit() {
             {/* Physical Characteristics */}
             <section className="bg-white p-8 rounded-xl shadow-sm">
               <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="photo_camera" className="text-[#735c00]" />
+                <MaterialSymbol icon="photo_camera" className="text-tertiary-container" />
                 <h3 className="text-xl font-bold text-emerald-900">{t('animals.physicalCharacteristics')}</h3>
               </div>
               <div className="flex flex-col md:flex-row gap-8">
@@ -478,11 +557,11 @@ export default function AnimalEdit() {
                       <img src={storageUrl(imagePreview)} alt="Animal" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#E3E3DE] to-[#cfe5d6]">
-                        <MaterialSymbol icon="add_a_photo" size={48} className="text-[#002819]/20 mb-2" />
+                        <MaterialSymbol icon="add_a_photo" size={48} className="text-brand-primary/20 mb-2" />
                         <p className="text-xs text-stone-400 font-medium">{t('animals.uploadPhoto')}</p>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-[#002819]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <div className="absolute inset-0 bg-brand-primary/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <div className="text-white text-center">
                         <MaterialSymbol icon="upload" className="text-4xl mb-2" />
                         <p className="text-xs font-bold uppercase tracking-widest">{t('animals.changePhoto')}</p>
@@ -501,7 +580,7 @@ export default function AnimalEdit() {
                 <div className="flex-1 space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animals.colorMarkings')}</label>
-                    <textarea name="color_markings" value={formData.color_markings} onChange={handleChange} rows="6" placeholder={t('animals.colorMarkingsPlaceholder')} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-medium focus:ring-2 focus:ring-[#06402b]/10 resize-none" />
+                    <textarea name="color_markings" value={formData.color_markings} onChange={handleChange} rows="6" placeholder={t('animals.colorMarkingsPlaceholder')} className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-medium focus:ring-2 focus:ring-brand-secondary/10 resize-none" />
                   </div>
                 </div>
               </div>
@@ -511,7 +590,7 @@ export default function AnimalEdit() {
             <section className="bg-white p-8 rounded-xl shadow-sm">
               <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                  <MaterialSymbol icon="monitor_heart" className="text-[#735c00]" />
+                  <MaterialSymbol icon="monitor_heart" className="text-tertiary-container" />
                   <h3 className="text-xl font-bold text-emerald-900">{t('animals.healthBenchmarks')}</h3>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
@@ -526,11 +605,11 @@ export default function AnimalEdit() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animalDetailsPage.baselineTemp')} (°C)</label>
-                    <input name="baseline_temperature" value={formData.baseline_temperature} onChange={handleChange} type="number" step="0.1" placeholder="38.5" className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10" />
+                    <input name="baseline_temperature" value={formData.baseline_temperature} onChange={handleChange} type="number" step="0.1" placeholder="38.5" className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">{t('animalDetailsPage.normalHeartRate')} (BPM)</label>
-                    <input name="normal_heart_rate" value={formData.normal_heart_rate} onChange={handleChange} type="number" placeholder="45" className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-[#06402b]/10" />
+                    <input name="normal_heart_rate" value={formData.normal_heart_rate} onChange={handleChange} type="number" placeholder="45" className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold focus:ring-2 focus:ring-brand-secondary/10" />
                   </div>
                 </div>
                 <div className="bg-stone-50 p-6 rounded-xl border border-stone-100">
@@ -553,6 +632,56 @@ export default function AnimalEdit() {
               </div>
             </section>
 
+            {/* Documents */}
+            <section className="bg-white p-8 rounded-xl shadow-sm">
+              <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <MaterialSymbol icon="description" className="text-tertiary-container" />
+                <h3 className="text-xl font-bold text-emerald-900">Documents</h3>
+              </div>
+
+              {existingDocuments.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <p className="text-[11px] font-bold text-stone-500 uppercase tracking-widest px-1">Current Documents</p>
+                  {existingDocuments.map(doc => (
+                    <div key={doc.id} className={`flex items-center gap-3 bg-stone-50 p-3 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <MaterialSymbol icon="file_present" className="text-emerald-700" />
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className={`flex-1 text-sm font-semibold text-emerald-900 hover:underline ${isRtl ? 'text-right' : ''}`}>
+                        {doc.original_name}
+                      </a>
+                      <span className="text-[10px] text-stone-400 font-medium uppercase">{doc.type.replace(/_/g, ' ')}</span>
+                      <button type="button" onClick={() => markDeleteDocument(doc.id)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
+                        <MaterialSymbol icon="close" size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {newDocuments.map((doc, index) => (
+                <div key={index} className={`flex flex-wrap items-start gap-3 p-4 bg-stone-50 rounded-xl mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <div className="flex-1 min-w-[200px] space-y-2">
+                    <input type="file" onChange={e => handleNewDocumentFile(index, e.target.files[0])} className="w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary" />
+                    <div className={`flex gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <select value={doc.type} onChange={e => handleNewDocumentType(index, e.target.value)} className="bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-900">
+                        {DOCUMENT_TYPES.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                      <input type="text" value={doc.notes} onChange={e => handleNewDocumentNotes(index, e.target.value)} placeholder="Notes" className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs font-medium text-emerald-900 placeholder:text-stone-400" />
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => removeNewDocument(index)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors mt-1">
+                    <MaterialSymbol icon="delete" size={18} />
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" onClick={addDocument} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-stone-300 text-sm font-bold text-stone-500 hover:border-emerald-400 hover:text-emerald-700 transition-all">
+                <MaterialSymbol icon="add" size={18} />
+                Add Document
+              </button>
+            </section>
+
             {/* Danger Zone */}
             {!isNewAnimal && (
               <div className="bg-red-50/50 p-8 rounded-xl border border-red-100/50">
@@ -573,10 +702,10 @@ export default function AnimalEdit() {
           <div className="col-span-12 lg:col-span-4 space-y-8">
             {/* Animal Assignment - Matching Device Edit Design */}
             {!isNewAnimal && (
-              <section className="bg-[#eeeee9] rounded-[1.5rem] p-6 transition-all hover:shadow-md">
+              <section className="bg-surface-dim rounded-[1.5rem] p-6 transition-all hover:shadow-md">
                 <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                  <span className="material-symbols-outlined text-[#002819] bg-white p-2 rounded-xl">link</span>
-                  <h4 className="text-lg font-bold font-['Manrope'] text-[#002819]">{t('animals.deviceAssignment')}</h4>
+                  <span className="material-symbols-outlined text-brand-primary bg-white p-2 rounded-xl">link</span>
+                  <h4 className="text-lg font-bold font-['Manrope'] text-brand-primary">{t('animals.deviceAssignment')}</h4>
                 </div>
                 <div className="flex flex-col items-center gap-4 p-5 bg-white rounded-2xl shadow-sm border border-[#cfe5d6]/30">
                    {currentDevice ? (
@@ -586,13 +715,13 @@ export default function AnimalEdit() {
                           <img src={storageUrl(imagePreview || existingImage)} alt="Animal" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-[#E3E3DE] to-[#cfe5d6] flex items-center justify-center">
-                            <MaterialSymbol icon="pets" size={40} className="text-[#002819]/20" />
+                            <MaterialSymbol icon="pets" size={40} className="text-brand-primary/20" />
                           </div>
                         )}
                       </div>
                       <div className={`flex-grow ${isRtl ? 'text-right' : 'text-left'}`}>
-                        <h5 className="text-base font-bold text-[#002819]">{formData.breed || formData.species} {formData.animal_id || ''}</h5>
-                        <p className="text-xs text-[#404943] mb-1">{formData.species} {formData.breed && `• ${formData.breed}`} {formData.gender && `• ${formData.gender}`}</p>
+                        <h5 className="text-base font-bold text-brand-primary">{formData.breed || formData.species} {formData.animal_id || ''}</h5>
+                        <p className="text-xs text-on-surface-variant mb-1">{formData.species} {formData.breed && `• ${formData.breed}`} {formData.gender && `• ${formData.gender}`}</p>
                         <div className={`flex items-center gap-2 ${isRtl ? 'justify-end flex-row-reverse' : 'justify-center'}`}>
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                           <span className="text-[10px] font-bold uppercase text-emerald-600 tracking-wider">{t('animals.currentlyLinked')}</span>
@@ -602,14 +731,14 @@ export default function AnimalEdit() {
                         <button 
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, device_id: '' }))}
-                          className="flex-1 px-4 py-2.5 rounded-xl border border-[#c0c9c1] text-xs font-semibold text-[#404943] hover:bg-[#eeeee9] transition-colors"
+                          className="flex-1 px-4 py-2.5 rounded-xl border border-outline text-xs font-semibold text-on-surface-variant hover:bg-surface-dim transition-colors"
                         >
                           {t('animals.unassignDevice')}
                         </button>
                         <button 
                           type="button"
                           onClick={() => document.querySelector('select[name="device_id"]')?.focus()}
-                          className="flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#002819] text-white hover:bg-[#06402b] transition-colors"
+                          className="flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold bg-brand-primary text-white hover:bg-brand-secondary transition-colors"
                         >
                           {t('animals.changeDevice')}
                         </button>
@@ -617,28 +746,28 @@ export default function AnimalEdit() {
                     </>
                   ) : (
                     <>
-                      <div className="w-20 h-20 rounded-2xl bg-[#eeeee9] flex items-center justify-center shadow-inner">
-                        <MaterialSymbol icon="link_off" size={40} className="text-[#002819]/30" />
+                      <div className="w-20 h-20 rounded-2xl bg-surface-dim flex items-center justify-center shadow-inner">
+                        <MaterialSymbol icon="link_off" size={40} className="text-brand-primary/30" />
                       </div>
                       <div className="flex-grow text-center">
-                        <h5 className="text-base font-bold text-[#404943]">{t('animals.noDeviceAssignedAlt')}</h5>
-                        <p className="text-xs text-[#717973] mb-1">{t('animals.linkDevice')}</p>
+                        <h5 className="text-base font-bold text-on-surface-variant">{t('animals.noDeviceAssignedAlt')}</h5>
+                        <p className="text-xs text-on-surface-subtle mb-1">{t('animals.linkDevice')}</p>
                         <div className="flex items-center justify-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[#c0c9c1]"></span>
-                          <span className="text-[10px] font-bold uppercase text-[#717973] tracking-wider">{t('animals.notLinked')}</span>
+                          <span className="w-2 h-2 rounded-full bg-outline"></span>
+                          <span className="text-[10px] font-bold uppercase text-on-surface-subtle tracking-wider">{t('animals.notLinked')}</span>
                         </div>
                       </div>
                       <button 
                         type="button"
                         onClick={() => document.querySelector('select[name="device_id"]')?.focus()}
-                        className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#002819] text-white hover:bg-[#06402b] transition-colors"
+                        className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-brand-primary text-white hover:bg-brand-secondary transition-colors"
                       >
                         {t('animals.assignDeviceBtn')}
                       </button>
                     </>
                   )}
                 </div>
-              </section>
+            </section>
             )}
 
               {/* Device Connectivity */}
@@ -646,11 +775,11 @@ export default function AnimalEdit() {
             <h4 className={`text-sm font-bold text-emerald-900 uppercase tracking-widest mb-4 ${isRtl ? 'text-right' : ''}`}>{t('animals.deviceConnectivity')}</h4>
             {devicesLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin w-6 h-6 border-2 border-[#002819] border-t-transparent rounded-full" />
+                  <div className="animate-spin w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full" />
                 </div>
               ) : (
                 <>
-                  <select name="device_id" value={formData.device_id} onChange={handleDeviceChange} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
+                  <select name="device_id" value={formData.device_id} onChange={handleDeviceChange} className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
                     <option value="">{t('animals.noDevice')}</option>
                     {availableDevices.map(device => (
                       <option key={device.id} value={device.device_id}>
@@ -680,12 +809,12 @@ export default function AnimalEdit() {
               <h4 className={`text-sm font-bold text-emerald-900 uppercase tracking-widest mb-4 ${isRtl ? 'text-right' : ''}`}>{t('animals.ownership')}</h4>
               {devicesLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin w-6 h-6 border-2 border-[#002819] border-t-transparent rounded-full" />
+                  <div className="animate-spin w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full" />
                 </div>
               ) : (
                 <>
                   {!isOwner && !isManager ? (
-                    <select name="owner_id" value={formData.owner_id} onChange={handleOwnerChange} className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
+                    <select name="owner_id" value={formData.owner_id} onChange={handleOwnerChange} className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-emerald-900 font-semibold mb-4">
                       <option value="">{t('animals.selectOwner')}</option>
                       {owners.map(owner => (
                         <option key={owner.id} value={owner.id}>
@@ -698,7 +827,7 @@ export default function AnimalEdit() {
                   )}
                   {currentOwner && (
                     <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-10 h-10 rounded-full bg-[#06402b]/10 overflow-hidden">
+                      <div className="w-10 h-10 rounded-full bg-brand-secondary/10 overflow-hidden">
                         {currentOwner.avatar_url ? (
                           <img src={storageUrl(currentOwner.avatar_url)} alt={currentOwner.name} className="w-full h-full object-cover" />
                         ) : (
@@ -715,14 +844,8 @@ export default function AnimalEdit() {
               )}
             </section>
 
-              {/* Quick Tips */}
-            <section className="bg-stone-900 p-6 rounded-xl text-stone-300 relative overflow-hidden">
-              <MaterialSymbol icon="lightbulb" className={`absolute text-white/5 text-8xl rotate-12 ${isRtl ? '-left-4 -bottom-4 right-auto' : '-right-4 -bottom-4'}`} />
-              <h4 className={`text-xs font-bold text-amber-400 uppercase tracking-widest mb-2 ${isRtl ? 'text-right' : ''}`}>{t('animals.systemInsight')}</h4>
-              <p className={`text-xs leading-relaxed font-medium ${isRtl ? 'text-right' : ''}`}>
-                Regular updates to animal health benchmarks ensure AI anomaly detection remains accurate. We recommend auditing these fields every 3 months.
-              </p>
-            </section>
+              {/* Quick Tips - Dynamic from banners */}
+            <DynamicInsightBanner isRtl={isRtl} />
           </div>
         </div>
       </div>
@@ -731,8 +854,8 @@ export default function AnimalEdit() {
       <div className={`fixed bottom-6 right-8 left-[calc(16rem+2rem)] pointer-events-none md:flex hidden ${isRtl ? 'left-8 right-[calc(16rem+2rem)]' : ''}`}>
         <div className={`bg-white/80 backdrop-blur-md border border-stone-200/50 p-4 rounded-2xl shadow-2xl flex-1 flex items-center justify-between pointer-events-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
           <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 bg-[#002819]/10 rounded-lg flex items-center justify-center">
-              <MaterialSymbol icon="history" className="text-[#002819]" style={{ fontVariationSettings: "'FILL' 1" }} />
+            <div className="w-10 h-10 bg-brand-primary/10 rounded-lg flex items-center justify-center">
+              <MaterialSymbol icon="history" className="text-brand-primary" style={{ fontVariationSettings: "'FILL' 1" }} />
             </div>
             <div className={isRtl ? 'text-right' : ''}>
               <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">{t('animals.unsavedChanges')}</p>
@@ -743,13 +866,36 @@ export default function AnimalEdit() {
             <button type="button" onClick={() => navigate('/animals')} className="px-6 py-2 text-xs font-black text-stone-500 uppercase tracking-widest hover:text-emerald-900 transition-colors">
               {t('animals.discard')}
             </button>
-            <button type="submit" disabled={isSubmitting} className="px-8 py-3 bg-[#002819] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-[#002819]/20 hover:bg-[#06402b] transition-all disabled:opacity-50">
+            <button type="submit" disabled={isSubmitting} className="px-8 py-3 bg-brand-primary text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20 hover:bg-brand-secondary transition-all disabled:opacity-50">
               {isSubmitting ? t('common.loading') : t('animals.applyUpdate')}
             </button>
           </div>
         </div>
       </div>
     </form>
+  );
+}
+
+function DynamicInsightBanner({ isRtl }) {
+  const { t } = useI18n();
+  const [banner, setBanner] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch('/api/banners/active?type=insight').then(res => {
+      if (cancelled) return;
+      if (res.ok) res.json().then(d => { if (!cancelled && d.data?.[0]) setBanner(d.data[0]); }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  if (!banner) return null;
+  return (
+    <section className="bg-stone-900 p-6 rounded-xl text-stone-300 relative overflow-hidden">
+      <MaterialSymbol icon={banner.icon || 'lightbulb'} className={`absolute text-white/5 text-8xl rotate-12 ${isRtl ? '-left-4 -bottom-4 right-auto' : '-right-4 -bottom-4'}`} />
+      <h4 className={`text-xs font-bold text-amber-400 uppercase tracking-widest mb-2 ${isRtl ? 'text-right' : ''}`}>{banner.title || t('animals.systemInsight')}</h4>
+      <p className={`text-xs leading-relaxed font-medium ${isRtl ? 'text-right' : ''}`}>
+        {banner.description || 'Regular updates to animal health benchmarks ensure AI anomaly detection remains accurate. We recommend auditing these fields every 3 months.'}
+      </p>
+    </section>
   );
 }
 

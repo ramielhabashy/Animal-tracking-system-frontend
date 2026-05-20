@@ -7,6 +7,7 @@ import { exportData } from '../utils/export';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import Pagination from '../components/Pagination';
+import TransferCreateModal from '../components/Transfers/TransferCreateModal';
 
 export default function AnimalList() {
   const { user } = useAuth();
@@ -25,6 +26,8 @@ export default function AnimalList() {
   const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferAnimalId, setTransferAnimalId] = useState(null);
   const [speciesFilter, setSpeciesFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deviceFilter, setDeviceFilter] = useState('all');
@@ -47,6 +50,7 @@ export default function AnimalList() {
   
   const canModify = user?.role !== 'Shepherd' && user?.role !== 'Doctor';
   const isAdmin = user?.role === 'Admin';
+  const canTransfer = user?.role === 'Admin' || user?.role === 'Owner';
 
   const extractList = (res) => Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
@@ -121,7 +125,7 @@ export default function AnimalList() {
   };
 
   const getAnimalStatus = (animal) => {
-    const temp = parseFloat(animal.baseline_temperature) || 38.5;
+    const temp = parseFloat(animal.device?.temperature ?? animal.baseline_temperature) || 38.5;
     if (temp > 39.5) return 'critical';
     if (temp > 39) return 'warning';
     return 'healthy';
@@ -232,8 +236,8 @@ export default function AnimalList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
-        <span className="ml-3 text-[#404943]">Loading animals...</span>
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
+        <span className="ml-3 text-on-surface-variant">Loading animals...</span>
       </div>
     );
   }
@@ -242,10 +246,10 @@ export default function AnimalList() {
     <div className="space-y-8">
       <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 ${isRtl ? 'text-right' : ''}`}>
         <div>
-          <h2 className="text-4xl font-black text-[#002819]">
+          <h2 className="text-4xl font-black text-brand-primary">
             {t('animals.animalManagement')}
           </h2>
-          <p className="text-[#404943] mt-2 font-medium">
+          <p className="text-on-surface-variant mt-2 font-medium">
             {totalAnimals} {t('common.animals')}
           </p>
         </div>
@@ -254,7 +258,7 @@ export default function AnimalList() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="px-4 py-2 bg-[#D4AF37] text-white rounded-xl font-bold hover:bg-[#c9a030] transition flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-accent text-white rounded-xl font-bold hover:bg-brand-accent transition flex items-center gap-2 disabled:opacity-50"
             >
               <MaterialSymbol icon="download" size={20} />
               {exporting ? t('common.exporting') : t('common.export')}
@@ -273,27 +277,27 @@ export default function AnimalList() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
 
       <div className={`flex flex-wrap gap-4 items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className="flex-1 min-w-[240px] relative">
-          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
           <input 
             type="text" 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
             placeholder={t('animals.searchAnimals')}
-            className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
+            className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
           />
         </div>
 
         <select
           value={speciesFilter}
           onChange={(e) => setSpeciesFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">{t('animals.allSpecies')}</option>
           {speciesOptions.map(species => (
@@ -304,7 +308,7 @@ export default function AnimalList() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">{t('animals.allStatuses')}</option>
           <option value="healthy">{t('animals.healthy')}</option>
@@ -316,7 +320,7 @@ export default function AnimalList() {
         <select
           value={deviceFilter}
           onChange={(e) => setDeviceFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">{t('animals.allDevices')}</option>
           <option value="assigned">{t('devices.assigned')}</option>
@@ -327,7 +331,7 @@ export default function AnimalList() {
         <select
           value={ownerFilter}
           onChange={(e) => setOwnerFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">{t('mapPage.allOwners')}</option>
           {ownerOptions.map(owner => (
@@ -338,14 +342,14 @@ export default function AnimalList() {
         <div className="flex bg-gray-100 rounded-xl p-0.5">
           <button
             onClick={() => setViewMode('tiles')}
-            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
             title={t('dashboard.regionalView')}
           >
             <MaterialSymbol icon="grid_view" size={18} />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2.5 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
             title={t('common.list')}
           >
             <MaterialSymbol icon="table_rows" size={18} />
@@ -355,21 +359,21 @@ export default function AnimalList() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <p className="text-xs font-bold text-[#717973] uppercase">{t('animals.title')}</p>
-          <p className="text-3xl font-black text-[#002819] mt-1">{debouncedSearch || speciesFilter !== 'all' || statusFilter !== 'all' || deviceFilter !== 'all' || ownerFilter !== 'all' ? filteredAnimals.length : totalAnimals}</p>
+          <p className="text-xs font-bold text-on-surface-subtle uppercase">{t('animals.title')}</p>
+          <p className="text-3xl font-black text-brand-primary mt-1">{debouncedSearch || speciesFilter !== 'all' || statusFilter !== 'all' || deviceFilter !== 'all' || ownerFilter !== 'all' ? filteredAnimals.length : totalAnimals}</p>
         </div>
-        <div className="bg-[#002819] p-5 rounded-2xl">
+        <div className="bg-brand-primary p-5 rounded-2xl">
           <p className="text-xs font-bold text-white/60 uppercase">{t('devices.assigned')}</p>
           <p className="text-3xl font-black text-white mt-1">{filteredAssigned}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <p className="text-xs font-bold text-[#717973] uppercase">{t('animals.noDeviceAssigned')}</p>
-          <p className="text-3xl font-black text-[#BA1A1A] mt-1">{filteredUnassigned}</p>
+          <p className="text-xs font-bold text-on-surface-subtle uppercase">{t('animals.noDeviceAssigned')}</p>
+          <p className="text-3xl font-black text-danger mt-1">{filteredUnassigned}</p>
         </div>
-        <div className="bg-[#D4AF37]/10 p-5 rounded-2xl">
-          <p className="text-xs font-bold text-[#735C00] uppercase">{t('animals.health')}</p>
-          <p className="text-3xl font-black text-[#735C00] mt-1">{filteredHealthy}</p>
-          <p className="text-xs text-[#735C00]/60 mt-1">
+        <div className="bg-brand-accent/10 p-5 rounded-2xl">
+          <p className="text-xs font-bold text-tertiary-container uppercase">{t('animals.health')}</p>
+          <p className="text-3xl font-black text-tertiary-container mt-1">{filteredHealthy}</p>
+          <p className="text-xs text-tertiary-container/60 mt-1">
             {filteredWarning} {t('alertsPage.warning')} &middot; {filteredCritical} {t('dashboard.critical')}
           </p>
         </div>
@@ -377,21 +381,22 @@ export default function AnimalList() {
 
       {filteredAnimals.length === 0 ? (
         <div className="card p-12 text-center">
-          <MaterialSymbol icon="pets" size={64} className="text-[#717973] mx-auto mb-4 opacity-50" />
-          <p className="text-[#404943] font-medium text-lg">{t('animals.noAnimals')}</p>
+          <MaterialSymbol icon="pets" size={64} className="text-on-surface-subtle mx-auto mb-4 opacity-50" />
+          <p className="text-on-surface-variant font-medium text-lg">{t('animals.noAnimals')}</p>
         </div>
       ) : viewMode === 'list' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.name')}</th>
-                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.species')}</th>
-                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.breed')}</th>
-                <th className="text-center py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.device')}</th>
-                <th className="text-left py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('animals.owner')}</th>
-                <th className="text-center py-3 px-4 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('common.status')}</th>
-                <th className="text-right py-3 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('common.actions')}</th>
+                <th className="text-left py-3 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.name')}</th>
+                <th className="text-left py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.species')}</th>
+                <th className="text-left py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.breed')}</th>
+                <th className="text-center py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.device')}</th>
+                <th className="text-left py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.owner')}</th>
+                <th className="text-center py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('common.status')}</th>
+                <th className="text-center py-3 px-4 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('animals.temperature')}</th>
+                <th className="text-right py-3 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -403,39 +408,54 @@ export default function AnimalList() {
                     <td className="py-3 px-5">
                       <Link to={`/animals/${animal.id}`} className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-base ${
-                          animalStatus === 'critical' ? 'bg-[#BA1A1A]/10' :
-                          animalStatus === 'warning' ? 'bg-[#D4AF37]/10' : 'bg-[#002819]/5'
+                          animalStatus === 'critical' ? 'bg-danger/10' :
+                          animalStatus === 'warning' ? 'bg-brand-accent/10' : 'bg-brand-primary/5'
                         }`}>
                           {animal.species === 'Camel' ? '🐪' : animal.species === 'Goat' ? '🐐' : '🐪'}
                         </div>
                         <div>
-                          <p className="font-semibold text-[#002819]">{animal.animal_id}</p>
-                          {animal.name && <p className="text-xs text-[#717973]">{animal.name}</p>}
+                          <p className="font-semibold text-brand-primary">{animal.animal_id}</p>
+                          {animal.name && <p className="text-xs text-on-surface-subtle">{animal.name}</p>}
                         </div>
                       </Link>
                     </td>
-                    <td className="py-3 px-4 text-[#404943]">{animal.species}</td>
-                    <td className="py-3 px-4 text-[#404943]">{animal.breed || '-'}</td>
+                    <td className="py-3 px-4 text-on-surface-variant">{animal.species}</td>
+                    <td className="py-3 px-4 text-on-surface-variant">{animal.breed || '-'}</td>
                     <td className="text-center py-3 px-4">
                       {animalDeviceId ? (
-                        <span className="text-xs font-medium text-[#002819]">{animalDeviceId}</span>
+                        <span className="text-xs font-medium text-brand-primary">{animalDeviceId}</span>
                       ) : (
-                        <span className="text-xs text-[#BA1A1A]">{t('animals.noDeviceAssigned')}</span>
+                        <span className="text-xs text-danger">{t('animals.noDeviceAssigned')}</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-[#404943]">{animal.owner?.name || '-'}</td>
+                    <td className="py-3 px-4 text-on-surface-variant">{animal.owner?.name || '-'}</td>
                     <td className="text-center py-3 px-4">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        animalStatus === 'critical' ? 'bg-[#BA1A1A]/10 text-[#BA1A1A]' :
-                        animalStatus === 'warning' ? 'bg-[#D4AF37]/10 text-[#735C00]' :
+                        animalStatus === 'critical' ? 'bg-danger/10 text-danger' :
+                        animalStatus === 'warning' ? 'bg-brand-accent/10 text-tertiary-container' :
                         'bg-[#10B981]/10 text-[#10B981]'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                          animalStatus === 'critical' ? 'bg-[#BA1A1A]' :
-                          animalStatus === 'warning' ? 'bg-[#D4AF37]' : 'bg-[#10B981]'
+                          animalStatus === 'critical' ? 'bg-danger' :
+                          animalStatus === 'warning' ? 'bg-brand-accent' : 'bg-[#10B981]'
                         }`} />
                         {animalStatus}
                       </span>
+                    </td>
+                    <td className="text-center py-3 px-4">
+                      {(() => {
+                        const liveTemp = animal.device?.temperature ?? animal.baseline_temperature;
+                        return liveTemp ? (
+                          <span className={`text-xs font-medium ${
+                            parseFloat(liveTemp) > 39.5 ? 'text-danger' :
+                            parseFloat(liveTemp) > 39 ? 'text-tertiary-container' : 'text-[#10B981]'
+                          }`}>
+                            {parseFloat(liveTemp).toFixed(1)}°C
+                          </span>
+                        ) : (
+                          <span className="text-xs text-on-surface-subtle">-</span>
+                        );
+                      })()}
                     </td>
                     <td className="text-right py-3 px-5">
                       <div className={`flex items-center justify-end gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -447,6 +467,11 @@ export default function AnimalList() {
                             <Link to={`/animals/${animal.id}/edit`} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('common.edit')}>
                               <MaterialSymbol icon="edit" size={16} />
                             </Link>
+                            {canTransfer && (
+                              <button onClick={() => { setTransferAnimalId(animal.id); setShowTransfer(true); }} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title="Transfer">
+                                <MaterialSymbol icon="swap_horiz" size={16} />
+                              </button>
+                            )}
                             {!animalDeviceId && (
                               <button onClick={() => openAssignModal(animal)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500" title={t('animals.assignDevice')}>
                                 <MaterialSymbol icon="sensors" size={16} />
@@ -475,9 +500,9 @@ return (
                     <div className={`flex items-start justify-between mb-4 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden ${
-                          animalStatus === 'critical' ? 'bg-[#BA1A1A]/10' :
-                          animalStatus === 'warning' ? 'bg-[#D4AF37]/10' :
-                          'bg-[#002819]/5'
+                          animalStatus === 'critical' ? 'bg-danger/10' :
+                          animalStatus === 'warning' ? 'bg-brand-accent/10' :
+                          'bg-brand-primary/5'
                         }`}>
                           {animal.identification_photo ? (
                             <img src={storageUrl(animal.identification_photo)} alt={animal.animal_id} className="w-full h-full object-cover" />
@@ -488,71 +513,86 @@ return (
                           )}
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-[#002819]">{animal.animal_id}</h3>
-                          {animal.name && <p className="text-sm text-[#717973]">{animal.name}</p>}
-                          <p className="text-sm text-[#717973]">{animal.species}{animal.breed && ` ${t('common.separator')} ${animal.breed}`}</p>
+                          <h3 className="text-lg font-bold text-brand-primary">{animal.animal_id}</h3>
+                          {animal.name && <p className="text-sm text-on-surface-subtle">{animal.name}</p>}
+                          <p className="text-sm text-on-surface-subtle">{animal.species}{animal.breed && ` ${t('common.separator')} ${animal.breed}`}</p>
                         </div>
                       </div>
                     <div className={`w-3 h-3 rounded-full ${
-                      animalStatus === 'critical' ? 'bg-[#BA1A1A] animate-pulse' :
-                      animalStatus === 'warning' ? 'bg-[#D4AF37]' :
+                      animalStatus === 'critical' ? 'bg-danger animate-pulse' :
+                      animalStatus === 'warning' ? 'bg-brand-accent' :
                       'bg-[#10B981]'
                     }`} />
                   </div>
 
                   <div className={`grid grid-cols-2 gap-3 text-sm ${isRtl ? 'text-right' : ''}`}>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.gender')}</p>
-                      <p className="font-semibold text-[#002819] capitalize">{animal.gender || '-'}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.gender')}</p>
+                      <p className="font-semibold text-brand-primary capitalize">{animal.gender || '-'}</p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.age')}</p>
-                      <p className="font-semibold text-[#002819]">{calculateAge(animal.date_of_birth) || '-'}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.age')}</p>
+                      <p className="font-semibold text-brand-primary">{calculateAge(animal.date_of_birth) || '-'}</p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.weight')}</p>
-                      <p className="font-semibold text-[#002819]">{animal.current_weight ? `${animal.current_weight} ${t('common.kg')}` : '-'}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.weight')}</p>
+                      <p className="font-semibold text-brand-primary">{animal.current_weight ? `${animal.current_weight} ${t('common.kg')}` : '-'}</p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.device')}</p>
-                      <p className="font-semibold text-[#002819] text-xs">
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.temperature')}</p>
+                      {(() => {
+                        const liveTemp = animal.device?.temperature ?? animal.baseline_temperature;
+                        return (
+                          <p className={`font-semibold flex items-center gap-1 ${
+                            parseFloat(liveTemp) > 39.5 ? 'text-danger' :
+                            parseFloat(liveTemp) > 39 ? 'text-tertiary-container' : 'text-[#10B981]'
+                          }`}>
+                            <MaterialSymbol icon="device_thermostat" size={16} />
+                            {liveTemp ? `${parseFloat(liveTemp).toFixed(1)}°C` : '-'}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.device')}</p>
+                      <p className="font-semibold text-brand-primary text-xs">
                         {animal.device?.device_id ? animal.device.device_id : 
                          animalDeviceId && !/^\d+$/.test(animalDeviceId) ? animalDeviceId : '-'}
                       </p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.owner')}</p>
-                      <p className="font-semibold text-[#002819] text-sm truncate">
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.owner')}</p>
+                      <p className="font-semibold text-brand-primary text-sm truncate">
                         {animal.owner?.name || '-'}
                       </p>
                     </div>
-                    <div className="bg-[#F4F4EF] rounded-xl p-3">
-                      <p className="text-xs text-[#717973]">{t('animals.groups')}</p>
+                    <div className="bg-surface-light rounded-xl p-3">
+                      <p className="text-xs text-on-surface-subtle">{t('animals.groups')}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {animal.groups?.length > 0 ? animal.groups.map(g => (
                           <span key={g.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: g.color || '#D4AF37', color: '#fff' }}>
                             {g.name}
                           </span>
-                        )) : <span className="text-xs font-semibold text-[#002819]">-</span>}
+                        )) : <span className="text-xs font-semibold text-brand-primary">-</span>}
                       </div>
                     </div>
                   </div>
 
                   {device && (
-                    <div className={`flex items-center gap-2 mt-4 p-3 rounded-xl ${device.status === 'offline' ? 'bg-[#BA1A1A]/5' : 'bg-[#10B981]/5'} ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-2 mt-4 p-3 rounded-xl ${device.status === 'offline' ? 'bg-danger/5' : 'bg-[#10B981]/5'} ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <MaterialSymbol 
                         icon={device.status === 'offline' ? 'wifi_off' : 'wifi'} 
                         size={16} 
-                        className={device.status === 'offline' ? 'text-[#BA1A1A]' : 'text-[#10B981]'} 
+                        className={device.status === 'offline' ? 'text-danger' : 'text-[#10B981]'} 
                       />
-                      <span className={`text-xs font-medium ${device.status === 'offline' ? 'text-[#BA1A1A]' : 'text-[#10B981]'}`}>
+                      <span className={`text-xs font-medium ${device.status === 'offline' ? 'text-danger' : 'text-[#10B981]'}`}>
                         {device.status === 'offline' ? t('devices.offline') : t('devices.online')}
                       </span>
                       {device.battery_level !== undefined && (
-                        <span className="text-xs text-[#717973]">{device.battery_level}%</span>
+                        <span className="text-xs text-on-surface-subtle">{device.battery_level}%</span>
                       )}
                       {device.last_ping && (
-                        <span className={`text-xs text-[#717973] ml-auto ${device.status === 'offline' ? '' : ''}`}>
+                        <span className={`text-xs text-on-surface-subtle ml-auto ${device.status === 'offline' ? '' : ''}`}>
                           Last: {new Date(device.last_ping).toLocaleString()}
                         </span>
                       )}
@@ -563,7 +603,7 @@ return (
                 <div className={`flex border-t border-[#F4F4EF] ${isRtl ? 'flex-row-reverse' : ''}`}>
                   <Link 
                     to={`/animals/${animal.id}`}
-                    className="flex-1 py-3 text-center text-sm font-semibold text-[#002819] hover:bg-[#F4F4EF] transition-colors"
+                    className="flex-1 py-3 text-center text-sm font-semibold text-brand-primary hover:bg-surface-light transition-colors"
                   >
                     {t('common.view')}
                   </Link>
@@ -571,14 +611,23 @@ return (
                         <>
                           <Link 
                             to={`/animals/${animal.id}/edit`}
-                            className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-[#F4F4EF] hover:text-[#002819] transition-colors border-x border-[#F4F4EF]"
+                            className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-surface-light hover:text-brand-primary transition-colors border-x border-[#F4F4EF]"
                           >
                             {t('common.edit')}
                           </Link>
+                          {canTransfer && (
+                            <button 
+                              onClick={() => { setTransferAnimalId(animal.id); setShowTransfer(true); }}
+                              className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-surface-light hover:text-brand-primary transition-colors border-x border-[#F4F4EF]"
+                            >
+                              <MaterialSymbol icon="swap_horiz" size={16} />
+                              Transfer
+                            </button>
+                          )}
                           {!animalDeviceId && (
                             <button 
                               onClick={() => openAssignModal(animal)}
-                              className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-[#F4F4EF] hover:text-[#002819] transition-colors"
+                              className="flex-1 py-3 text-center text-sm font-semibold text-[#717473] hover:bg-surface-light hover:text-brand-primary transition-colors"
                             >
                               {t('animals.assignDevice')}
                             </button>
@@ -609,17 +658,17 @@ return (
           <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
             <div className={`flex items-center justify-between mb-8 ${isRtl ? 'flex-row-reverse' : ''}`}>
               <div>
-                <h3 className="text-2xl font-bold text-[#002819]">{t('animals.assignDevice')}</h3>
-                <p className="text-sm text-[#717973] mt-1">{selectedAnimal.animal_id}</p>
+                <h3 className="text-2xl font-bold text-brand-primary">{t('animals.assignDevice')}</h3>
+                <p className="text-sm text-on-surface-subtle mt-1">{selectedAnimal.animal_id}</p>
               </div>
-              <button onClick={() => setShowAssignModal(false)} className="p-3 hover:bg-[#F4F4EF] rounded-xl transition">
-                <MaterialSymbol icon="close" size={24} className="text-[#717973]" />
+              <button onClick={() => setShowAssignModal(false)} className="p-3 hover:bg-surface-light rounded-xl transition">
+                <MaterialSymbol icon="close" size={24} className="text-on-surface-subtle" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>
+                <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'text-right' : ''}`}>
                   {t('devices.title')} *
                 </label>
                 <select
@@ -639,7 +688,7 @@ return (
               <div className={`flex gap-4 pt-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <button
                   onClick={() => setShowAssignModal(false)}
-                  className="flex-1 py-3 bg-[#F4F4EF] text-[#002819] rounded-xl font-bold text-sm hover:bg-[#E3E3DE] transition"
+                  className="flex-1 py-3 bg-surface-light text-brand-primary rounded-xl font-bold text-sm hover:bg-surface-high transition"
                 >
                   {t('common.cancel')}
                 </button>
@@ -654,6 +703,14 @@ return (
             </div>
           </div>
         </div>
+      )}
+
+      {showTransfer && (
+        <TransferCreateModal
+          preselectedAnimalIds={[transferAnimalId]}
+          onClose={() => { setShowTransfer(false); setTransferAnimalId(null); }}
+          onCreated={() => { fetchData(); }}
+        />
       )}
     </div>
   );

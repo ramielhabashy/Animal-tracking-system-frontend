@@ -5,6 +5,7 @@ import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import TranslateButton from '../components/TranslateButton';
+import TransferCreateModal from '../components/Transfers/TransferCreateModal';
 
 export default function AnimalGroupList() {
   const { t, dir } = useI18n();
@@ -30,7 +31,26 @@ export default function AnimalGroupList() {
   const [ownerFilter, setOwnerFilter] = useState('');
   const [viewMode, setViewMode] = useState('tiles');
 
+  const [showShepherdModal, setShowShepherdModal] = useState(false);
+  const [shepherdGroup, setShepherdGroup] = useState(null);
+  const [shepherds, setShepherds] = useState([]);
+  const [selectedShepherdIds, setSelectedShepherdIds] = useState([]);
+
+  const [shepherdFilter, setShepherdFilter] = useState('');
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferGroup, setTransferGroup] = useState(null);
+
   const isAdmin = user?.role === 'Admin';
+  const isOwner = user?.role === 'Owner';
+  const isManager = user?.role === 'Manager';
+  const isShepherd = user?.role === 'Shepherd';
+  const canManage = isAdmin || isOwner || isManager;
+  const canTransfer = isAdmin || isOwner;
+
+  const allShepherds = groups.flatMap(g => g.shepherds || []);
+  const extraShepherds = (isAdmin || isOwner || isManager) ? (shepherds || []) : [];
+  const uniqueShepherds = [...allShepherds, ...extraShepherds]
+    .filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
 
   const filteredGroups = groups.filter(g => {
     const matchesSearch = !searchTerm || 
@@ -39,7 +59,8 @@ export default function AnimalGroupList() {
       g.owner?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.animals?.some(a => a.animal_id?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesOwner = !ownerFilter || g.owner_id === parseInt(ownerFilter);
-    return matchesSearch && matchesOwner;
+    const matchesShepherd = !shepherdFilter || g.shepherds?.some(s => s.id === parseInt(shepherdFilter));
+    return matchesSearch && matchesOwner && matchesShepherd;
   });
 
   const groupsByOwner = isAdmin ? filteredGroups.reduce((acc, g) => {
@@ -50,9 +71,27 @@ export default function AnimalGroupList() {
   }, {}) : {};
 
   useEffect(() => {
+    if (!user) return;
     fetchGroups();
-    fetchOwners();
-  }, []);
+    if (isAdmin) {
+      fetchOwners();
+    }
+    if (isAdmin || isOwner || isManager) {
+      fetchAllShepherds();
+    }
+  }, [user]);
+
+  const fetchAllShepherds = async () => {
+    try {
+      const response = await apiFetch('/api/users?role=Shepherd&per_page=100');
+      if (response.ok) {
+        const data = await response.json();
+        setShepherds(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch shepherds:', error);
+    }
+  };
 
   const fetchGroups = async () => {
     try {
@@ -133,6 +172,52 @@ export default function AnimalGroupList() {
     setShowAssignModal(true);
   };
 
+  const openShepherdModal = async (group) => {
+    setShepherdGroup(group);
+    setSelectedShepherdIds([]);
+    try {
+      const response = await apiFetch(`/api/users?role=Shepherd&per_page=100`);
+      if (response.ok) {
+        const data = await response.json();
+        const allShepherds = data.data || [];
+        setShepherds(allShepherds.filter(s => !group.shepherds?.find(gs => gs.id === s.id)));
+      }
+    } catch (error) {
+      console.error('Failed to fetch shepherds:', error);
+    }
+    setShowShepherdModal(true);
+  };
+
+  const handleAssignShepherds = async () => {
+    if (!shepherdGroup || selectedShepherdIds.length === 0) return;
+    try {
+      const response = await apiFetch(`/api/animal-groups/${shepherdGroup.id}/shepherds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shepherd_ids: selectedShepherdIds }),
+      });
+      if (response.ok) {
+        setShowShepherdModal(false);
+        fetchGroups();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to assign shepherds');
+      }
+    } catch (error) {
+      console.error('Failed to assign shepherds:', error);
+    }
+  };
+
+  const handleRemoveShepherd = async (group, shepherdId) => {
+    if (!confirm(t('groupsPage.removeShepherdConfirm'))) return;
+    try {
+      await apiFetch(`/api/animal-groups/${group.id}/shepherds/${shepherdId}`, { method: 'DELETE' });
+      fetchGroups();
+    } catch (error) {
+      console.error('Failed to remove shepherd:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -188,6 +273,11 @@ export default function AnimalGroupList() {
     }
   };
 
+  const handleTransfer = (group) => {
+    setTransferGroup(group);
+    setShowTransfer(true);
+  };
+
   const deleteGroup = async (group) => {
     if (!confirm(t('groupsPage.deleteConfirm', { name: group.name }))) return;
     try {
@@ -205,13 +295,15 @@ export default function AnimalGroupList() {
           <h1 className="text-2xl font-bold text-gray-900">{t('nav.animalGroups')}</h1>
           <p className="text-gray-500 text-sm mt-1">{t('groupsPage.description') || t('animalGroups.description')}</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className={`flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-        >
-          <MaterialSymbol icon="add" size={20} />
-          {t('groupsPage.createGroup')}
-        </button>
+        {canManage && (
+          <button
+            onClick={openCreateModal}
+            className={`flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+          >
+            <MaterialSymbol icon="add" size={20} />
+            {t('groupsPage.createGroup')}
+          </button>
+        )}
       </div>
 
       <div className={`flex flex-wrap items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -235,16 +327,28 @@ export default function AnimalGroupList() {
             <option key={o.id} value={o.id}>{o.name}</option>
           ))}
         </select>
+        {!isShepherd && uniqueShepherds.length > 0 && (
+          <select
+            value={shepherdFilter}
+            onChange={e => setShepherdFilter(e.target.value)}
+            className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white min-w-[160px]"
+          >
+            <option value="">{t('groupsPage.allShepherds') || 'All Shepherds'}</option>
+            {uniqueShepherds.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        )}
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => setViewMode('tiles')}
-            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <MaterialSymbol icon="grid_view" size={18} />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <MaterialSymbol icon="table_rows" size={18} />
           </button>
@@ -260,19 +364,21 @@ export default function AnimalGroupList() {
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
           <MaterialSymbol icon="folder_off" size={48} className="text-gray-300 mb-3" />
           <p className="text-gray-500">{t('groupsPage.noGroups')}</p>
-          <button
-            onClick={openCreateModal}
-            className="mt-4 text-amber-600 hover:text-amber-700 font-medium"
-          >
-            {t('groupsPage.createFirst')}
-          </button>
+          {canManage && (
+            <button
+              onClick={openCreateModal}
+              className="mt-4 text-amber-600 hover:text-amber-700 font-medium"
+            >
+              {t('groupsPage.createFirst')}
+            </button>
+          )}
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
           <MaterialSymbol icon="search_off" size={48} className="text-gray-300 mb-3" />
           <p className="text-gray-500">{t('common.noData')}</p>
           <button
-            onClick={() => { setSearchTerm(''); setOwnerFilter(''); }}
+            onClick={() => { setSearchTerm(''); setOwnerFilter(''); setShepherdFilter(''); }}
             className="mt-4 text-amber-600 hover:text-amber-700 font-medium"
           >
             {t('common.clearFilters')}
@@ -285,6 +391,7 @@ export default function AnimalGroupList() {
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('geofences.name')}</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('users.owner')}</th>
+                {!isShepherd && <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('groupsPage.shepherds') || 'Shepherds'}</th>}
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('groupsPage.animals')}</th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">{t('common.color') || 'Color'}</th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-700">{t('common.actions')}</th>
@@ -302,6 +409,17 @@ export default function AnimalGroupList() {
                   <td className="py-3 px-4 text-gray-600">
                     {group.owner?.name || <span className="text-gray-400">-</span>}
                   </td>
+                  {!isShepherd && (
+                    <td className="py-3 px-4">
+                      <div className="flex flex-wrap gap-1">
+                        {group.shepherds?.length > 0 ? group.shepherds.map(s => (
+                          <span key={s.id} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                            {s.name}
+                          </span>
+                        )) : <span className="text-gray-400 text-xs">-</span>}
+                      </div>
+                    </td>
+                  )}
                   <td className="text-center py-3 px-4">
                     <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
                       {group.animals_count || group.animals?.length || 0}
@@ -312,15 +430,27 @@ export default function AnimalGroupList() {
                   </td>
                   <td className="text-right py-3 px-4">
                     <div className={`flex items-center justify-end gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <button onClick={() => openAssignModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#002819]" title={t('groupsPage.assign')}>
-                        <MaterialSymbol icon="person_add" size={16} />
-                      </button>
-                      <button onClick={() => openEditModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#002819]" title={t('common.edit')}>
-                        <MaterialSymbol icon="edit" size={16} />
-                      </button>
-                      <button onClick={() => deleteGroup(group)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600" title={t('common.delete')}>
-                        <MaterialSymbol icon="delete" size={16} />
-                      </button>
+                      {canManage && (
+                        <>
+                          <button onClick={() => openShepherdModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-700" title={t('groupsPage.manageShepherds') || 'Shepherds'}>
+                            <MaterialSymbol icon="group" size={16} />
+                          </button>
+                          <button onClick={() => openAssignModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-brand-primary" title={t('groupsPage.assign')}>
+                            <MaterialSymbol icon="person_add" size={16} />
+                          </button>
+                          {canTransfer && (
+                            <button onClick={() => { setTransferGroup(group); setShowTransfer(true); }} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-brand-primary" title="Transfer Group">
+                              <MaterialSymbol icon="swap_horiz" size={16} />
+                            </button>
+                          )}
+                          <button onClick={() => openEditModal(group)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-brand-primary" title={t('common.edit')}>
+                            <MaterialSymbol icon="edit" size={16} />
+                          </button>
+                          <button onClick={() => deleteGroup(group)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600" title={t('common.delete')}>
+                            <MaterialSymbol icon="delete" size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -333,7 +463,7 @@ export default function AnimalGroupList() {
           {Object.entries(groupsByOwner).map(([ownerName, ownerGroups]) => (
             <div key={ownerName}>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#002819] to-[#06402B] flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white text-sm font-bold">
                   {ownerName === 'Unassigned' ? '?' : ownerName.charAt(0).toUpperCase()}
                 </div>
                 <h3 className="font-bold text-lg text-gray-900">{ownerName}</h3>
@@ -342,14 +472,46 @@ export default function AnimalGroupList() {
                 </span>
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {ownerGroups.map(group => <GroupCard key={group.id} group={group} t={t} isRtl={isRtl} onAssign={openAssignModal} onEdit={openEditModal} onDelete={deleteGroup} showOwner={false} />)}
+                {ownerGroups.map(group => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    t={t}
+                    isRtl={isRtl}
+                    isShepherd={isShepherd}
+                    canManage={canManage}
+                    onAssign={openAssignModal}
+                    onEdit={openEditModal}
+                    onDelete={deleteGroup}
+                    onShepherd={openShepherdModal}
+                    onRemoveShepherd={handleRemoveShepherd}
+                    showOwner={false}
+                    onTransfer={canTransfer ? handleTransfer : undefined}
+                  />
+                ))}
               </div>
             </div>
           ))}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredGroups.map(group => <GroupCard key={group.id} group={group} t={t} isRtl={isRtl} onAssign={openAssignModal} onEdit={openEditModal} onDelete={deleteGroup} showOwner={!!group.owner} />)}
+          {filteredGroups.map(group => (
+            <GroupCard
+              key={group.id}
+              group={group}
+              t={t}
+              isRtl={isRtl}
+              isShepherd={isShepherd}
+              canManage={canManage}
+              onAssign={openAssignModal}
+              onEdit={openEditModal}
+              onDelete={deleteGroup}
+              onShepherd={openShepherdModal}
+              onRemoveShepherd={handleRemoveShepherd}
+              showOwner={!!group.owner}
+              onTransfer={canTransfer ? handleTransfer : undefined}
+            />
+          ))}
         </div>
       )}
 
@@ -403,7 +565,7 @@ export default function AnimalGroupList() {
                 </div>
               </div>
 
-              {user?.role === 'Admin' && (
+              {isAdmin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('users.owner')}</label>
                   <select
@@ -422,7 +584,7 @@ export default function AnimalGroupList() {
                 </div>
               )}
 
-              {(formData.owner_id || user?.role !== 'Admin') && (
+              {(formData.owner_id || !isAdmin) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('nav.animals')}</label>
                   <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto p-2 space-y-1">
@@ -472,6 +634,26 @@ export default function AnimalGroupList() {
           availableAnimals={availableAnimals}
           onAssign={handleAssignAnimals}
           onClose={() => setShowAssignModal(false)}
+        />
+      )}
+
+      {showShepherdModal && shepherdGroup && (
+        <ShepherdAssignmentModal
+          group={shepherdGroup}
+          shepherds={shepherds}
+          selectedIds={selectedShepherdIds}
+          setSelectedIds={setSelectedShepherdIds}
+          onAssign={handleAssignShepherds}
+          onClose={() => setShowShepherdModal(false)}
+          t={t}
+        />
+      )}
+
+      {showTransfer && transferGroup && (
+        <TransferCreateModal
+          preselectedGroupId={transferGroup.id}
+          onClose={() => { setShowTransfer(false); setTransferGroup(null); }}
+          onCreated={() => { fetchGroups(); }}
         />
       )}
     </div>
@@ -564,7 +746,7 @@ function AnimalAssignmentModal({ group, availableAnimals, onAssign, onClose }) {
   );
 }
 
-function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
+function GroupCard({ group, t, isRtl, isShepherd, canManage, onAssign, onEdit, onDelete, onShepherd, onRemoveShepherd, showOwner, onTransfer }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
@@ -572,7 +754,7 @@ function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
           <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: group.color }} />
           <h3 className="font-semibold text-gray-900 truncate">{group.name} <TranslateButton text={group.name} /></h3>
           {showOwner && group.owner && (
-            <span className="text-xs px-2 py-1 bg-[#D4AF37]/10 text-[#735c00] rounded-full shrink-0">
+            <span className="text-xs px-2 py-1 bg-brand-accent/10 text-tertiary-container rounded-full shrink-0">
               {group.owner.name}
             </span>
           )}
@@ -585,6 +767,19 @@ function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
       {group.description && (
         <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description} <TranslateButton text={group.description} /></p>
       )}
+
+      <div className="flex flex-wrap gap-1 mb-1">
+        {(group.shepherds || []).map(s => (
+          <span key={s.id} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1">
+            {s.name}
+            {canManage && onRemoveShepherd && (
+              <button onClick={(e) => { e.stopPropagation(); onRemoveShepherd(group, s.id); }} className="hover:text-red-600">
+                <MaterialSymbol icon="close" size={12} />
+              </button>
+            )}
+          </span>
+        ))}
+      </div>
 
       {group.animals && group.animals.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">
@@ -601,27 +796,123 @@ function GroupCard({ group, t, isRtl, onAssign, onEdit, onDelete, showOwner }) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
-        <button
-          onClick={() => onAssign(group)}
-          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-        >
-          <MaterialSymbol icon="person_add" size={16} />
-          {t('groupsPage.assign')}
-        </button>
-        <button
-          onClick={() => onEdit(group)}
-          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-        >
-          <MaterialSymbol icon="edit" size={16} />
-          {t('common.edit')}
-        </button>
-        <button
-          onClick={() => onDelete(group)}
-          className={`flex items-center justify-center px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
-        >
-          <MaterialSymbol icon="delete" size={16} />
-        </button>
+      {canManage && (
+        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+          <button
+            onClick={() => onShepherd(group)}
+            className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+          >
+            <MaterialSymbol icon="group" size={16} />
+            {t('groupsPage.shepherds') || 'Shepherds'}
+          </button>
+          <button
+            onClick={() => onAssign(group)}
+            className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+          >
+            <MaterialSymbol icon="person_add" size={16} />
+            {t('groupsPage.assign')}
+          </button>
+          {onTransfer && (
+            <button
+              onClick={() => onTransfer(group)}
+              className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+            >
+              <MaterialSymbol icon="swap_horiz" size={16} />
+              Transfer
+            </button>
+          )}
+          <button
+            onClick={() => onEdit(group)}
+            className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+          >
+            <MaterialSymbol icon="edit" size={16} />
+            {t('common.edit')}
+          </button>
+          <button
+            onClick={() => onDelete(group)}
+            className={`flex items-center justify-center px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+          >
+            <MaterialSymbol icon="delete" size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShepherdAssignmentModal({ group, shepherds, selectedIds, setSelectedIds, onAssign, onClose, t }) {
+  const toggleShepherd = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSubmit = () => {
+    if (selectedIds.length > 0) {
+      onAssign();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900">
+            {t('groupsPage.assignShepherds') || 'Assign Shepherds'} — {group.name}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {shepherds.length > 0
+              ? (shepherds.length + (group.shepherds?.length || 0)) + ' ' + (t('common.total') || 'total') + ' ' + (t('groupsPage.shepherds') || 'shepherds')
+              : (t('groupsPage.allShepherdsAssigned') || 'All shepherds already assigned')}
+          </p>
+        </div>
+
+        <div className="p-6">
+          {shepherds.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">{t('groupsPage.allShepherdsAssigned') || 'All available shepherds already assigned to this group'}</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {shepherds.map((shepherd) => (
+                <label
+                  key={shepherd.id}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedIds.includes(shepherd.id)
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(shepherd.id)}
+                    onChange={() => toggleShepherd(shepherd.id)}
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{shepherd.name}</p>
+                    <p className="text-sm text-gray-500">{shepherd.email}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={selectedIds.length === 0}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t('groupsPage.assign')} {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

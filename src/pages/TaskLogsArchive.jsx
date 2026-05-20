@@ -55,25 +55,25 @@ export default function TaskLogsArchive() {
 
   const logTypeColors = {
     checkpoint: 'bg-[#3B82F6]/10 text-[#2563EB]',
-    photo: 'bg-[#10B981]/10 text-[#059669]',
-    note: 'bg-[#F59E0B]/10 text-[#735C00]',
+    photo: 'bg-[#10B981]/10 text-success',
+    note: 'bg-[#F59E0B]/10 text-tertiary-container',
     location_update: 'bg-[#8B5CF6]/10 text-[#7C3AED]',
-    status_change: 'bg-[#717973]/10 text-[#404943]',
+    status_change: 'bg-on-surface-subtle/10 text-on-surface-variant',
   };
 
   const statusColors = {
-    submitted: 'bg-[#F59E0B]/15 text-[#735C00]',
+    submitted: 'bg-[#F59E0B]/15 text-tertiary-container',
     reviewed: 'bg-[#3B82F6]/15 text-[#2563EB]',
-    approved: 'bg-[#10B981]/15 text-[#059669]',
-    rejected: 'bg-[#BA1A1A]/10 text-[#BA1A1A]',
+    approved: 'bg-[#10B981]/15 text-success',
+    rejected: 'bg-danger/10 text-danger',
   };
 
   return (
     <div className="space-y-8">
       <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 ${isRtl ? 'text-right' : ''}`}>
         <div>
-          <h2 className="text-4xl font-black text-[#002819]">{t('tasks.taskLogsArchive')}</h2>
-          <p className="text-[#404943] mt-2 font-medium">Review and manage all submitted task logs</p>
+          <h2 className="text-4xl font-black text-brand-primary">{t('tasks.taskLogsArchive')}</h2>
+          <p className="text-on-surface-variant mt-2 font-medium">Review and manage all submitted task logs</p>
         </div>
         <Link 
           to="/tasks"
@@ -86,22 +86,22 @@ export default function TaskLogsArchive() {
 
       <div className={`flex flex-wrap gap-4 items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className="flex-1 min-w-[240px] relative">
-          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
           <input 
             type="text" 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
             placeholder={t('common.search')}
-            className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
+            className={`w-full bg-white rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
           />
         </div>
 
         <div className={`flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <MaterialSymbol icon="filter_list" size={20} className="text-[#717973]" />
+          <MaterialSymbol icon="filter_list" size={20} className="text-on-surface-subtle" />
           <select
             value={logTypeFilter}
             onChange={(e) => setLogTypeFilter(e.target.value)}
-            className="bg-transparent border-none text-sm font-medium text-[#404943] focus:outline-none cursor-pointer"
+            className="bg-transparent border-none text-sm font-medium text-on-surface-variant focus:outline-none cursor-pointer"
           >
             <option value="all">{t('common.all')} {t('common.type')}</option>
             <option value="checkpoint">{t('tasks.checkpoint')}</option>
@@ -112,11 +112,11 @@ export default function TaskLogsArchive() {
         </div>
 
         <div className={`flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <MaterialSymbol icon="fact_check" size={20} className="text-[#717973]" />
+          <MaterialSymbol icon="fact_check" size={20} className="text-on-surface-subtle" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-transparent border-none text-sm font-medium text-[#404943] focus:outline-none cursor-pointer"
+            className="bg-transparent border-none text-sm font-medium text-on-surface-variant focus:outline-none cursor-pointer"
           >
             <option value="all">{t('common.all')} Status</option>
             <option value="submitted">Submitted</option>
@@ -129,43 +129,43 @@ export default function TaskLogsArchive() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
         </div>
       ) : logs.length === 0 ? (
         <div className="card p-12 text-center">
-          <MaterialSymbol icon="history" size={64} className="text-[#717973] mx-auto mb-4 opacity-50" />
-          <p className="text-[#404943] font-medium text-lg">{t('common.noData')}</p>
-          <p className="text-[#717973] text-sm mt-1">No task logs have been submitted yet</p>
+          <MaterialSymbol icon="history" size={64} className="text-on-surface-subtle mx-auto mb-4 opacity-50" />
+          <p className="text-on-surface-variant font-medium text-lg">{t('common.noData')}</p>
+          <p className="text-on-surface-subtle text-sm mt-1">No task logs have been submitted yet</p>
         </div>
       ) : (
         <div className="space-y-4">
           {logs.map((log) => (
             <div key={log.id} className="card p-6">
               <div className={`flex items-start gap-5 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${logTypeColors[log.log_type] || 'bg-[#F4F4EF] text-[#404943]'}`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${logTypeColors[log.log_type] || 'bg-surface-light text-on-surface-variant'}`}>
                   <MaterialSymbol icon={logTypeIcons[log.log_type] || 'note'} size={26} />
                 </div>
                 <div className="flex-1">
                   <div className={`flex items-start justify-between ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                     <div>
                       <div className={`flex items-center gap-3 mb-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${logTypeColors[log.log_type] || 'bg-[#F4F4EF] text-[#404943]'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${logTypeColors[log.log_type] || 'bg-surface-light text-on-surface-variant'}`}>
                           {t(`tasks.${log.log_type === 'location_update' ? 'locationUpdate' : log.log_type === 'status_change' ? 'statusChange' : log.log_type}`)}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[log.status] || 'bg-[#F4F4EF] text-[#404943]'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[log.status] || 'bg-surface-light text-on-surface-variant'}`}>
                           {log.status || 'submitted'}
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#002819]">{log.task?.title || 'Unknown Task'}</h3>
+                      <h3 className="font-bold text-brand-primary">{log.task?.title || 'Unknown Task'}</h3>
                     </div>
-                    <span className="text-sm text-[#717973] whitespace-nowrap">
+                    <span className="text-sm text-on-surface-subtle whitespace-nowrap">
                       {new Date(log.created_at).toLocaleString()}
                     </span>
                   </div>
 
-                  <p className="mt-3 text-[#404943]">{log.description} <TranslateButton text={log.description} /></p>
+                  <p className="mt-3 text-on-surface-variant">{log.description} <TranslateButton text={log.description} /></p>
 
-                  <div className={`flex items-center gap-5 mt-4 text-sm text-[#717973] ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <div className={`flex items-center gap-5 mt-4 text-sm text-on-surface-subtle ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <MaterialSymbol icon="person" size={16} />
                       <span>{log.user?.name || 'Unknown'}</span>
@@ -188,7 +188,7 @@ export default function TaskLogsArchive() {
                 <div className="flex items-center gap-2">
                   <Link 
                     to={`/tasks`}
-                    className="p-3 bg-[#F4F4EF] text-[#404943] hover:bg-[#E3E3DE] rounded-xl transition-colors"
+                    className="p-3 bg-surface-light text-on-surface-variant hover:bg-surface-high rounded-xl transition-colors"
                     title={t('tasks.viewLogs')}
                   >
                     <MaterialSymbol icon="open_in_new" size={20} />

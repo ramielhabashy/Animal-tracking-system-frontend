@@ -618,23 +618,23 @@ export default function MapView() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-8rem)] flex items-center justify-center bg-[#fafaf5]">
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center bg-surface">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-[#002819] border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-[#404943] font-medium">{t('mapPage.loadingMap')}</p>
+          <div className="animate-spin w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-on-surface-variant font-medium">{t('mapPage.loadingMap')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] relative overflow-hidden bg-[#fafaf5]">
+    <div className="h-[calc(100vh-8rem)] relative overflow-hidden bg-surface">
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-[1000] flex justify-between items-center px-4 py-2 bg-[#002819]/95 backdrop-blur-md shadow-xl">
+      <header className="absolute top-0 left-0 right-0 z-[1000] flex justify-between items-center px-4 py-2 bg-brand-primary/95 backdrop-blur-md shadow-xl">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#D4AF37] rounded-lg flex items-center justify-center">
-              <MaterialSymbol icon="map" size={18} className="text-[#002819]" weight="bold" />
+            <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center">
+              <MaterialSymbol icon="map" size={18} className="text-brand-primary" weight="bold" />
             </div>
             <span className="text-lg font-bold text-white font-['Manrope'] tracking-tight hidden sm:block">{t('mapPage.liveTracker')}</span>
           </div>
@@ -647,7 +647,7 @@ export default function MapView() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('mapPage.search')}
-                className={`w-48 bg-white/10 border-none rounded-lg ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-1.5 text-white text-sm placeholder:text-white/50 focus:ring-2 focus:ring-[#D4AF37] focus:bg-white/15 transition-all`}
+                className={`w-48 bg-white/10 border-none rounded-lg ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-1.5 text-white text-sm placeholder:text-white/50 focus:ring-2 focus:ring-brand-accent focus:bg-white/15 transition-all`}
               />
             <MaterialSymbol icon="search" size={16} className={`absolute top-1/2 -translate-y-1/2 text-white/50 ${isRtl ? 'right-3' : 'left-3'}`} />
           </div>
@@ -671,7 +671,7 @@ export default function MapView() {
                 <select
                   value={selectedOwner}
                   onChange={(e) => setSelectedOwner(e.target.value)}
-                  className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37] max-w-[120px]"
+                  className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-brand-accent max-w-[120px]"
                 >
                   <option value="all">{t('mapPage.allOwners')}</option>
                   {owners.map(owner => (
@@ -684,7 +684,7 @@ export default function MapView() {
               <select
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
-                className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37] max-w-[120px]"
+                className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-brand-accent max-w-[120px]"
               >
                 <option value="all">{t('mapPage.allGroups')}</option>
                 {groups.filter(g => selectedOwner === 'all' || g.owner_id === parseInt(selectedOwner) || g.owner?.id === parseInt(selectedOwner)).map(group => (
@@ -696,7 +696,7 @@ export default function MapView() {
               <select
                 value={selectedGeofence}
                 onChange={(e) => setSelectedGeofence(e.target.value)}
-                className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37] max-w-[130px]"
+                className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-brand-accent max-w-[130px]"
               >
                 <option value="all">{t('mapPage.allFences')}</option>
                 {geofences.filter(g => selectedOwner === 'all' || g.owner_id === parseInt(selectedOwner) || g.owner?.id === parseInt(selectedOwner)).map(geofence => (
@@ -736,7 +736,7 @@ export default function MapView() {
             onChange={(e) => { 
               setTimeFilter(Number(e.target.value)); 
             }}
-            className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-[#D4AF37]"
+            className="bg-white/10 border-none rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:ring-2 focus:ring-brand-accent"
           >
             <option value={6}>6h</option>
             <option value={12}>12h</option>
@@ -751,14 +751,14 @@ export default function MapView() {
           {/* Toggle Buttons */}
           <button 
             onClick={() => setShowPaths(!showPaths)}
-            className={`p-2 rounded-lg transition-all ${showPaths ? 'bg-[#D4AF37] text-[#002819]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            className={`p-2 rounded-lg transition-all ${showPaths ? 'bg-brand-accent text-brand-primary' : 'bg-white/10 text-white hover:bg-white/20'}`}
             title={showPaths ? t('mapPage.hidePaths') : t('mapPage.showPaths')}
           >
             <MaterialSymbol icon="route" size={18} />
           </button>
           <button 
             onClick={() => setShowGeofences(!showGeofences)}
-            className={`p-2 rounded-lg transition-all ${showGeofences ? 'bg-[#D4AF37] text-[#002819]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            className={`p-2 rounded-lg transition-all ${showGeofences ? 'bg-brand-accent text-brand-primary' : 'bg-white/10 text-white hover:bg-white/20'}`}
             title={showGeofences ? t('mapPage.hideFences') : t('mapPage.showFences')}
           >
             <MaterialSymbol icon="fence" size={18} />
@@ -766,7 +766,7 @@ export default function MapView() {
 
           <button
             onClick={() => setShowAlertsPanel(!showAlertsPanel)}
-            className={`relative p-2 rounded-lg transition-all ${showAlertsPanel ? 'bg-[#D4AF37] text-[#002819]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            className={`relative p-2 rounded-lg transition-all ${showAlertsPanel ? 'bg-brand-accent text-brand-primary' : 'bg-white/10 text-white hover:bg-white/20'}`}
             title="Alerts"
           >
             <MaterialSymbol icon="notifications" size={18} />
@@ -812,30 +812,30 @@ export default function MapView() {
                 <Popup>
                   <div className="p-3 min-w-[220px]">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-[#002819] text-sm">{geofence.name}</h3>
+                      <h3 className="font-bold text-brand-primary text-sm">{geofence.name}</h3>
                       <span className={`w-3 h-3 rounded-full ${geofence.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 mb-3">
                       <div className="bg-gray-50 rounded-lg p-2">
-                        <div className="text-[10px] text-[#717973] uppercase">Perimeter</div>
-                        <div className="text-sm font-bold text-[#002819]">{perimeterKm} km</div>
+                        <div className="text-[10px] text-on-surface-subtle uppercase">Perimeter</div>
+                        <div className="text-sm font-bold text-brand-primary">{perimeterKm} km</div>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-2">
-                        <div className="text-[10px] text-[#717973] uppercase">Alert</div>
-                        <div className="text-sm font-bold text-[#002819] capitalize">{geofence.alert_type}</div>
+                        <div className="text-[10px] text-on-surface-subtle uppercase">Alert</div>
+                        <div className="text-sm font-bold text-brand-primary capitalize">{geofence.alert_type}</div>
                       </div>
                       <div className="bg-green-50 rounded-lg p-2">
-                        <div className="text-[10px] text-[#717973] uppercase">Inside</div>
+                        <div className="text-[10px] text-on-surface-subtle uppercase">Inside</div>
                         <div className="text-sm font-bold text-green-600">{stats.animalsInside || 0}</div>
                       </div>
                       <div className="bg-amber-50 rounded-lg p-2">
-                        <div className="text-[10px] text-[#717973] uppercase">Outside</div>
+                        <div className="text-[10px] text-on-surface-subtle uppercase">Outside</div>
                         <div className="text-sm font-bold text-amber-600">{stats.animalsOutside || 0}</div>
                       </div>
                     </div>
                     
-                    <div className="text-xs text-[#404943] mb-2">
+                    <div className="text-xs text-on-surface-variant mb-2">
                       <span className="font-medium">{geofence.animals?.length || 0}</span> animals assigned
                       {geofence.groups?.length > 0 && (
                         <span> • <span className="font-medium">{geofence.groups.length}</span> groups</span>
@@ -896,7 +896,7 @@ export default function MapView() {
                   <Popup>
                     <div className="p-3 min-w-[220px]">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
+                        <h3 className="font-bold text-brand-primary">{animal.name || animal.animal_id}</h3>
                         <span className={`px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 ${
                           isOnline(animal.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                         }`}>
@@ -904,87 +904,87 @@ export default function MapView() {
                           {isOnline(animal.id) ? 'Live' : 'Offline'}
                         </span>
                       </div>
-                      <p className="text-[10px] text-[#717973] mt-0.5">{animal.animal_id}</p>
-                      <p className="text-xs text-[#404943] mt-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}</p>
+                      <p className="text-[10px] text-on-surface-subtle mt-0.5">{animal.animal_id}</p>
+                      <p className="text-xs text-on-surface-variant mt-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}</p>
                       {['Admin', 'Owner', 'Manager'].includes(user?.role) && (
-                        <p className="text-xs text-[#717973]">Owner: {animal.owner?.name || animal.owner_name || 'N/A'}</p>
+                        <p className="text-xs text-on-surface-subtle">Owner: {animal.owner?.name || animal.owner_name || 'N/A'}</p>
                       )}
-                      <p className="text-xs text-[#717973]">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
+                      <p className="text-xs text-on-surface-subtle">Last: {formatLastSeen(getLastLocationTime(animal.id))}</p>
 
                       {/* Doctor sees health data */}
                       {user?.role === 'Doctor' ? (
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-blue-50 p-2 rounded">
-                            <span className="text-[#717973]">Temp</span>
-                            <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Temp</span>
+                            <p className="font-bold text-brand-primary">{(animal.temperature ?? animal.baseline_temperature) ? `${(animal.temperature ?? animal.baseline_temperature)}°C` : 'N/A'}</p>
                           </div>
                           <div className="bg-blue-50 p-2 rounded">
-                            <span className="text-[#717973]">Heart Rate</span>
-                            <p className="font-bold text-[#002819]">{animal.normal_heart_rate ? `${animal.normal_heart_rate} bpm` : 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Heart Rate</span>
+                            <p className="font-bold text-brand-primary">{animal.normal_heart_rate ? `${animal.normal_heart_rate} bpm` : 'N/A'}</p>
                           </div>
                           <div className="bg-blue-50 p-2 rounded">
-                            <span className="text-[#717973]">Weight</span>
-                            <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Weight</span>
+                            <p className="font-bold text-brand-primary">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
                           </div>
                           <div className="bg-blue-50 p-2 rounded">
-                            <span className="text-[#717973]">Device</span>
-                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Device</span>
+                            <p className="font-bold text-brand-primary truncate">{animal.device?.device_id || 'N/A'}</p>
                           </div>
                         </div>
                       ) : user?.role === 'Shepherd' ? (
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-emerald-50 p-2 rounded">
-                            <span className="text-[#717973]">Battery</span>
-                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                            <span className="text-on-surface-subtle">Battery</span>
+                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-brand-primary'}`}>
                               {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
                             </p>
                           </div>
                           <div className="bg-emerald-50 p-2 rounded">
-                            <span className="text-[#717973]">Signal</span>
-                            <p className="font-bold text-[#002819]">{animal.device?.signal_strength ?? 'N/A'}
+                            <span className="text-on-surface-subtle">Signal</span>
+                            <p className="font-bold text-brand-primary">{animal.device?.signal_strength ?? 'N/A'}
                               {animal.device?.advanced_tracking ? ' ⚡' : ''}
                             </p>
                           </div>
                           <div className="bg-emerald-50 p-2 rounded">
-                            <span className="text-[#717973]">Path Pts</span>
-                            <p className="font-bold text-[#002819]">{getPathPositions(animal.id).length}</p>
+                            <span className="text-on-surface-subtle">Path Pts</span>
+                            <p className="font-bold text-brand-primary">{getPathPositions(animal.id).length}</p>
                           </div>
                           <div className="bg-emerald-50 p-2 rounded">
-                            <span className="text-[#717973]">Device</span>
-                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Device</span>
+                            <p className="font-bold text-brand-primary truncate">{animal.device?.device_id || 'N/A'}</p>
                           </div>
                         </div>
                       ) : (
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-[#717973]">Device</span>
-                            <p className="font-bold text-[#002819] truncate">{animal.device?.device_id || 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Device</span>
+                            <p className="font-bold text-brand-primary truncate">{animal.device?.device_id || 'N/A'}</p>
                           </div>
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-[#717973]">Battery</span>
-                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                            <span className="text-on-surface-subtle">Battery</span>
+                            <p className={`font-bold ${parseInt(animal.device?.battery_level) < 20 ? 'text-red-600' : 'text-brand-primary'}`}>
                               {animal.device?.battery_level != null ? `${animal.device.battery_level}%` : 'N/A'}
                             </p>
                           </div>
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-[#717973]">Weight</span>
-                            <p className="font-bold text-[#002819]">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Weight</span>
+                            <p className="font-bold text-brand-primary">{animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}</p>
                           </div>
                           <div className="bg-gray-50 p-2 rounded">
-                            <span className="text-[#717973]">Temp</span>
-                            <p className="font-bold text-[#002819]">{animal.baseline_temperature ? `${animal.baseline_temperature}°C` : 'N/A'}</p>
+                            <span className="text-on-surface-subtle">Temp</span>
+                            <p className="font-bold text-brand-primary">{(animal.temperature ?? animal.baseline_temperature) ? `${(animal.temperature ?? animal.baseline_temperature)}°C` : 'N/A'}</p>
                           </div>
                         </div>
                       )}
 
                       {animal.geofences?.length > 0 && (
                         <div className="mt-1.5 text-xs">
-                          <span className="text-[#717973]">Geofences: </span>
-                          <span className="text-[#002819] font-medium">{animal.geofences.map(g => g.name).join(', ')}</span>
+                          <span className="text-on-surface-subtle">Geofences: </span>
+                          <span className="text-brand-primary font-medium">{animal.geofences.map(g => g.name).join(', ')}</span>
                         </div>
                       )}
                       <div className="mt-2 flex gap-2">
-                        <Link to={`/animals/${animal.id}`} className="flex-1 text-center text-xs bg-[#002819] text-white py-1.5 rounded font-bold hover:bg-[#06402b]">
+                        <Link to={`/animals/${animal.id}`} className="flex-1 text-center text-xs bg-brand-primary text-white py-1.5 rounded font-bold hover:bg-brand-secondary">
                           View Details
                         </Link>
                         <button onClick={() => { setSelectedAnimal(animal); setZoomPosition(position); }} className="flex-1 text-center text-xs border border-gray-200 py-1.5 rounded font-bold hover:bg-gray-50">
@@ -1006,7 +1006,7 @@ export default function MapView() {
         {canCreateGeofence && (
           <button
             onClick={() => setIsDrawingGeofence(!isDrawingGeofence)}
-            className={`p-3 rounded-full shadow-lg transition-all ${isDrawingGeofence ? 'bg-[#D4AF37] text-[#002819] ring-4 ring-[#D4AF37]/30' : 'bg-white text-[#002819] hover:shadow-xl'}`}
+            className={`p-3 rounded-full shadow-lg transition-all ${isDrawingGeofence ? 'bg-brand-accent text-brand-primary ring-4 ring-brand-accent/30' : 'bg-white text-brand-primary hover:shadow-xl'}`}
             title={isDrawingGeofence ? 'Click to finish drawing' : 'Draw new geofence'}
           >
             <MaterialSymbol icon={isDrawingGeofence ? 'check' : 'hexagon'} size={24} />
@@ -1014,14 +1014,14 @@ export default function MapView() {
         )}
         <button
           onClick={centerOnAllAnimals}
-          className="p-3 bg-white text-[#002819] rounded-full shadow-lg hover:shadow-xl transition-all"
+          className="p-3 bg-white text-brand-primary rounded-full shadow-lg hover:shadow-xl transition-all"
           title="Center on all animals"
         >
           <MaterialSymbol icon="center_focus_strong" size={24} />
         </button>
         {isDrawingGeofence && (
-          <div className="bg-white p-3 rounded-xl shadow-lg text-xs text-[#404943] max-w-[220px] animate-in fade-in">
-            <p className="font-bold text-[#002819] flex items-center gap-1 mb-2">
+          <div className="bg-white p-3 rounded-xl shadow-lg text-xs text-on-surface-variant max-w-[220px] animate-in fade-in">
+            <p className="font-bold text-brand-primary flex items-center gap-1 mb-2">
               <MaterialSymbol icon="edit" size={14} />
               Drawing Mode
             </p>
@@ -1036,7 +1036,7 @@ export default function MapView() {
                   key={mode}
                   onClick={() => setDrawMode(mode)}
                   className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
-                    drawMode === mode ? 'bg-[#D4AF37] text-[#002819]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    drawMode === mode ? 'bg-brand-accent text-brand-primary' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                   title={label}
                 >
@@ -1077,7 +1077,7 @@ export default function MapView() {
           {!sidebarCollapsed && (
             <>
                 <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-[#002819]">Herd Status</h3>
+                  <h3 className="font-bold text-brand-primary">Herd Status</h3>
                   <button onClick={() => setSidebarCollapsed(true)} className={`p-1 hover:bg-gray-100 rounded ${isRtl ? 'order-first' : ''}`}>
                     <MaterialSymbol icon={isRtl ? 'chevron_left' : 'chevron_right'} size={20} />
                   </button>
@@ -1088,7 +1088,7 @@ export default function MapView() {
                   {filteredAnimals.length} animals
                 </span>
                 {lastUpdated && (
-                  <span className="text-xs text-[#717973]">
+                  <span className="text-xs text-on-surface-subtle">
                     Updated {lastUpdated.toLocaleTimeString()}
                   </span>
                 )}
@@ -1151,14 +1151,14 @@ export default function MapView() {
                 onClick={() => { setSelectedAnimal(animal); setZoomPosition(getLastLocation(animal.id)); }}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   selectedAnimal?.id === animal.id 
-                    ? 'border-[#D4AF37] bg-amber-50/50 shadow-md' 
-                    : 'border-[#eeeee9] hover:border-[#002819]/20 hover:shadow-sm'
+                    ? 'border-brand-accent bg-amber-50/50 shadow-md' 
+                    : 'border-[#eeeee9] hover:border-brand-primary/20 hover:shadow-sm'
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isOnline(animal.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <h4 className="font-bold text-[#002819] text-sm truncate">{animal.name || animal.animal_id}</h4>
+                    <h4 className="font-bold text-brand-primary text-sm truncate">{animal.name || animal.animal_id}</h4>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className={`w-1.5 h-1.5 rounded-full ${statusColor} ${getAnimalStatus(animal) === 'critical' ? 'animate-pulse' : ''}`} />
@@ -1169,8 +1169,8 @@ export default function MapView() {
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-[#717973] mb-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}{animal.date_of_birth ? ` • Born ${animal.date_of_birth}` : ''}</p>
-                <div className="flex items-center gap-3 text-[10px] text-[#717973] mb-2">
+                <p className="text-xs text-on-surface-subtle mb-1">{animal.species}{animal.breed ? ` • ${animal.breed}` : ''}{animal.gender ? ` • ${animal.gender}` : ''}{animal.date_of_birth ? ` • Born ${animal.date_of_birth}` : ''}</p>
+                <div className="flex items-center gap-3 text-[10px] text-on-surface-subtle mb-2">
                   <span>Last: {formatLastSeen(getLastLocationTime(animal.id))}</span>
                   {animal.owner?.name && ['Admin', 'Manager', 'Doctor', 'Owner'].includes(user?.role) && (
                     <span className="truncate">Owner: {animal.owner.name}</span>
@@ -1182,19 +1182,19 @@ export default function MapView() {
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-blue-50 rounded-lg p-2">
                       <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-blue-500'} />
-                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
-                        {animal.baseline_temperature || 'N/A'}°
+                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-brand-primary'}`}>
+                        {(animal.temperature ?? animal.baseline_temperature) || 'N/A'}°
                       </p>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-2">
                       <MaterialSymbol icon="favorite" size={14} className="text-blue-500" />
-                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                      <p className="text-xs font-bold mt-1 text-brand-primary">
                         {animal.normal_heart_rate ? `${animal.normal_heart_rate} bpm` : 'N/A'}
                       </p>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-2">
                       <MaterialSymbol icon="scale" size={14} className="text-blue-500" />
-                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                      <p className="text-xs font-bold mt-1 text-brand-primary">
                         {animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}
                       </p>
                     </div>
@@ -1202,37 +1202,37 @@ export default function MapView() {
                 ) : ['Admin'].includes(user?.role) ? (
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-gray-50 rounded-lg p-2">
-                      <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-[#717973]'} />
-                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-[#002819]'}`}>
-                        {animal.baseline_temperature || 'N/A'}°
+                      <MaterialSymbol icon="thermostat" size={14} className={getAnimalStatus(animal) === 'critical' ? 'text-red-500' : 'text-on-surface-subtle'} />
+                      <p className={`text-xs font-bold mt-1 ${getAnimalStatus(animal) === 'critical' ? 'text-red-600' : 'text-brand-primary'}`}>
+                        {(animal.temperature ?? animal.baseline_temperature) || 'N/A'}°
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2">
                       <MaterialSymbol icon={battery < 20 ? 'battery_alert' : battery < 50 ? 'battery_low' : 'battery_full'} size={14} className={battery < 20 ? 'text-red-500' : battery < 30 ? 'text-amber-500' : 'text-green-600'} />
-                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-brand-primary'}`}>
                         {!isNaN(battery) ? `${battery}%` : 'N/A'}
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2">
-                      <MaterialSymbol icon="location_on" size={14} className="text-[#717973]" />
-                      <p className="text-xs font-bold mt-1 text-[#002819]">{getPathPositions(animal.id).length} pts</p>
+                      <MaterialSymbol icon="location_on" size={14} className="text-on-surface-subtle" />
+                      <p className="text-xs font-bold mt-1 text-brand-primary">{getPathPositions(animal.id).length} pts</p>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-gray-50 rounded-lg p-2">
                       <MaterialSymbol icon={battery < 20 ? 'battery_alert' : battery < 50 ? 'battery_low' : 'battery_full'} size={14} className={battery < 20 ? 'text-red-500' : battery < 30 ? 'text-amber-500' : 'text-green-600'} />
-                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-[#002819]'}`}>
+                      <p className={`text-xs font-bold mt-1 ${battery < 20 ? 'text-red-600' : 'text-brand-primary'}`}>
                         {!isNaN(battery) ? `${battery}%` : 'N/A'}
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2">
-                      <MaterialSymbol icon="location_on" size={14} className="text-[#717973]" />
-                      <p className="text-xs font-bold mt-1 text-[#002819]">{getPathPositions(animal.id).length} pts</p>
+                      <MaterialSymbol icon="location_on" size={14} className="text-on-surface-subtle" />
+                      <p className="text-xs font-bold mt-1 text-brand-primary">{getPathPositions(animal.id).length} pts</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2">
-                      <MaterialSymbol icon="scale" size={14} className="text-[#717973]" />
-                      <p className="text-xs font-bold mt-1 text-[#002819]">
+                      <MaterialSymbol icon="scale" size={14} className="text-on-surface-subtle" />
+                      <p className="text-xs font-bold mt-1 text-brand-primary">
                         {animal.current_weight ? `${animal.current_weight}kg` : 'N/A'}
                       </p>
                     </div>
@@ -1241,7 +1241,7 @@ export default function MapView() {
 
                 {/* Signal strength for Shepherd */}
                 {['Shepherd'].includes(user?.role) && animal.device?.signal_strength != null && (
-                  <div className="mt-1.5 text-[10px] text-[#717973]">
+                  <div className="mt-1.5 text-[10px] text-on-surface-subtle">
                     Signal: {animal.device.signal_strength}
                     {animal.device.advanced_tracking ? ' | Advanced ON' : ''}
                   </div>
@@ -1260,7 +1260,7 @@ export default function MapView() {
             
             {filteredAnimalsWithoutPaths.length > 0 && (
               <div className="pt-4 border-t border-[#eeeee9]">
-                <p className="text-xs text-[#717973] mb-3 font-medium flex items-center gap-2">
+                <p className="text-xs text-on-surface-subtle mb-3 font-medium flex items-center gap-2">
                   <MaterialSymbol icon="gps_off" size={14} />
                   No Tracking Data ({filteredAnimalsWithoutPaths.length})
                 </p>
@@ -1273,15 +1273,15 @@ export default function MapView() {
                     onClick={() => hasDevice && setSelectedAnimal(animal)}
                     className={`p-3 rounded-xl border cursor-pointer transition-all mb-2 ${
                       selectedAnimal?.id === animal.id 
-                        ? 'border-[#D4AF37] bg-amber-50/50' 
-                        : 'border-[#eeeee9] hover:border-[#002819]/20'
+                        ? 'border-brand-accent bg-amber-50/50' 
+                        : 'border-[#eeeee9] hover:border-brand-primary/20'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <div className={`w-2.5 h-2.5 rounded-full ${hasDevice ? 'bg-amber-400' : 'bg-gray-300'}`} />
-                      <span className="font-medium text-sm text-[#404943]">{animal.animal_id}</span>
+                      <span className="font-medium text-sm text-on-surface-variant">{animal.animal_id}</span>
                     </div>
-                    <p className={`text-xs text-[#717973] ${isRtl ? 'mr-4' : 'ml-4'}`}>
+                    <p className={`text-xs text-on-surface-subtle ${isRtl ? 'mr-4' : 'ml-4'}`}>
                       {animal.species}{hasDevice ? ' • Device: ' + (animal.device.device_id || 'paired') : ' • No device'}
                     </p>
                     {hasDevice && !isNaN(battery) && (
@@ -1295,7 +1295,7 @@ export default function MapView() {
             )}
             
             {filteredAnimals.length === 0 && (
-              <div className="text-center py-8 text-[#717973]">
+              <div className="text-center py-8 text-on-surface-subtle">
                 <MaterialSymbol icon="search_off" size={40} className="mx-auto mb-2 opacity-50" />
                 <p className="text-sm font-medium">No animals found</p>
                 <p className="text-xs mt-1">Try adjusting your filters</p>
@@ -1338,7 +1338,7 @@ export default function MapView() {
           </div>
           <div className="divide-y divide-[#eeeee9] max-h-[35vh] overflow-y-auto">
             {filteredPanelAlerts.length === 0 ? (
-              <div className="p-6 text-center text-[#717973]">
+              <div className="p-6 text-center text-on-surface-subtle">
                 <MaterialSymbol icon="check_circle" size={32} className="mx-auto mb-2 text-green-500" />
                 <p className="text-sm font-medium">No alerts</p>
                 <p className="text-xs">All clear!</p>
@@ -1351,16 +1351,16 @@ export default function MapView() {
                       <MaterialSymbol icon={alert.type === 'entry' ? 'login' : 'logout'} size={18} />
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-[#002819]">
+                      <p className="font-bold text-sm text-brand-primary">
                         {alert.animal?.animal_id || 'Unknown'} {alert.type === 'entry' ? 'entered' : 'exited'}
                       </p>
-                      <p className="text-xs text-[#717973]">{alert.geofence?.name || 'Geofence'}</p>
-                      <p className="text-xs text-[#717973]">{new Date(alert.triggered_at).toLocaleString()}</p>
+                      <p className="text-xs text-on-surface-subtle">{alert.geofence?.name || 'Geofence'}</p>
+                      <p className="text-xs text-on-surface-subtle">{new Date(alert.triggered_at).toLocaleString()}</p>
                     </div>
                     {!alert.is_acknowledged && (
                       <button 
                         onClick={() => acknowledgeAlert(alert.id)} 
-                        className="px-2 py-1 bg-[#002819] text-white text-xs rounded-lg font-medium hover:bg-[#06402b]"
+                        className="px-2 py-1 bg-brand-primary text-white text-xs rounded-lg font-medium hover:bg-brand-secondary"
                       >
                         Ack
                       </button>
@@ -1375,39 +1375,39 @@ export default function MapView() {
 
       {/* Geofence Modal */}
       {showGeofenceModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#002819]/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-brand-primary/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-96 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                <MaterialSymbol icon="hexagon" size={20} className="text-[#D4AF37]" />
+              <div className="w-10 h-10 bg-brand-accent/20 rounded-full flex items-center justify-center">
+                <MaterialSymbol icon="hexagon" size={20} className="text-brand-accent" />
               </div>
-              <h3 className="text-lg font-bold text-[#002819]">Create Geofence</h3>
+              <h3 className="text-lg font-bold text-brand-primary">Create Geofence</h3>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#717973] uppercase mb-2">Name</label>
+                <label className="block text-xs font-bold text-on-surface-subtle uppercase mb-2">Name</label>
                 <input
                   type="text"
                   value={newGeofenceName}
                   onChange={(e) => setNewGeofenceName(e.target.value)}
                   placeholder="e.g., North Pasture"
-                  className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#D4AF37]"
+                  className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#717973] uppercase mb-2">Alert Type</label>
+                <label className="block text-xs font-bold text-on-surface-subtle uppercase mb-2">Alert Type</label>
                 <select 
                   value={newGeofenceAlertType}
                   onChange={(e) => setNewGeofenceAlertType(e.target.value)}
-                  className="w-full bg-[#eeeee9] border-none rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-surface-dim border-none rounded-xl px-4 py-3 text-sm"
                 >
                   <option value="both">Alert on Entry & Exit</option>
                   <option value="entry">Alert on Entry Only</option>
                   <option value="exit">Alert on Exit Only</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2 text-sm text-[#717973]">
+              <div className="flex items-center gap-2 text-sm text-on-surface-subtle">
                 <MaterialSymbol icon="place" size={16} />
                 <span>{pendingGeofencePoints.length} boundary points selected</span>
               </div>
@@ -1415,14 +1415,14 @@ export default function MapView() {
             <div className="flex gap-3 mt-6">
               <button 
                 onClick={() => { setShowGeofenceModal(false); setPendingGeofencePoints([]); }} 
-                className="flex-1 py-3 bg-[#eeeee9] text-[#002819] rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+                className="flex-1 py-3 bg-surface-dim text-brand-primary rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={saveGeofence} 
                 disabled={!newGeofenceName} 
-                className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm disabled:opacity-50 hover:bg-[#06402b] transition-colors"
+                className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm disabled:opacity-50 hover:bg-brand-secondary transition-colors"
               >
                 Save Geofence
               </button>
@@ -1436,23 +1436,23 @@ export default function MapView() {
         <div className={`bg-white/95 backdrop-blur-md rounded-full px-5 py-2 shadow-xl flex items-center gap-5 ${isRtl ? 'flex-row-reverse' : ''}`}>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-[#002819]">{filteredAnimalsWithPaths.length} tracked</span>
+            <span className="text-sm font-medium text-brand-primary">{filteredAnimalsWithPaths.length} tracked</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-gray-400 rounded-full" />
-            <span className="text-sm font-medium text-[#404943]">{filteredAnimalsWithoutPaths.length} untracked</span>
+            <span className="text-sm font-medium text-on-surface-variant">{filteredAnimalsWithoutPaths.length} untracked</span>
           </div>
           <div className="h-4 w-px bg-gray-200" />
           <div className="flex items-center gap-2" title="Active Geofences">
-            <span className="w-2 h-2 bg-[#D4AF37] rounded-sm" />
-            <span className="text-sm text-[#717973]">{geofences.filter(g => g.is_active).length} fences</span>
+            <span className="w-2 h-2 bg-brand-accent rounded-sm" />
+            <span className="text-sm text-on-surface-subtle">{geofences.filter(g => g.is_active).length} fences</span>
           </div>
           {selectedGeofence !== 'all' && geofenceStats[selectedGeofence] && (
             <>
               <div className="h-4 w-px bg-gray-200" />
               <div className="flex items-center gap-1 text-xs" title="Selected fence perimeter">
-                <MaterialSymbol icon="straighten" size={14} className="text-[#D4AF37]" />
-                <span className="text-[#717973]">{geofenceStats[selectedGeofence].perimeter?.toFixed(1) || '-'} km</span>
+                <MaterialSymbol icon="straighten" size={14} className="text-brand-accent" />
+                <span className="text-on-surface-subtle">{geofenceStats[selectedGeofence].perimeter?.toFixed(1) || '-'} km</span>
               </div>
             </>
           )}
@@ -1466,13 +1466,13 @@ export default function MapView() {
               type="checkbox" 
               checked={autoRefresh} 
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-[#002819] focus:ring-[#002819]"
+              className="w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-[#002819]"
             />
-            <span className="text-xs text-[#717973]">Auto-refresh</span>
+            <span className="text-xs text-on-surface-subtle">Auto-refresh</span>
           </label>
           <button
             onClick={() => fetchBaseData()}
-            className="p-1.5 rounded-lg bg-white/10 text-[#717973] hover:bg-white/20 hover:text-[#002819] transition"
+            className="p-1.5 rounded-lg bg-white/10 text-on-surface-subtle hover:bg-white/20 hover:text-brand-primary transition"
             title="Refresh now"
           >
             <MaterialSymbol icon="refresh" size={16} />

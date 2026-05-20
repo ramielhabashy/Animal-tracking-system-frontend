@@ -329,7 +329,7 @@ export default function VaccinationSchedulePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -341,28 +341,28 @@ export default function VaccinationSchedulePage() {
           <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
             <button
               onClick={() => navigateCalendar(-1)}
-              className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-dim rounded-lg transition-colors"
             >
               <MaterialSymbol icon={isRtl ? 'chevron_right' : 'chevron_left'} size={24} />
             </button>
             <div className={isRtl ? 'text-right' : ''}>
-              <h2 className="text-3xl font-extrabold font-['Manrope'] text-[#002819] tracking-tight">{t('vaccination.title')}</h2>
-              <p className="text-[#404943] mt-1">{getDateLabel()}</p>
+              <h2 className="text-3xl font-extrabold font-['Manrope'] text-brand-primary tracking-tight">{t('vaccination.title')}</h2>
+              <p className="text-on-surface-variant mt-1">{getDateLabel()}</p>
             </div>
             <button
               onClick={() => navigateCalendar(1)}
-              className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-dim rounded-lg transition-colors"
             >
               <MaterialSymbol icon={isRtl ? 'chevron_left' : 'chevron_right'} size={24} />
             </button>
             <button
               onClick={goToToday}
-              className="px-4 py-2 text-sm bg-[#002819] text-white rounded-lg font-medium hover:bg-[#06402b] transition-colors"
+              className="px-4 py-2 text-sm bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-secondary transition-colors"
             >
               {t('vaccination.today') || 'Today'}
             </button>
           </div>
-          <div className={`flex bg-[#eeeee9] p-1 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex bg-surface-dim p-1 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
             {[
               { key: 'month', label: t('vaccination.month') },
               { key: 'week', label: t('vaccination.week') },
@@ -373,8 +373,8 @@ export default function VaccinationSchedulePage() {
                 onClick={() => setViewMode(mode.key)}
                 className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
                   viewMode === mode.key 
-                    ? 'bg-white text-[#002819] font-bold shadow-sm' 
-                    : 'text-[#404943] hover:bg-[#e8e8e3]'
+                    ? 'bg-white text-brand-primary font-bold shadow-sm' 
+                    : 'text-on-surface-variant hover:bg-surface-dim'
                 }`}
               >
                 {mode.label}
@@ -389,9 +389,9 @@ export default function VaccinationSchedulePage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-lg shadow-[#002819]/5 overflow-hidden flex-1 min-h-[500px]">
+        <div className="bg-white rounded-2xl shadow-lg shadow-brand-primary/5 overflow-hidden flex-1 min-h-[500px]">
           {viewMode !== 'day' && (
-            <div className={`grid ${getGridClass()} bg-[#002819] text-white text-center py-4 border-b border-[#002819]`}>
+            <div className={`grid ${getGridClass()} bg-brand-primary text-white text-center py-4 border-b border-brand-primary`}>
               {(viewMode === 'week' 
                 ? [t('vaccination.sun'), t('vaccination.mon'), t('vaccination.tue'), t('vaccination.wed'), t('vaccination.thu'), t('vaccination.fri'), t('vaccination.sat')]
                 : [t('vaccination.sun'), t('vaccination.mon'), t('vaccination.tue'), t('vaccination.wed'), t('vaccination.thu'), t('vaccination.fri'), t('vaccination.sat')]
@@ -416,18 +416,18 @@ export default function VaccinationSchedulePage() {
                 <div
                   key={index}
                   className={`p-4 ${getCellHeight()} border-r border-b border-[#e8e8e3] ${
-                    isCurrentMonth ? 'bg-white' : 'bg-[#f4f4ef] text-[#404943]/40'
-                   } ${isToday ? 'bg-[#D4AF37]/10' : ''} ${viewMode === 'day' ? 'border-s-0' : ''}`}
+                    isCurrentMonth ? 'bg-white' : 'bg-surface-light text-on-surface-variant/40'
+                   } ${isToday ? 'bg-brand-accent/10' : ''} ${viewMode === 'day' ? 'border-s-0' : ''}`}
                 >
                   {viewMode === 'day' && (
                     <div className="text-center mb-4">
-                      <div className="text-xs font-bold uppercase tracking-widest text-[#404943]/60">
+                      <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">
                         {date.toLocaleDateString('en-US', { weekday: 'long' })}
                       </div>
-                      <div className="text-4xl font-black text-[#002819] mt-2">
+                      <div className="text-4xl font-black text-brand-primary mt-2">
                         {date.getDate()}
                       </div>
-                      <div className="text-sm text-[#404943]/60">
+                      <div className="text-sm text-on-surface-variant/60">
                         {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       </div>
                     </div>
@@ -435,8 +435,8 @@ export default function VaccinationSchedulePage() {
                   {viewMode === 'week' && (
                     <span className={`text-sm font-semibold ${
                       isToday 
-                        ? 'bg-[#D4AF37] text-white px-2 py-0.5 rounded-full' 
-                        : 'text-[#404943]'
+                        ? 'bg-brand-accent text-white px-2 py-0.5 rounded-full' 
+                        : 'text-on-surface-variant'
                     }`}>
                       {date.getDate()}
                     </span>
@@ -444,8 +444,8 @@ export default function VaccinationSchedulePage() {
                   {viewMode === 'month' && (
                     <span className={`text-sm font-semibold ${
                       isToday 
-                        ? 'bg-[#D4AF37] text-white px-2 py-0.5 rounded-full' 
-                        : 'text-[#404943]'
+                        ? 'bg-brand-accent text-white px-2 py-0.5 rounded-full' 
+                        : 'text-on-surface-variant'
                     }`}>
                       {date.getDate()}
                     </span>
@@ -465,7 +465,7 @@ export default function VaccinationSchedulePage() {
                       );
                     })}
                     {dayVaccinations.length > 2 && (
-                      <div className="text-[10px] text-[#404943] font-medium">
+                      <div className="text-[10px] text-on-surface-variant font-medium">
                         +{dayVaccinations.length - 2} more
                       </div>
                     )}
@@ -476,33 +476,32 @@ export default function VaccinationSchedulePage() {
           </div>
         </div>
 
-        <div className="bg-[#eeeee9] rounded-2xl p-8 border border-[#c0c9c1]/10">
+        <div className="bg-surface-dim rounded-2xl p-8 border border-outline/10">
           <div className={`flex items-center gap-4 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="bg-[#002819] p-3 rounded-xl text-[#D4AF37]">
+            <div className="bg-brand-primary p-3 rounded-xl text-brand-accent">
               <MaterialSymbol icon="settings_suggest" size={24} />
             </div>
             <div>
               <h3 className="text-xl font-bold font-['Manrope']">{t('vaccination.automatedReminders') || 'Automated Reminders'}</h3>
-              <p className="text-sm text-[#404943]">{t('vaccination.reminderDesc') || 'Configure how and when your team receives alerts.'}</p>
+              <p className="text-sm text-on-surface-variant">{t('vaccination.reminderDesc') || 'Configure how and when your team receives alerts.'}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: 'mail', label: t('vaccination.emailAlerts') || 'Email Alerts', desc: t('vaccination.emailDesc') || 'Send detailed health summaries to vet staff weekly.', enabled: true },
-              { icon: 'sms', label: t('vaccination.smsGateway') || 'SMS Gateway', desc: t('vaccination.smsDesc') || 'Instant mobile notification for overdue vaccines.', enabled: false },
               { icon: 'notifications', label: t('vaccination.pushNotifications') || 'Push Notifications', desc: t('vaccination.pushDesc') || 'Real-time app alerts for mobile terminal users.', enabled: true },
             ].map((item, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl border border-[#c0c9c1]/15 flex flex-col gap-4">
+              <div key={i} className="bg-white p-6 rounded-xl border border-outline/15 flex flex-col gap-4">
                 <div className={`flex justify-between items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
                   <span className="font-bold text-sm flex items-center gap-2">
                     <MaterialSymbol icon={item.icon} size={18} />
                     {item.label}
                   </span>
-                  <div className={`w-10 h-5 ${item.enabled ? 'bg-[#06402b]' : 'bg-[#e3e3de]'} rounded-full relative cursor-pointer`}>
+                  <div className={`w-10 h-5 ${item.enabled ? 'bg-brand-secondary' : 'bg-surface-high'} rounded-full relative cursor-pointer`}>
                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${item.enabled ? (isRtl ? 'left-1' : 'right-1') : (isRtl ? 'right-1' : 'left-1')}`} />
                   </div>
                 </div>
-                <p className="text-xs text-[#404943]">{item.desc}</p>
+                <p className="text-xs text-on-surface-variant">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -513,21 +512,21 @@ export default function VaccinationSchedulePage() {
         {canAdd && (
           <button
             onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
-            className="w-full py-4 bg-gradient-to-br from-[#002819] to-[#06402b] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#002819]/20 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
+            className="w-full py-4 bg-gradient-to-br from-brand-primary to-brand-secondary text-white rounded-2xl font-bold text-sm shadow-lg shadow-brand-primary/20 flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
           >
             <MaterialSymbol icon="add_circle" size={22} />
             {t('vaccination.add')}
           </button>
         )}
 
-        <div className="bg-[#e3e3de] rounded-2xl p-6 flex-1 flex flex-col">
+        <div className="bg-surface-high rounded-2xl p-6 flex-1 flex flex-col">
           <h3 className={`text-lg font-bold font-['Manrope'] mb-6 flex items-center justify-between ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
             {t('vaccination.upcomingReminders')}
-            <span className="text-[10px] bg-yellow-500 text-[#002819] px-2 py-0.5 rounded-full">{upcomingVaccinations.length} {t('vaccination.pending')}</span>
+            <span className="text-[10px] bg-yellow-500 text-brand-primary px-2 py-0.5 rounded-full">{upcomingVaccinations.length} {t('vaccination.pending')}</span>
           </h3>
           <div className="space-y-4 flex-1">
             {upcomingVaccinations.length === 0 ? (
-              <p className="text-sm text-[#404943] text-center py-8">{t('vaccination.noUpcoming')}</p>
+              <p className="text-sm text-on-surface-variant text-center py-8">{t('vaccination.noUpcoming')}</p>
             ) : (
               upcomingVaccinations.map(vacc => {
                 const colors = getEventColor(vacc);
@@ -538,16 +537,16 @@ export default function VaccinationSchedulePage() {
                   <div key={vacc.id} className={`bg-white p-4 rounded-xl shadow-sm border-r-4 ${colors.border}`}>
                     <div className={`flex justify-between items-start mb-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <span className={`text-[10px] font-bold uppercase tracking-tighter ${colors.text}`}>{daysUntil}</span>
-                      <span className="text-[10px] text-[#404943]">
+                      <span className="text-[10px] text-on-surface-variant">
                         {new Date(vacc.scheduled_date).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="font-bold text-sm text-[#002819]">{vacc.vaccine_name} <TranslateButton text={vacc.vaccine_name} /></p>
+                    <p className="font-bold text-sm text-brand-primary">{vacc.vaccine_name} <TranslateButton text={vacc.vaccine_name} /></p>
                     <div className={`flex items-center gap-2 mt-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-6 h-6 rounded-md bg-[#002819]/10 flex items-center justify-center">
-                        <MaterialSymbol icon="pets" size={14} className="text-[#002819]/60" />
+                      <div className="w-6 h-6 rounded-md bg-brand-primary/10 flex items-center justify-center">
+                        <MaterialSymbol icon="pets" size={14} className="text-brand-primary/60" />
                       </div>
-                      <span className="text-[10px] text-[#404943]">{animal?.name || t('nav.animals')}</span>
+                      <span className="text-[10px] text-on-surface-variant">{animal?.name || t('nav.animals')}</span>
                     </div>
                     <div className={`flex gap-2 mt-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       {canEdit && (
@@ -574,7 +573,7 @@ export default function VaccinationSchedulePage() {
           </div>
         </div>
 
-        <div className="bg-[#eeeee9] rounded-xl p-6">
+        <div className="bg-surface-dim rounded-xl p-6">
           <h4 className="text-sm font-bold mb-4">{t('vaccination.legend') || 'Calendar Legend'}</h4>
           <div className="space-y-3">
             {[
@@ -585,30 +584,23 @@ export default function VaccinationSchedulePage() {
             ].map((item, i) => (
               <div key={i} className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <span className={`w-3 h-3 rounded-full ${item.color}`} />
-                <span className="text-xs text-[#404943]">{item.label}</span>
+                <span className="text-xs text-on-surface-variant">{item.label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br from-[#002819] to-[#06402b] rounded-2xl p-6 text-white relative overflow-hidden ${isRtl ? 'text-right' : ''}`}>
-          <MaterialSymbol icon="medical_services" size={80} className="absolute -right-4 -bottom-4 text-white/10" />
-          <h4 className="text-lg font-bold font-['Manrope'] relative z-10">{t('vaccination.needVet') || 'Need a Vet?'}</h4>
-          <p className="text-xs text-emerald-100/70 mt-2 mb-4 relative z-10">{t('vaccination.vetDesc') || 'Connect with regional experts for complex vaccination procedures.'}</p>
-          <button className="bg-yellow-500 text-[#002819] font-bold text-xs px-4 py-2 rounded-lg relative z-10">
-            {t('vaccination.requestConsult') || 'Request Consult'}
-          </button>
-        </div>
+        <DynamicCtaBanner isRtl={isRtl} />
       </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-[#E3E3DE] flex items-center justify-between">
-              <h3 className="text-xl font-bold text-[#002819]">
+            <div className="p-6 border-b border-surface-high flex items-center justify-between">
+              <h3 className="text-xl font-bold text-brand-primary">
                 {editingRecord ? t('vaccination.editSchedule') : t('vaccination.newSchedule')}
               </h3>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-[#F4F4EF] rounded-lg">
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-surface-light rounded-lg">
                 <MaterialSymbol icon="close" size={20} />
               </button>
             </div>
@@ -616,11 +608,11 @@ export default function VaccinationSchedulePage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.animal')} *</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.animal')} *</label>
                   <select
                     value={formData.animal_id}
                     onChange={(e) => setFormData({ ...formData, animal_id: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                     required
                     disabled={!!editingRecord}
                   >
@@ -634,23 +626,23 @@ export default function VaccinationSchedulePage() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.vaccineName')} *</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.vaccineName')} *</label>
                   <input
                     type="text"
                     value={formData.vaccine_name}
                     onChange={(e) => setFormData({ ...formData, vaccine_name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                     placeholder={t('vaccination.vaccinePlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.vaccinationType') || 'Vaccination Type'}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.vaccinationType') || 'Vaccination Type'}</label>
                     <select
                       value={formData.vaccination_type}
                       onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                      className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                     >
                       {vaccinationTypes.map((vt) => (
                         <option key={vt.slug} value={vt.slug}>{vt.name}</option>
@@ -659,11 +651,11 @@ export default function VaccinationSchedulePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.assignTo') || 'Assign to Team Member'}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.assignTo') || 'Assign to Team Member'}</label>
                   <select
                     value={formData.assigned_to}
                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   >
                     <option value="">{t('vaccination.selectTeamMember') || 'Select team member (optional)'}</option>
                     {teamMembers.map((member) => (
@@ -680,27 +672,27 @@ export default function VaccinationSchedulePage() {
                   )}
                 </div>
 
-                <div className="col-span-2 bg-[#f4f4ef] rounded-xl p-4">
+                <div className="col-span-2 bg-surface-light rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="font-semibold text-[#002819]">{t('vaccination.enableReminder') || 'Enable Reminder'}</p>
-                      <p className="text-xs text-[#404943]">{t('vaccination.reminderDesc') || 'Get notified before the vaccination date'}</p>
+                      <p className="font-semibold text-brand-primary">{t('vaccination.enableReminder') || 'Enable Reminder'}</p>
+                      <p className="text-xs text-on-surface-variant">{t('vaccination.reminderDesc') || 'Get notified before the vaccination date'}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, reminder_enabled: !formData.reminder_enabled })}
-                      className={`w-12 h-6 rounded-full relative transition-colors ${formData.reminder_enabled ? 'bg-[#06402b]' : 'bg-gray-300'}`}
+                      className={`w-12 h-6 rounded-full relative transition-colors ${formData.reminder_enabled ? 'bg-brand-secondary' : 'bg-gray-300'}`}
                     >
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.reminder_enabled ? (isRtl ? 'left-1' : 'right-1') : (isRtl ? 'right-1' : 'left-1')}`} />
                     </button>
                   </div>
                   {formData.reminder_enabled && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm text-[#404943]">{t('vaccination.remindMe') || 'Remind me'}</span>
+                      <span className="text-sm text-on-surface-variant">{t('vaccination.remindMe') || 'Remind me'}</span>
                       <select
                         value={formData.reminder_days}
                         onChange={(e) => setFormData({ ...formData, reminder_days: parseInt(e.target.value) })}
-                        className="px-3 py-1 rounded-lg border border-[#E3E3DE] bg-white text-[#002819] text-sm"
+                        className="px-3 py-1 rounded-lg border border-surface-high bg-white text-brand-primary text-sm"
                       >
                         <option value="1">1</option>
                         <option value="2">2</option>
@@ -708,100 +700,100 @@ export default function VaccinationSchedulePage() {
                         <option value="7">7</option>
                         <option value="14">14</option>
                       </select>
-                      <span className="text-sm text-[#404943]">{t('vaccination.daysBefore') || 'day(s) before'}</span>
+                      <span className="text-sm text-on-surface-variant">{t('vaccination.daysBefore') || 'day(s) before'}</span>
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.manufacturer')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.manufacturer')}</label>
                   <input
                     type="text"
                     value={formData.manufacturer}
                     onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.batchNumber')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.batchNumber')}</label>
                   <input
                     type="text"
                     value={formData.batch_number}
                     onChange={(e) => setFormData({ ...formData, batch_number: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.doseNumber')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.doseNumber')}</label>
                   <input
                     type="number"
                     min="1"
                     value={formData.dose_number}
                     onChange={(e) => setFormData({ ...formData, dose_number: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.totalDoses')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.totalDoses')}</label>
                   <input
                     type="number"
                     min="1"
                     value={formData.total_doses}
                     onChange={(e) => setFormData({ ...formData, total_doses: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.scheduledDate')} *</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.scheduledDate')} *</label>
                   <input
                     type="date"
                     value={formData.scheduled_date}
                     onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.nextDueDate')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.nextDueDate')}</label>
                   <input
                     type="date"
                     value={formData.next_due_date}
                     onChange={(e) => setFormData({ ...formData, next_due_date: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.veterinarian')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.veterinarian')}</label>
                   <input
                     type="text"
                     value={formData.veterinarian}
                     onChange={(e) => setFormData({ ...formData, veterinarian: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.clinic')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.clinic')}</label>
                   <input
                     type="text"
                     value={formData.clinic}
                     onChange={(e) => setFormData({ ...formData, clinic: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-sm font-semibold text-[#002819] mb-1">{t('vaccination.notes')}</label>
+                  <label className="block text-sm font-semibold text-brand-primary mb-1">{t('vaccination.notes')}</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E3E3DE] bg-white text-[#002819] focus:ring-2 focus:ring-[#002819] focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-surface-high bg-white text-brand-primary focus:ring-2 focus:ring-[#002819] focus:border-transparent"
                     rows="3"
                   />
                 </div>
@@ -811,13 +803,13 @@ export default function VaccinationSchedulePage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-6 py-3 bg-[#F4F4EF] text-[#002819] rounded-xl font-semibold hover:bg-[#E3E3DE] transition"
+                  className="flex-1 px-6 py-3 bg-surface-light text-brand-primary rounded-xl font-semibold hover:bg-surface-high transition"
                 >
                   {t('vaccination.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-[#002819] text-white rounded-xl font-semibold hover:bg-[#06402b] transition shadow-lg"
+                  className="flex-1 px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-brand-secondary transition shadow-lg"
                 >
                   {editingRecord ? t('vaccination.update') : t('vaccination.create')}
                 </button>
@@ -825,6 +817,32 @@ export default function VaccinationSchedulePage() {
             </form>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function DynamicCtaBanner({ isRtl }) {
+  const { t } = useI18n();
+  const [banner, setBanner] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch('/api/banners/active?type=cta').then(res => {
+      if (cancelled) return;
+      if (res.ok) res.json().then(d => { if (!cancelled && d.data?.[0]) setBanner(d.data[0]); }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  if (!banner) return null;
+  return (
+    <div className={`bg-gradient-to-br from-brand-primary to-brand-secondary rounded-2xl p-6 text-white relative overflow-hidden ${isRtl ? 'text-right' : ''}`}>
+      <MaterialSymbol icon={banner.icon || 'medical_services'} size={80} className="absolute -right-4 -bottom-4 text-white/10" />
+      <h4 className="text-lg font-bold font-['Manrope'] relative z-10">{banner.title || t('vaccination.needVet')}</h4>
+      <p className="text-xs text-emerald-100/70 mt-2 mb-4 relative z-10">{banner.description || t('vaccination.vetDesc')}</p>
+      {banner.button_url && (
+        <a href={banner.button_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-yellow-500 text-brand-primary font-bold text-xs px-4 py-2 rounded-lg relative z-10">
+          {banner.button_text || t('vaccination.requestConsult')}
+        </a>
       )}
     </div>
   );

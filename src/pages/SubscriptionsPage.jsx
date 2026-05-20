@@ -5,6 +5,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { OrdersPanel } from './OrdersPage';
 
 function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey }) {
   const max = maxValue || Math.max(...data.map(d => d.value), 1);
@@ -15,7 +16,7 @@ function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey })
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
           <div className="w-full flex flex-col items-center justify-end" style={{ height: '100%' }}>
-            <span className="text-[10px] font-bold text-[#002819] mb-1">{d.value}</span>
+            <span className="text-[10px] font-bold text-brand-primary mb-1">{d.value}</span>
             <div
               className="w-full rounded-t-lg transition-all duration-500 hover:opacity-80"
               style={{
@@ -24,7 +25,7 @@ function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey })
                 maxWidth: barWidth,
               }}
             />
-            <span className="text-[9px] text-[#717973] mt-2 truncate w-full text-center font-medium">
+            <span className="text-[9px] text-on-surface-subtle mt-2 truncate w-full text-center font-medium">
               {d.label}
             </span>
           </div>
@@ -62,15 +63,15 @@ function DonutChart({ segments, total, size = 160 }) {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black text-[#002819]">{total}</span>
-        <span className="text-[9px] uppercase font-bold text-[#717973] tracking-widest">subs</span>
+        <span className="text-2xl font-black text-brand-primary">{total}</span>
+        <span className="text-[9px] uppercase font-bold text-on-surface-subtle tracking-widest">subs</span>
       </div>
     </div>
   );
 }
 
 function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' }) {
-  if (!data || data.length === 0) return <div className="text-center py-12 text-[#717973] text-sm">No data</div>;
+  if (!data || data.length === 0) return <div className="text-center py-12 text-on-surface-subtle text-sm">No data</div>;
 
   const values = data.map(d => d[valueKey] || 0);
   const max = Math.max(...values, 1);
@@ -86,7 +87,7 @@ function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' 
   const areaD = `${pathD} L${points[points.length - 1].x},${chartHeight} L${points[0].x},${chartHeight} Z`;
 
   return (
-    <div className="relative" style={{ height }}>
+    <div className="relative pb-6" style={{ height: height + 24 }}>
       <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
@@ -100,7 +101,7 @@ function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' 
           <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="white" strokeWidth="1.5" />
         ))}
       </svg>
-      <div className="absolute -bottom-6 w-full flex justify-between text-[10px] text-[#717973] font-bold uppercase tracking-widest px-1">
+      <div className="absolute bottom-0 w-full flex justify-between text-[10px] text-on-surface-subtle font-bold uppercase tracking-widest px-1">
         {data.filter((_, i) => i === 0 || i === Math.floor(data.length / 2) || i === data.length - 1).map((d, i) => (
           <span key={i}>{d.label}</span>
         ))}
@@ -154,6 +155,11 @@ export default function SubscriptionsPage() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false);
+  const [userOrders, setUserOrders] = useState([]);
+  const [userOrdersLoading, setUserOrdersLoading] = useState(false);
+  const [orderUploadId, setOrderUploadId] = useState(null);
+  const [orderUploadFile, setOrderUploadFile] = useState(null);
+  const [orderUploadLoading, setOrderUploadLoading] = useState(false);
   const [bankTransferFile, setBankTransferFile] = useState(null);
   const [bankTransferLoading, setBankTransferLoading] = useState(false);
   const [ownerPaymentMethod, setOwnerPaymentMethod] = useState('');
@@ -187,6 +193,9 @@ export default function SubscriptionsPage() {
         setOwnerPaymentMethod(currentSubscription.payment_method || '');
         setOwnerPaymentRef(currentSubscription.payment_reference || '');
       }
+    }
+    if (!isAdmin && activeTab === 'orders') {
+      fetchUserOrders();
     }
   }, [activeTab, currentSubscription]);
 
@@ -378,6 +387,49 @@ export default function SubscriptionsPage() {
       console.error('Failed to fetch payment history:', error);
     } finally {
       setPaymentHistoryLoading(false);
+    }
+  };
+
+  const fetchUserOrders = async () => {
+    setUserOrdersLoading(true);
+    try {
+      const res = await apiFetch('/api/checkout/orders');
+      if (res.ok) {
+        const data = await res.json();
+        setUserOrders(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setUserOrdersLoading(false);
+    }
+  };
+
+  const handleOrderUpload = async (orderId) => {
+    if (!orderUploadFile) return;
+    setOrderUploadLoading(true);
+    setMessage(null);
+    const formData = new FormData();
+    formData.append('order_id', orderId);
+    formData.append('payment_proof', orderUploadFile);
+    try {
+      const res = await apiFetch('/api/checkout/bank-transfer', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Payment proof uploaded. Awaiting admin approval.' });
+        setOrderUploadId(null);
+        setOrderUploadFile(null);
+        fetchUserOrders();
+      } else {
+        const d = await res.json();
+        setMessage({ type: 'error', text: d.message || 'Upload failed' });
+      }
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Upload failed' });
+    } finally {
+      setOrderUploadLoading(false);
     }
   };
 
@@ -764,8 +816,13 @@ export default function SubscriptionsPage() {
       has_auctions: formData.get('has_auctions') === 'on',
       has_advanced_reports: formData.get('has_advanced_reports') === 'on',
       has_api_access: formData.get('has_api_access') === 'on',
+      has_ai_assistant: formData.get('has_ai_assistant') === 'on',
+      has_medical_records: formData.get('has_medical_records') === 'on',
+      has_tasks: formData.get('has_tasks') === 'on',
+      is_featured: formData.get('is_featured') === 'on',
+      is_yearly_only: formData.get('is_yearly_only') === 'on',
+      is_active: formData.get('is_active') === 'on',
       sort_order: parseInt(formData.get('sort_order')) || 10,
-      is_active: true,
     };
 
     try {
@@ -996,7 +1053,7 @@ export default function SubscriptionsPage() {
       <MaterialSymbol
         icon={sortDir === 'asc' ? 'expand_less' : 'expand_more'}
         size={16}
-        className="text-[#002819] ml-1"
+        className="text-brand-primary ml-1"
       />
     );
   };
@@ -1024,7 +1081,7 @@ export default function SubscriptionsPage() {
       case 'starter': return 'bg-blue-100 text-blue-700';
       case 'professional': return 'bg-purple-100 text-purple-700';
       case 'enterprise': return 'bg-amber-100 text-amber-700';
-      default: return 'bg-[#D4AF37]/20 text-[#735c00]';
+      default: return 'bg-brand-accent/20 text-tertiary-container';
     }
   };
 
@@ -1045,7 +1102,7 @@ export default function SubscriptionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -1057,21 +1114,6 @@ export default function SubscriptionsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
           <p className="text-gray-500 text-sm mt-1">Choose the perfect plan for your livestock management needs</p>
         </div>
-        {isAdmin && owners.length > 0 && (
-          <select
-            value={selectedOwnerId || ''}
-            onChange={(e) => {
-              setSelectedOwnerId(e.target.value || null);
-              fetchData();
-            }}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm"
-          >
-            <option value="">All Owners</option>
-            {owners.map(owner => (
-              <option key={owner.id} value={owner.id}>{owner.name}</option>
-            ))}
-          </select>
-        )}
       </div>
 
       {message && (
@@ -1086,7 +1128,7 @@ export default function SubscriptionsPage() {
           onClick={() => setActiveTab('plans')}
           className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
             activeTab === 'plans'
-              ? 'border-[#002819] text-[#002819]'
+              ? 'border-brand-primary text-brand-primary'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -1097,11 +1139,23 @@ export default function SubscriptionsPage() {
             onClick={() => setActiveTab('billing')}
             className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
               activeTab === 'billing'
-                ? 'border-[#002819] text-[#002819]'
+                ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             Billing
+          </button>
+        )}
+        {!isAdmin && (
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
+              activeTab === 'orders'
+                ? 'border-brand-primary text-brand-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Orders
           </button>
         )}
         {isAdmin && (
@@ -1109,7 +1163,7 @@ export default function SubscriptionsPage() {
             onClick={() => setActiveTab('subscribers')}
             className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
               activeTab === 'subscribers'
-                ? 'border-[#002819] text-[#002819]'
+                ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -1121,7 +1175,7 @@ export default function SubscriptionsPage() {
             onClick={() => setActiveTab('payments')}
             className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
               activeTab === 'payments'
-                ? 'border-[#002819] text-[#002819]'
+                ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -1130,10 +1184,22 @@ export default function SubscriptionsPage() {
         )}
         {isAdmin && (
           <button
+            onClick={() => setActiveTab('adminOrders')}
+            className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
+              activeTab === 'adminOrders'
+                ? 'border-brand-primary text-brand-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Orders
+          </button>
+        )}
+        {isAdmin && (
+          <button
             onClick={() => setActiveTab('reports')}
             className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
               activeTab === 'reports'
-                ? 'border-[#002819] text-[#002819]'
+                ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -1148,20 +1214,20 @@ export default function SubscriptionsPage() {
           {/* Current Usage */}
           {!isAdmin && currentSubscription && limits && (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-[#002819] mb-4">Current Usage</h2>
+              <h2 className="text-lg font-bold text-brand-primary mb-4">Current Usage</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Animals', used: limits.animals.used, max: limits.animals.max, icon: 'pets' },
                   { label: 'Devices', used: limits.devices.used, max: limits.devices.max, icon: 'sensors' },
                   { label: 'Team Members', used: limits.users.used, max: limits.users.max, icon: 'group' },
                 ].map((item) => (
-                  <div key={item.label} className="p-4 bg-[#f4f4ef] rounded-xl">
+                  <div key={item.label} className="p-4 bg-surface-light rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
-                      <MaterialSymbol icon={item.icon} size={20} className="text-[#735c00]" />
+                      <MaterialSymbol icon={item.icon} size={20} className="text-tertiary-container" />
                       <span className="text-sm font-medium text-gray-600">{item.label}</span>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-[#002819]">{item.used}</span>
+                      <span className="text-2xl font-bold text-brand-primary">{item.used}</span>
                       <span className="text-gray-500">/ {item.max === 0 ? 'Unlimited' : item.max}</span>
                     </div>
                     {item.max > 0 && (
@@ -1201,7 +1267,7 @@ export default function SubscriptionsPage() {
                   key={tier.id}
                   className={`relative bg-white rounded-2xl p-6 shadow-sm border-2 transition-all ${
                     isCurrentTier
-                      ? 'border-[#D4AF37] ring-4 ring-[#D4AF37]/20'
+                      ? 'border-brand-accent ring-4 ring-brand-accent/20'
                       : isHigherTier
                         ? 'border-emerald-200 hover:border-emerald-400'
                         : 'border-gray-100 hover:border-gray-200'
@@ -1209,7 +1275,7 @@ export default function SubscriptionsPage() {
                 >
                   {isCurrentTier && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-4 py-1 bg-[#D4AF37] text-white text-xs font-bold rounded-full">
+                      <span className="px-4 py-1 bg-brand-accent text-white text-xs font-bold rounded-full">
                         Current Plan
                       </span>
                     </div>
@@ -1224,13 +1290,13 @@ export default function SubscriptionsPage() {
                   )}
 
                   <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-[#002819]">{tier.name}</h3>
+                    <h3 className="text-xl font-bold text-brand-primary">{tier.name}</h3>
                     <p className="text-sm text-gray-500 mt-1">{tier.description}</p>
                   </div>
 
                   <div className="text-center mb-6">
                     <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-3xl font-bold text-[#002819]">{formatPrice(tier.price_monthly)}</span>
+                      <span className="text-3xl font-bold text-brand-primary">{formatPrice(tier.price_monthly)}</span>
                       <span className="text-gray-500">/mo</span>
                     </div>
                     {tier.price_yearly > 0 && (
@@ -1270,7 +1336,7 @@ export default function SubscriptionsPage() {
                       <button
                         onClick={() => isCurrentTier ? null : (isFree || !currentSubscription ? handleUpgrade(tier) : openPlanPaymentModal(tier, 'upgrade'))}
                         disabled={actionLoading === tier.id}
-                        className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
+                        className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors disabled:opacity-50"
                       >
                         {actionLoading === tier.id ? 'Processing...' : isFree && !currentSubscription ? 'Subscribe Free' : 'Upgrade'}
                       </button>
@@ -1287,10 +1353,10 @@ export default function SubscriptionsPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-[#002819]">Manage Subscription Tiers</h2>
+                  <h2 className="text-lg font-bold text-brand-primary">Manage Subscription Tiers</h2>
                   <button
                     onClick={() => { setEditingTier(null); setShowTierModal(true); }}
-                    className="px-4 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors flex items-center gap-2"
                   >
                     <MaterialSymbol icon="add" size={18} />
                     Add New Tier
@@ -1298,52 +1364,82 @@ export default function SubscriptionsPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Name</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Slug</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Price (Mo/Yr)</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Limits</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Features</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Actions</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Name</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Slug</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Monthly</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Yearly</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Limits</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Trial</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Order</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Features</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Flags</th>
+                        <th className="text-start py-3 px-3 text-[10px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {tiers.map((tier) => (
-                        <tr key={tier.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-[#002819]">{tier.name}</span>
+                        <tr key={tier.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-brand-primary text-sm">{tier.name}</div>
+                            {tier.description && (
+                              <div className="text-[10px] text-gray-500 truncate max-w-[140px]">{tier.description}</div>
+                            )}
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{tier.slug}</td>
-                          <td className="py-3 px-4 text-sm">
-                            {formatPrice(tier.price_monthly)} / {formatPrice(tier.price_yearly)}
+                          <td className="py-3 px-3 text-gray-500">{tier.slug}</td>
+                          <td className="py-3 px-3 font-medium">{formatPrice(tier.price_monthly)}</td>
+                          <td className="py-3 px-3 font-medium">{formatPrice(tier.price_yearly)}</td>
+                          <td className="py-3 px-3 text-gray-600">
+                            <span title="Animals">{tier.max_animals === 0 ? '∞' : tier.max_animals}</span>
+                            <span className="text-gray-300 mx-0.5">/</span>
+                            <span title="Devices">{tier.max_devices === 0 ? '∞' : tier.max_devices}</span>
+                            <span className="text-gray-300 mx-0.5">/</span>
+                            <span title="Users">{tier.max_users === 0 ? '∞' : tier.max_users}</span>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {tier.max_animals === 0 ? 'Unlimited' : tier.max_animals} A / {tier.max_devices === 0 ? 'Unlimited' : tier.max_devices} D / {tier.max_users === 0 ? 'Unlimited' : tier.max_users} U
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            <div className="flex gap-1 flex-wrap">
-                              {tier.has_geofencing && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs">Geo</span>}
-                              {tier.has_auctions && <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Auc</span>}
-                              {tier.has_advanced_reports && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">Rep</span>}
-                              {tier.has_api_access && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">API</span>}
+                          <td className="py-3 px-3 text-gray-600">{tier.trial_days || '-'}</td>
+                          <td className="py-3 px-3 text-gray-600">{tier.sort_order}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex gap-1 flex-wrap max-w-[160px]">
+                              {tier.has_geofencing && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-[4px] text-[10px] font-semibold">Geo</span>}
+                              {tier.has_auctions && <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-[4px] text-[10px] font-semibold">Auc</span>}
+                              {tier.has_advanced_reports && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-[4px] text-[10px] font-semibold">Rep</span>}
+                              {tier.has_api_access && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-[4px] text-[10px] font-semibold">API</span>}
+                              {tier.has_ai_assistant && <span className="px-1.5 py-0.5 bg-cyan-100 text-cyan-700 rounded-[4px] text-[10px] font-semibold">AI</span>}
+                              {tier.has_medical_records && <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded-[4px] text-[10px] font-semibold">Med</span>}
+                              {tier.has_tasks && <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-[4px] text-[10px] font-semibold">Task</span>}
                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-2">
+                          <td className="py-3 px-3">
+                            <div className="flex gap-1 flex-wrap">
+                              {tier.is_active === false && (
+                                <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded-[4px] text-[10px] font-semibold">Inactive</span>
+                              )}
+                              {tier.is_featured && (
+                                <span className="px-1.5 py-0.5 bg-brand-primary text-brand-accent rounded-[4px] text-[10px] font-semibold">Featured</span>
+                              )}
+                              {tier.is_yearly_only && (
+                                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-[4px] text-[10px] font-semibold">Yearly</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex gap-1">
                               <button
                                 onClick={() => openEditTier(tier)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit tier"
                               >
-                                <MaterialSymbol icon="edit" size={18} />
+                                <MaterialSymbol icon="edit" size={16} />
                               </button>
                               {tier.slug !== 'free' && (
                                 <button
                                   onClick={() => handleDeleteTier(tier)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete tier"
                                 >
-                                  <MaterialSymbol icon="delete" size={18} />
+                                  <MaterialSymbol icon="delete" size={16} />
                                 </button>
                               )}
                             </div>
@@ -1443,7 +1539,7 @@ export default function SubscriptionsPage() {
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                 {sortedSubscriptions.length === allSubscriptions.length ? 'Total Owners' : 'Showing'}
               </p>
-              <p className="text-2xl font-bold text-[#002819]">
+              <p className="text-2xl font-bold text-brand-primary">
                 {sortedSubscriptions.length}
                 {sortedSubscriptions.length !== allSubscriptions.length && (
                   <span className="text-sm font-normal text-gray-400 ml-1">/ {allSubscriptions.length}</span>
@@ -1470,7 +1566,7 @@ export default function SubscriptionsPage() {
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">MRR</p>
-              <p className="text-2xl font-bold text-[#002819]">{formatCurrency(allSubscriptions.reduce((sum, sub) => sum + (parseFloat(sub.tier?.price_monthly) || 0), 0))}</p>
+              <p className="text-2xl font-bold text-brand-primary">{formatCurrency(allSubscriptions.reduce((sum, sub) => sum + (parseFloat(sub.tier?.price_monthly) || 0), 0))}</p>
             </div>
           </div>
 
@@ -1537,7 +1633,7 @@ export default function SubscriptionsPage() {
           {/* Data Table */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#002819]">All Subscribers</h3>
+              <h3 className="text-lg font-bold text-brand-primary">All Subscribers</h3>
               <div className="flex items-center gap-2">
                 {selectedSubs.length > 0 && (
                   <div className="flex items-center gap-1.5">
@@ -1561,7 +1657,7 @@ export default function SubscriptionsPage() {
                       <input type="checkbox"
                         checked={selectedSubs.length > 0 && selectedSubs.length === sortedSubscriptions.length}
                         onChange={(e) => { if (e.target.checked) { setSelectedSubs(sortedSubscriptions.map(s => s.user_id)); } else { setSelectedSubs([]); } }}
-                        className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]" />
+                        className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]" />
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('user')}>
                       <div className="flex items-center">
@@ -1618,10 +1714,10 @@ export default function SubscriptionsPage() {
                         <input type="checkbox"
                           checked={selectedSubs.includes(sub.user_id)}
                           onChange={(e) => { if (e.target.checked) { setSelectedSubs(prev => [...prev, sub.user_id]); } else { setSelectedSubs(prev => prev.filter(id => id !== sub.user_id)); } }}
-                          className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]" />
+                          className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]" />
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium text-[#002819]">{sub.user?.name || 'Unknown'}</div>
+                        <div className="font-medium text-brand-primary">{sub.user?.name || 'Unknown'}</div>
                         <div className="text-sm text-gray-500">{sub.user?.email}</div>
                       </td>
                       <td className="py-3 px-4">
@@ -1645,7 +1741,7 @@ export default function SubscriptionsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-[#002819]">{devices.used ?? '-'}</span>
+                          <span className="font-medium text-brand-primary">{devices.used ?? '-'}</span>
                           <span className="text-gray-400">/</span>
                           <span className={devices.max > 0 && devices.used > devices.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
                             {devices.max === 0 ? '∞' : devices.max ?? '-'}
@@ -1661,7 +1757,7 @@ export default function SubscriptionsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-[#002819]">{animals.used ?? '-'}</span>
+                          <span className="font-medium text-brand-primary">{animals.used ?? '-'}</span>
                           <span className="text-gray-400">/</span>
                           <span className={animals.max > 0 && animals.used > animals.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
                             {animals.max === 0 ? '∞' : animals.max ?? '-'}
@@ -1677,7 +1773,7 @@ export default function SubscriptionsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-[#002819]">{team.used ?? '-'}</span>
+                          <span className="font-medium text-brand-primary">{team.used ?? '-'}</span>
                           <span className="text-gray-400">/</span>
                           <span className={team.max > 0 && team.used > team.max ? 'text-red-600 font-bold' : 'text-gray-500'}>
                             {team.max === 0 ? '∞' : team.max ?? '-'}
@@ -1703,7 +1799,7 @@ export default function SubscriptionsPage() {
                               setPaymentRefInput(sub.payment_reference || '');
                               setShowSubscriberModal(true);
                             }}
-                            className="px-2 py-1 border border-gray-200 rounded-lg text-xs font-bold text-[#002819] hover:bg-gray-50 transition-colors"
+                            className="px-2 py-1 border border-gray-200 rounded-lg text-xs font-bold text-brand-primary hover:bg-gray-50 transition-colors"
                           >
                             <MaterialSymbol icon="edit_square" size={14} className="inline mr-1" />
                             Edit
@@ -1761,7 +1857,7 @@ export default function SubscriptionsPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Payments</p>
-              <p className="text-2xl font-bold text-[#002819]">{allSubscriptions.length}</p>
+              <p className="text-2xl font-bold text-brand-primary">{allSubscriptions.length}</p>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Revenue</p>
@@ -1844,7 +1940,7 @@ export default function SubscriptionsPage() {
           {/* Payments Table */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#002819]">Payment Records</h3>
+              <h3 className="text-lg font-bold text-brand-primary">Payment Records</h3>
               <div className="flex items-center gap-2">
                 {selectedPayments.length > 0 && (
                   <span className="text-xs text-gray-500">{selectedPayments.length} selected</span>
@@ -1890,46 +1986,47 @@ export default function SubscriptionsPage() {
                             setSelectedPayments([]);
                           }
                         }}
-                        className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                        className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                       />
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('owner')}>
                       <div className="flex items-center">
                         Owner
-                        {paymentSortField === 'owner' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'owner' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('amount')}>
                       <div className="flex items-center">
                         Plan / Amount
-                        {paymentSortField === 'amount' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'amount' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('method')}>
                       <div className="flex items-center">
                         Payment Method
-                        {paymentSortField === 'method' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'method' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Reference</th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('start_date')}>
                       <div className="flex items-center">
                         Start Date
-                        {paymentSortField === 'start_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'start_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('renewal_date')}>
                       <div className="flex items-center">
                         Renewal Date
-                        {paymentSortField === 'renewal_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'renewal_date' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
                     <th className="text-start py-3 px-4 text-sm font-bold text-gray-600 cursor-pointer select-none" onClick={() => handlePaymentSort('status')}>
                       <div className="flex items-center">
                         Status
-                        {paymentSortField === 'status' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-[#002819] ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
+                        {paymentSortField === 'status' ? <MaterialSymbol icon={paymentSortDir === 'asc' ? 'expand_less' : 'expand_more'} size={16} className="text-brand-primary ml-1" /> : <MaterialSymbol icon="unfold_more" size={16} className="text-gray-400 ml-1" />}
                       </div>
                     </th>
+                    <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1981,15 +2078,15 @@ export default function SubscriptionsPage() {
                                 setSelectedPayments(prev => prev.filter(id => id !== sub.user_id));
                               }
                             }}
-                            className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                            className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                           />
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-medium text-[#002819]">{sub.user?.name || 'Unknown'}</div>
+                          <div className="font-medium text-brand-primary">{sub.user?.name || 'Unknown'}</div>
                           <div className="text-sm text-gray-500">{sub.user?.email}</div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-[#002819]">{sub.tier?.name || 'N/A'}</div>
+                          <div className="font-semibold text-brand-primary">{sub.tier?.name || 'N/A'}</div>
                           <div className="text-sm text-emerald-600 font-medium">
                             {sub.tier?.price_monthly ? formatCurrency(sub.tier.price_monthly) + '/mo' : '-'}
                           </div>
@@ -2015,6 +2112,68 @@ export default function SubscriptionsPage() {
                             {normalizeStatus(sub.status)?.replace('_', ' ')}
                           </span>
                         </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setEditingSubscriber(sub);
+                                setPaymentMethodInput(sub.payment_method || '');
+                                setPaymentRefInput(sub.payment_reference || '');
+                                setShowSubscriberModal(true);
+                              }}
+                              className="px-2 py-1 border border-gray-200 rounded-lg text-xs font-bold text-brand-primary hover:bg-gray-50 transition-colors"
+                              title="Edit payment details"
+                            >
+                              <MaterialSymbol icon="edit_square" size={14} className="inline mr-1" />
+                              Edit
+                            </button>
+                            {sub.status === 'pending_payment' && (
+                              <>
+                                <button
+                                  onClick={() => handleApprovePayment(sub)}
+                                  className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 whitespace-nowrap"
+                                >
+                                  <MaterialSymbol icon="check" size={14} className="inline mr-1" />
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleRejectPayment(sub)}
+                                  className="px-2 py-1 text-xs font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 whitespace-nowrap"
+                                >
+                                  <MaterialSymbol icon="close" size={14} className="inline mr-1" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            {sub.status === 'active' && (
+                              <button
+                                onClick={() => handlePauseSubscription(sub.user_id)}
+                                className="px-2 py-1 text-xs font-bold text-sky-600 border border-sky-200 rounded-lg hover:bg-sky-50 whitespace-nowrap"
+                              >
+                                <MaterialSymbol icon="pause_circle" size={14} className="inline mr-1" />
+                                Pause
+                              </button>
+                            )}
+                            {sub.status === 'paused' && (
+                              <button
+                                onClick={() => handleReactivateSubscription(sub.user_id)}
+                                className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 whitespace-nowrap"
+                              >
+                                <MaterialSymbol icon="play_circle" size={14} className="inline mr-1" />
+                                Reactivate
+                              </button>
+                            )}
+                            {sub.status === 'cancelled' && (
+                              <button
+                                onClick={() => handleReactivateSubscription(sub.user_id)}
+                                className="px-2 py-1 text-xs font-bold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 whitespace-nowrap"
+                              >
+                                <MaterialSymbol icon="play_circle" size={14} className="inline mr-1" />
+                                Reactivate
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ));
                   })()}
@@ -2038,7 +2197,7 @@ export default function SubscriptionsPage() {
                       return true;
                     });
                     return filtered.length === 0 && (
-                      <tr><td colSpan={8} className="py-8 text-center text-gray-500">No payment records found</td></tr>
+                      <tr><td colSpan={9} className="py-8 text-center text-gray-500">No payment records found</td></tr>
                     );
                   })()}
                 </tbody>
@@ -2077,7 +2236,7 @@ export default function SubscriptionsPage() {
           {/* Current Plan & Payment Method */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-[#002819] mb-4">Current Plan</h3>
+              <h3 className="text-lg font-bold text-brand-primary mb-4">Current Plan</h3>
               {currentSubscription ? (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
@@ -2094,20 +2253,20 @@ export default function SubscriptionsPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Billing Cycle</span>
-                    <span className="text-sm font-medium text-[#002819] capitalize">{currentSubscription.billing_cycle || 'Monthly'}</span>
+                    <span className="text-sm font-medium text-brand-primary capitalize">{currentSubscription.billing_cycle || 'Monthly'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Started</span>
-                    <span className="text-sm font-medium text-[#002819]">{formatDate(currentSubscription.started_at || currentSubscription.created_at)}</span>
+                    <span className="text-sm font-medium text-brand-primary">{formatDate(currentSubscription.started_at || currentSubscription.created_at)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Renewal</span>
-                    <span className="text-sm font-medium text-[#002819]">{formatDate(currentSubscription.ends_at || currentSubscription.renewal_at || currentSubscription.next_billing_date)}</span>
+                    <span className="text-sm font-medium text-brand-primary">{formatDate(currentSubscription.ends_at || currentSubscription.renewal_at || currentSubscription.next_billing_date)}</span>
                   </div>
                   {currentSubscription.tier?.price_monthly > 0 && (
                     <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                       <span className="text-sm font-bold text-gray-700">Amount</span>
-                      <span className="text-lg font-bold text-[#002819]">{formatCurrency(currentSubscription.tier.price_monthly)}<span className="text-sm font-normal text-gray-500">/{currentSubscription.billing_cycle === 'yearly' ? 'yr' : 'mo'}</span></span>
+                      <span className="text-lg font-bold text-brand-primary">{formatCurrency(currentSubscription.tier.price_monthly)}<span className="text-sm font-normal text-gray-500">/{currentSubscription.billing_cycle === 'yearly' ? 'yr' : 'mo'}</span></span>
                     </div>
                   )}
                   <div className="pt-4 space-y-2">
@@ -2115,7 +2274,7 @@ export default function SubscriptionsPage() {
                       <button
                         onClick={handleRenew}
                         disabled={actionLoading === 'renew'}
-                        className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
+                        className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors disabled:opacity-50"
                       >
                         {actionLoading === 'renew' ? 'Renewing...' : 'Renew Subscription'}
                       </button>
@@ -2132,7 +2291,7 @@ export default function SubscriptionsPage() {
                     {(currentSubscription.status === 'none' || !currentSubscription.status || currentSubscription.status === 'pending') && (
                       <button
                         onClick={() => setActiveTab('plans')}
-                        className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors"
+                        className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors"
                       >
                         Subscribe to a Plan
                       </button>
@@ -2159,7 +2318,7 @@ export default function SubscriptionsPage() {
                 <div className="text-center py-8 text-gray-500 text-sm">
                   <MaterialSymbol icon="credit_card_off" size={32} className="mx-auto mb-2 text-gray-300" />
                   <p>No active subscription</p>
-                  <button onClick={() => setActiveTab('plans')} className="mt-4 px-4 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b]">
+                  <button onClick={() => setActiveTab('plans')} className="mt-4 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary">
                     Subscribe Now
                   </button>
                 </div>
@@ -2167,7 +2326,7 @@ export default function SubscriptionsPage() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-[#002819] mb-4">Payment Method</h3>
+              <h3 className="text-lg font-bold text-brand-primary mb-4">Payment Method</h3>
               {currentSubscription ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -2196,7 +2355,7 @@ export default function SubscriptionsPage() {
                   </div>
                   <button
                     onClick={handleOwnerUpdatePaymentInfo}
-                    className="px-4 py-2 bg-[#002819] text-white rounded-lg text-xs font-bold hover:bg-[#06402b]"
+                    className="px-4 py-2 bg-brand-primary text-white rounded-lg text-xs font-bold hover:bg-brand-secondary"
                   >
                     Save Payment Info
                   </button>
@@ -2210,7 +2369,7 @@ export default function SubscriptionsPage() {
           {/* Bank Transfer Upload */}
           {currentSubscription && currentSubscription.tier?.price_monthly > 0 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-[#002819] mb-4">Bank Transfer Payment</h3>
+              <h3 className="text-lg font-bold text-brand-primary mb-4">Bank Transfer Payment</h3>
               <p className="text-sm text-gray-500 mb-4">
                 Upload your bank transfer receipt (PDF) to complete payment for the current plan.
                 An admin will review and approve your payment.
@@ -2220,7 +2379,7 @@ export default function SubscriptionsPage() {
                   type="file"
                   accept=".pdf"
                   onChange={(e) => setBankTransferFile(e.target.files[0] || null)}
-                  className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#002819] file:text-white hover:file:bg-[#06402b]"
+                  className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary"
                 />
                 <button
                   onClick={handleBankTransferUpload}
@@ -2235,10 +2394,10 @@ export default function SubscriptionsPage() {
 
           {/* Payment History */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-[#002819] mb-4">Payment History</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-4">Payment History</h3>
             {paymentHistoryLoading ? (
               <div className="flex items-center justify-center h-32">
-                <div className="animate-spin w-6 h-6 border-4 border-[#002819] border-t-transparent rounded-full" />
+                <div className="animate-spin w-6 h-6 border-4 border-brand-primary border-t-transparent rounded-full" />
               </div>
             ) : paymentHistory.length > 0 ? (
               <div className="overflow-x-auto">
@@ -2267,7 +2426,7 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-600 capitalize">{sub.payment_method || '-'}</td>
-                        <td className="py-3 px-4 text-sm font-medium text-[#002819]">{sub.amount ? formatCurrency(sub.amount) : '-'}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-brand-primary">{sub.amount ? formatCurrency(sub.amount) : '-'}</td>
                         <td className="py-3 px-4 text-sm text-gray-600">{formatDate(sub.started_at || sub.created_at)}</td>
                         <td className="py-3 px-4 text-sm text-gray-600">{formatDate(sub.ended_at)}</td>
                       </tr>
@@ -2285,48 +2444,194 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
+      {/* Orders Tab */}
+      {activeTab === 'orders' && !isAdmin && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-brand-primary mb-4">My Orders</h3>
+            {userOrdersLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin w-6 h-6 border-4 border-brand-primary border-t-transparent rounded-full" />
+              </div>
+            ) : userOrders.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Order</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Plan</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Amount</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Payment</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Shipping</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Date</th>
+                      <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userOrders.map((order) => (
+                      <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 font-bold text-brand-primary">#{order.id}</td>
+                        <td className="py-3 px-4 text-sm text-gray-700">{order.tier?.name || 'N/A'}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-brand-primary">${parseFloat(order.amount || 0).toFixed(2)}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
+                            order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {order.payment_status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              order.shipping_status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                              order.shipping_status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {order.shipping_status || 'pending'}
+                            </span>
+                            {order.tracking_number && (
+                              <span className="text-xs text-gray-500" title={order.tracking_number}>
+                                #{order.tracking_number}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-4">
+                          {order.payment_method === 'bank_transfer' && order.payment_status === 'pending' && (
+                            orderUploadId === order.id ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="file"
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(e) => setOrderUploadFile(e.target.files[0] || null)}
+                                  className="text-xs w-24 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-brand-primary file:text-white"
+                                />
+                                <button
+                                  onClick={() => handleOrderUpload(order.id)}
+                                  disabled={orderUploadLoading || !orderUploadFile}
+                                  className="px-2 py-1 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600 disabled:opacity-50"
+                                >
+                                  {orderUploadLoading ? '...' : 'Upload'}
+                                </button>
+                                <button
+                                  onClick={() => { setOrderUploadId(null); setOrderUploadFile(null); }}
+                                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setOrderUploadId(order.id)}
+                                className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition"
+                              >
+                                Upload Proof
+                              </button>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                <MaterialSymbol icon="receipt_long" size={32} className="mx-auto mb-2 text-gray-300" />
+                No orders yet
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Admin Orders Tab */}
+      {activeTab === 'adminOrders' && isAdmin && (
+        <div className="space-y-6">
+          <OrdersPanel />
+        </div>
+      )}
+
       {/* Reports Tab */}
       {activeTab === 'reports' && isAdmin && (
         <div className="space-y-6">
           {statsLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+              <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
             </div>
           ) : stats ? (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
                     <MaterialSymbol icon="group" size={18} className="text-emerald-600" />
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Subscribers</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Subs</p>
                   </div>
-                  <p className="text-2xl font-bold text-[#002819]">{stats.active_subscribers || 0}</p>
+                  <p className="text-2xl font-bold text-brand-primary">{stats.active_subscribers || 0}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <MaterialSymbol icon="payments" size={18} className="text-[#002819]" />
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Revenue</p>
+                    <MaterialSymbol icon="people" size={18} className="text-blue-600" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</p>
                   </div>
-                  <p className="text-2xl font-bold text-[#002819]">{formatCurrency(stats.mrr || 0)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.total_users || 0}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <MaterialSymbol icon="person_add" size={18} className="text-blue-600" />
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">New This Month</p>
+                    <MaterialSymbol icon="payments" size={18} className="text-brand-primary" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Rev</p>
                   </div>
-                  <p className="text-2xl font-bold text-blue-600">{stats.new_this_month || 0}</p>
+                  <p className="text-2xl font-bold text-brand-primary">{formatCurrency(stats.mrr || 0)}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <MaterialSymbol icon="person_remove" size={18} className="text-red-600" />
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Churned This Month</p>
+                    <MaterialSymbol icon="trending_up" size={18} className="text-purple-600" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">ARPU</p>
                   </div>
-                  <p className="text-2xl font-bold text-red-600">{stats.churned_this_month || 0}</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {stats.active_subscribers > 0 ? formatCurrency((stats.mrr || 0) / stats.active_subscribers) : formatCurrency(0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MaterialSymbol icon="person_add" size={18} className="text-emerald-600" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">New / Mo</p>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-600">{stats.new_this_month || 0}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MaterialSymbol icon="person_remove" size={18} className="text-red-500" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Churned / Mo</p>
+                  </div>
+                  <p className="text-2xl font-bold text-red-500">{stats.churned_this_month || 0}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MaterialSymbol icon="cancel" size={18} className="text-red-700" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cancelled</p>
+                  </div>
+                  <p className="text-2xl font-bold text-red-700">{stats.cancelled || 0}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MaterialSymbol icon="warning" size={18} className="text-amber-600" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Past Due</p>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-600">{stats.past_due || 0}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
                     <MaterialSymbol icon="hourglass_bottom" size={18} className="text-amber-600" />
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Payments</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Pay</p>
                   </div>
                   <p className="text-2xl font-bold text-amber-600">{stats.pending_payments || 0}</p>
                 </div>
@@ -2334,26 +2639,37 @@ export default function SubscriptionsPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold text-[#002819] mb-4">Tier Distribution</h3>
+                  <h3 className="text-lg font-bold text-brand-primary mb-4">Tier Distribution</h3>
                   {stats.tier_distribution && stats.tier_distribution.length > 0 ? (
                     <div className="flex items-center gap-8">
                       <DonutChart
-                        segments={stats.tier_distribution.map((t, i) => ({
-                          value: parseFloat(((t.count / Math.max(...stats.tier_distribution.map(x => x.count), 1)) * 100).toFixed(1)),
-                          color: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'][i % 6],
-                        }))}
+                        segments={(() => {
+                          const total = stats.tier_distribution.reduce((sum, t) => sum + t.count, 0);
+                          return stats.tier_distribution.map((t, i) => ({
+                            value: parseFloat(((t.count / Math.max(total, 1)) * 100).toFixed(1)),
+                            color: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'][i % 6],
+                          }));
+                        })()}
                         total={stats.tier_distribution.reduce((sum, t) => sum + t.count, 0)}
                       />
                       <div className="space-y-3 flex-1">
-                        {stats.tier_distribution.map((t, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'][i % 6] }} />
-                              <span className="text-sm font-semibold text-gray-700">{t.name || t.tier_name || `Tier ${i + 1}`}</span>
+                        {(() => {
+                          const total = stats.tier_distribution.reduce((sum, t) => sum + t.count, 0);
+                          return stats.tier_distribution.map((t, i) => (
+                            <div key={i}>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'][i % 6] }} />
+                                  <span className="text-sm font-semibold text-gray-700">{t.name || t.tier_name || `Tier ${i + 1}`}</span>
+                                </div>
+                                <span className="text-sm font-bold text-brand-primary">{t.count} <span className="text-[10px] font-normal text-gray-500">({total > 0 ? ((t.count / total) * 100).toFixed(0) : 0}%)</span></span>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${total > 0 ? (t.count / total) * 100 : 0}%`, backgroundColor: ['#002819', '#D4AF37', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'][i % 6] }} />
+                              </div>
                             </div>
-                            <span className="text-sm font-bold text-[#002819]">{t.count}</span>
-                          </div>
-                        ))}
+                          ));
+                        })()}
                       </div>
                     </div>
                   ) : (
@@ -2362,27 +2678,59 @@ export default function SubscriptionsPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold text-[#002819] mb-4">Subscription Growth</h3>
+                  <h3 className="text-lg font-bold text-brand-primary mb-4">Subscription Growth</h3>
                   {stats.growth_over_time && stats.growth_over_time.length > 0 ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                          <span className="text-xs font-semibold text-gray-600">New this month: {stats.new_this_month || 0}</span>
+                          <span className="text-xs font-semibold text-gray-600">New: {stats.new_this_month || 0}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-red-500" />
-                          <span className="text-xs font-semibold text-gray-600">Churned this month: {stats.churned_this_month || 0}</span>
+                          <span className="w-3 h-3 rounded-full bg-red-400" />
+                          <span className="text-xs font-semibold text-gray-600">Churned: {stats.churned_this_month || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-emerald-200" />
+                          <span className="text-xs font-semibold text-gray-600">Net: {(stats.new_this_month || 0) - (stats.churned_this_month || 0)}</span>
                         </div>
                       </div>
-                      <div className="h-48 relative pb-8">
-                        <TrendChart
-                          data={stats.growth_over_time.map(g => ({ label: g.month, value: g.new || 0 }))}
-                          color="#10B981"
-                          height={200}
-                        />
+                      <div className="h-56 relative">
+                        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 120">
+                          <defs>
+                            <linearGradient id="greenFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#10B981" stopOpacity="0.15" />
+                              <stop offset="100%" stopColor="#10B981" stopOpacity="0.02" />
+                            </linearGradient>
+                          </defs>
+                          {(() => {
+                            const data = stats.growth_over_time;
+                            const pad = 30; const w = 1000; const h = 120;
+                            const maxVal = Math.max(...data.flatMap(g => [g.new || 0, g.cancelled || 0]), 1);
+                            const ptsNew = data.map((g, i) => ({ x: pad + (i / (data.length - 1 || 1)) * (w - 2 * pad), y: h - ((g.new || 0) / maxVal) * (h - 10) }));
+                            const ptsChurn = data.map((g, i) => ({ x: pad + (i / (data.length - 1 || 1)) * (w - 2 * pad), y: h - ((g.cancelled || 0) / maxVal) * (h - 10) }));
+                            const pathNew = ptsNew.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+                            const pathChurn = ptsChurn.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+                            return (<>
+                              <path d={pathNew + ` L${ptsNew[ptsNew.length - 1].x},${h} L${ptsNew[0].x},${h} Z`} fill="url(#greenFill)" />
+                              <path d={pathNew} fill="none" stroke="#10B981" strokeWidth="1.5" />
+                              <path d={pathChurn} fill="none" stroke="#F87171" strokeWidth="1.5" strokeDasharray="4 2" />
+                              {ptsNew.filter((_, i) => i === 0 || i === ptsNew.length - 1 || i === Math.floor(ptsNew.length / 2)).map((p, i) => (
+                                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#10B981" stroke="white" strokeWidth="1.5" />
+                              ))}
+                              {ptsChurn.filter((_, i) => i === 0 || i === ptsChurn.length - 1 || i === Math.floor(ptsChurn.length / 2)).map((p, i) => (
+                                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#F87171" stroke="white" strokeWidth="1.5" />
+                              ))}
+                            </>);
+                          })()}
+                        </svg>
+                        <div className="flex justify-between text-[10px] text-on-surface-subtle font-bold uppercase tracking-widest px-1 mt-1">
+                          {stats.growth_over_time.filter((_, i) => i === 0 || i === Math.floor(stats.growth_over_time.length / 2) || i === stats.growth_over_time.length - 1).map((g, i) => (
+                            <span key={i}>{g.month}</span>
+                          ))}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-2">New subscriptions over time</div>
+                      <div className="text-xs text-gray-400">New subscriptions vs churned over time</div>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500 text-sm">No growth data available</div>
@@ -2390,17 +2738,17 @@ export default function SubscriptionsPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold text-[#002819] mb-4">Revenue Over Time</h3>
+                  <h3 className="text-lg font-bold text-brand-primary mb-4">Revenue Over Time</h3>
                   {stats.revenue_over_time && stats.revenue_over_time.length > 0 ? (
-                    <div className="h-48">
+                    <div className="h-52">
                       <BarChart
                         data={stats.revenue_over_time.map(r => ({
-                          label: r.label || r.month || '',
+                          label: (r.label || r.month || '').slice(-2),
                           value: r.value || r.revenue || 0,
                           color: '#D4AF37',
                         }))}
                         color="#D4AF37"
-                        height={200}
+                        height={180}
                       />
                     </div>
                   ) : (
@@ -2409,7 +2757,7 @@ export default function SubscriptionsPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold text-[#002819] mb-4">Payment Methods</h3>
+                  <h3 className="text-lg font-bold text-brand-primary mb-4">Payment Methods</h3>
                   {stats.payment_methods && stats.payment_methods.length > 0 ? (
                     <div className="space-y-4">
                       {stats.payment_methods.map((pm, i) => (
@@ -2423,7 +2771,7 @@ export default function SubscriptionsPage() {
                             <span className="text-sm font-medium text-gray-700 capitalize">{pm.method || pm.name || `Method ${i + 1}`}</span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm font-bold text-[#002819]">{pm.count || pm.subscribers || 0}</span>
+                            <span className="text-sm font-bold text-brand-primary">{pm.count || pm.subscribers || 0}</span>
                             <span className="text-xs text-gray-500 w-16 text-right">{pm.percentage ? `${pm.percentage}%` : ''}</span>
                           </div>
                         </div>
@@ -2449,45 +2797,47 @@ export default function SubscriptionsPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-[#002819] mb-4">Recent Subscriptions</h3>
+                <h3 className="text-lg font-bold text-brand-primary mb-4">Recent Subscriptions</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">User</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Tier</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Status</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Date</th>
-                        <th className="text-start py-3 px-4 text-sm font-bold text-gray-600">Amount</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">User</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Email</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Tier</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Billing</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Payment</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Started</th>
+                        <th className="text-start py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Ends</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(stats.recent_subscriptions || []).slice(0, 20).map((sub, i) => (
                         <tr key={sub.id || i} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">
-                            <span className="font-medium text-[#002819]">{sub.user?.name || sub.name || 'Unknown'}</span>
+                            <span className="font-medium text-brand-primary text-sm">{sub.user_name || sub.user?.name || 'Unknown'}</span>
                           </td>
+                          <td className="py-3 px-4 text-xs text-gray-500">{sub.user_email || sub.user?.email || '-'}</td>
                           <td className="py-3 px-4">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTierBadgeColor(sub.tier?.slug || sub.tier_name)}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTierBadgeColor(sub.tier?.slug || sub.tier_name)}`}>
                               {sub.tier?.name || sub.tier_name || 'N/A'}
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(sub.status)}`}>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${getStatusBadgeClass(sub.status)}`}>
                               {normalizeStatus(sub.status)?.replace('_', ' ') || 'N/A'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {formatDate(sub.created_at || sub.started_at || sub.date)}
-                          </td>
-                          <td className="py-3 px-4 text-sm font-medium text-[#002819]">
-                            {sub.amount ? formatCurrency(sub.amount) : sub.tier?.price_monthly ? formatCurrency(sub.tier.price_monthly) : '-'}
-                          </td>
+                          <td className="py-3 px-4 text-xs text-gray-600 capitalize">{sub.billing_cycle || '-'}</td>
+                          <td className="py-3 px-4 text-xs text-gray-600">{sub.payment_method || '-'}</td>
+                          <td className="py-3 px-4 text-xs text-gray-600">{formatDate(sub.started_at || sub.created_at || sub.date)}</td>
+                          <td className="py-3 px-4 text-xs text-gray-600">{sub.ends_at ? formatDate(sub.ends_at) : '-'}</td>
                         </tr>
                       ))}
                       {(!stats.recent_subscriptions || stats.recent_subscriptions.length === 0) && (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-gray-500">No recent subscriptions</td>
+                          <td colSpan={8} className="py-8 text-center text-gray-500">No recent subscriptions</td>
                         </tr>
                       )}
                     </tbody>
@@ -2507,7 +2857,7 @@ export default function SubscriptionsPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-[#002819]">{editingSubscriber.user?.name || 'Unknown'}</h2>
+                <h2 className="text-xl font-bold text-brand-primary">{editingSubscriber.user?.name || 'Unknown'}</h2>
                 <p className="text-sm text-gray-500">{editingSubscriber.user?.email}</p>
               </div>
               <button onClick={() => setShowSubscriberModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -2533,7 +2883,7 @@ export default function SubscriptionsPage() {
 
             {/* Usage */}
             <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <h3 className="text-sm font-bold text-[#002819] mb-3">Resource Usage</h3>
+              <h3 className="text-sm font-bold text-brand-primary mb-3">Resource Usage</h3>
               <div className="space-y-3">
                 {['animals', 'devices', 'team'].map(key => {
                   const u = editingSubscriber.usage?.[key] || {};
@@ -2542,7 +2892,7 @@ export default function SubscriptionsPage() {
                     <div key={key}>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="capitalize text-gray-600">{key}</span>
-                        <span className="font-semibold text-[#002819]">{u.used ?? 0} / {u.max === 0 ? '∞' : u.max}</span>
+                        <span className="font-semibold text-brand-primary">{u.used ?? 0} / {u.max === 0 ? '∞' : u.max}</span>
                       </div>
                       {u.max > 0 && (
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -2561,17 +2911,17 @@ export default function SubscriptionsPage() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase mb-1">Started</p>
-                <p className="text-sm font-medium text-[#002819]">{formatDate(editingSubscriber.started_at || editingSubscriber.created_at)}</p>
+                <p className="text-sm font-medium text-brand-primary">{formatDate(editingSubscriber.started_at || editingSubscriber.created_at)}</p>
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase mb-1">Renewal</p>
-                <p className="text-sm font-medium text-[#002819]">{formatDate(editingSubscriber.ends_at || editingSubscriber.renewal_at || editingSubscriber.next_billing_date)}</p>
+                <p className="text-sm font-medium text-brand-primary">{formatDate(editingSubscriber.ends_at || editingSubscriber.renewal_at || editingSubscriber.next_billing_date)}</p>
               </div>
             </div>
 
             {/* Payment */}
             <div className="border-t border-gray-200 pt-4 mb-6">
-              <h3 className="text-sm font-bold text-[#002819] mb-3">Payment</h3>
+              <h3 className="text-sm font-bold text-brand-primary mb-3">Payment</h3>
               <div className="flex items-center gap-3 mb-3">
                 <label className="text-xs font-semibold text-gray-600 w-20">Method:</label>
                 <select
@@ -2604,7 +2954,7 @@ export default function SubscriptionsPage() {
                   });
                   setShowSubscriberModal(false);
                 }}
-                className="px-4 py-2 bg-[#002819] text-white rounded-lg text-xs font-bold hover:bg-[#06402b]"
+                className="px-4 py-2 bg-brand-primary text-white rounded-lg text-xs font-bold hover:bg-brand-secondary"
               >
                 Save Payment Info
               </button>
@@ -2612,7 +2962,7 @@ export default function SubscriptionsPage() {
 
             {/* Quick Actions */}
             <div className="border-t border-gray-200 pt-4 space-y-3">
-              <h3 className="text-sm font-bold text-[#002819]">Quick Actions</h3>
+              <h3 className="text-sm font-bold text-brand-primary">Quick Actions</h3>
 
               {/* Change Tier */}
               <div className="flex items-center gap-3">
@@ -2651,7 +3001,7 @@ export default function SubscriptionsPage() {
               {editingSubscriber.billing_cycle && (
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-semibold text-gray-600 w-20">Billing:</label>
-                  <span className="text-sm font-medium text-[#002819] capitalize">{editingSubscriber.billing_cycle}</span>
+                  <span className="text-sm font-medium text-brand-primary capitalize">{editingSubscriber.billing_cycle}</span>
                   <button
                     onClick={() => handleChangeBillingCycle(editingSubscriber.id, editingSubscriber.billing_cycle)}
                     className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -2702,7 +3052,7 @@ export default function SubscriptionsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPlanPaymentModal(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#002819]">
+              <h2 className="text-xl font-bold text-brand-primary">
                 {planAction === 'upgrade' ? 'Upgrade' : 'Downgrade'} to {planTargetTier.name}
               </h2>
               <button onClick={() => setShowPlanPaymentModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -2715,7 +3065,7 @@ export default function SubscriptionsPage() {
               {currentSubscription?.tier && (
                 <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs font-bold text-gray-500 uppercase mb-1">Current</p>
-                  <p className="text-sm font-bold text-[#002819]">{currentSubscription.tier.name}</p>
+                  <p className="text-sm font-bold text-brand-primary">{currentSubscription.tier.name}</p>
                   {currentSubscription.tier.price_monthly > 0 && (
                     <p className="text-xs text-gray-500">{formatCurrency(currentSubscription.tier.price_monthly)}/mo</p>
                   )}
@@ -2735,7 +3085,7 @@ export default function SubscriptionsPage() {
               <button
                 onClick={() => setPlanPaymentMethod('card')}
                 className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${
-                  planPaymentMethod === 'card' ? 'bg-[#002819] text-white' : 'bg-gray-100 text-gray-700'
+                  planPaymentMethod === 'card' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-700'
                 }`}
               >
                 <MaterialSymbol icon="credit_card" size={18} className="inline mr-1" />
@@ -2744,7 +3094,7 @@ export default function SubscriptionsPage() {
               <button
                 onClick={() => setPlanPaymentMethod('bank')}
                 className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${
-                  planPaymentMethod === 'bank' ? 'bg-[#002819] text-white' : 'bg-gray-100 text-gray-700'
+                  planPaymentMethod === 'bank' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-700'
                 }`}
               >
                 <MaterialSymbol icon="account_balance" size={18} className="inline mr-1" />
@@ -2789,7 +3139,7 @@ export default function SubscriptionsPage() {
                 <button
                   onClick={handlePlanCardPayment}
                   disabled={planProcessing}
-                  className="w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors disabled:opacity-50"
+                  className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors disabled:opacity-50"
                 >
                   {planProcessing ? 'Processing...' : `Pay ${formatCurrency(planTargetTier.price_monthly)} & ${planAction === 'upgrade' ? 'Upgrade' : 'Downgrade'}`}
                 </button>
@@ -2809,7 +3159,7 @@ export default function SubscriptionsPage() {
                     type="file"
                     accept=".pdf"
                     onChange={e => setPlanTransferFile(e.target.files[0] || null)}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#002819] file:text-white hover:file:bg-[#06402b]"
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary"
                   />
                 </div>
                 <button
@@ -2830,7 +3180,7 @@ export default function SubscriptionsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#002819]">
+              <h2 className="text-xl font-bold text-brand-primary">
                 {editingTier ? 'Edit Tier' : 'Create New Tier'}
               </h2>
               <button onClick={() => { setShowTierModal(false); setEditingTier(null); }} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -2961,7 +3311,7 @@ export default function SubscriptionsPage() {
                       type="checkbox"
                       name="has_geofencing"
                       defaultChecked={editingTier?.has_geofencing}
-                      className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                     />
                     <span className="text-sm">Geofencing</span>
                   </label>
@@ -2970,7 +3320,7 @@ export default function SubscriptionsPage() {
                       type="checkbox"
                       name="has_auctions"
                       defaultChecked={editingTier?.has_auctions}
-                      className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                     />
                     <span className="text-sm">Auctions</span>
                   </label>
@@ -2979,7 +3329,7 @@ export default function SubscriptionsPage() {
                       type="checkbox"
                       name="has_advanced_reports"
                       defaultChecked={editingTier?.has_advanced_reports}
-                      className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                     />
                     <span className="text-sm">Advanced Reports</span>
                   </label>
@@ -2988,17 +3338,89 @@ export default function SubscriptionsPage() {
                       type="checkbox"
                       name="has_api_access"
                       defaultChecked={editingTier?.has_api_access}
-                      className="w-4 h-4 text-[#002819] border-gray-300 rounded focus:ring-[#002819]"
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
                     />
                     <span className="text-sm">API Access</span>
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="has_ai_assistant"
+                      defaultChecked={editingTier?.has_ai_assistant}
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
+                    />
+                    <span className="text-sm">AI Assistant</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="has_medical_records"
+                      defaultChecked={editingTier?.has_medical_records}
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
+                    />
+                    <span className="text-sm">Medical Records</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="has_tasks"
+                      defaultChecked={editingTier?.has_tasks}
+                      className="w-4 h-4 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
+                    />
+                    <span className="text-sm">Tasks & Scheduling</span>
+                  </label>
                 </div>
+              </div>
+
+              <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-xl p-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_featured"
+                    defaultChecked={editingTier?.is_featured}
+                    className="w-5 h-5 text-brand-primary border-gray-300 rounded focus:ring-[#002819]"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-brand-primary">Featured Tier</span>
+                    <p className="text-xs text-on-surface-subtle mt-0.5">Shows this tier prominently with a larger card, gradient background, and badge</p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_yearly_only"
+                    defaultChecked={editingTier?.is_yearly_only}
+                    className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-amber-800">Yearly Only</span>
+                    <p className="text-xs text-amber-700 mt-0.5">Disables monthly billing — users can only subscribe yearly</p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    defaultChecked={editingTier?.is_active !== false}
+                    className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-red-800">Active</span>
+                    <p className="text-xs text-red-700 mt-0.5">When unchecked, users cannot subscribe to this tier</p>
+                  </div>
+                </label>
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition-colors"
+                  className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-colors"
                 >
                   {editingTier ? 'Update Tier' : 'Create Tier'}
                 </button>

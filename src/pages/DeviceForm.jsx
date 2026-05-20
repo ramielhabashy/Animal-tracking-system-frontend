@@ -161,15 +161,15 @@ export default function DeviceForm() {
         <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
           <button
             onClick={handleCancel}
-            className="p-2 hover:bg-[#eeeee9] rounded-lg transition-colors"
+            className="p-2 hover:bg-surface-dim rounded-lg transition-colors"
           >
-            <MaterialSymbol icon={isRtl ? "arrow_forward" : "arrow_back"} size={24} className="text-[#404943]" />
+            <MaterialSymbol icon={isRtl ? "arrow_forward" : "arrow_back"} size={24} className="text-on-surface-variant" />
           </button>
           <div className={isRtl ? 'text-right' : ''}>
-            <h2 className="text-3xl font-extrabold font-['Manrope'] text-[#002819] tracking-tight">
+            <h2 className="text-3xl font-extrabold font-['Manrope'] text-brand-primary tracking-tight">
               {t('devices.registerNew') || 'Register New Device'}
             </h2>
-            <p className="text-[#404943] mt-1">
+            <p className="text-on-surface-variant mt-1">
               Add a new IoT tracker to your fleet
             </p>
           </div>
@@ -180,7 +180,7 @@ export default function DeviceForm() {
         <div
           className={`p-4 rounded-xl ${
             message.type === 'success'
-              ? 'bg-[#cfe5d6] text-[#002819]'
+              ? 'bg-[#cfe5d6] text-brand-primary'
               : 'bg-[#ffdad6] text-[#93000a]'
           }`}
         >
@@ -192,16 +192,16 @@ export default function DeviceForm() {
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Device Identification */}
-          <div className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+          <div className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
             <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-              <span className="bg-white p-2 rounded-xl text-[#002819]">
+              <span className="bg-white p-2 rounded-xl text-brand-primary">
                 <MaterialSymbol icon="fingerprint" size={20} />
               </span>
-              <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Device Identification</h3>
+              <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Device Identification</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Device Name *
                 </label>
                 <input
@@ -210,19 +210,19 @@ export default function DeviceForm() {
                   onChange={handleChange}
                   required
                   placeholder="e.g., Front Gate Tracker"
-                  className={`w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.name ? 'ring-2 ring-red-500' : ''}`}
+                  className={`w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.name ? 'ring-2 ring-red-500' : ''}`}
                 />
                 {errors.name && <p className="text-red-600 text-xs">{errors.name}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Device Type *
                 </label>
                 <select
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.type ? 'ring-2 ring-red-500' : ''}`}
+                  className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.type ? 'ring-2 ring-red-500' : ''}`}
                   required
                 >
                   <option value="collar">Pro Tracking Collar v4</option>
@@ -233,14 +233,14 @@ export default function DeviceForm() {
                 {errors.type && <p className="text-red-600 text-xs">{errors.type}</p>}
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Status
                 </label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="online">Online</option>
                   <option value="offline">Offline</option>
@@ -251,16 +251,16 @@ export default function DeviceForm() {
           </div>
 
           {/* Hardware Configuration */}
-          <div className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+          <div className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
             <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-              <span className="bg-white p-2 rounded-xl text-[#002819]">
+              <span className="bg-white p-2 rounded-xl text-brand-primary">
                 <MaterialSymbol icon="settings_suggest" size={20} />
               </span>
-              <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Hardware Configuration</h3>
+              <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Hardware Configuration</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Battery Level (%) *
                 </label>
                 <input
@@ -270,20 +270,20 @@ export default function DeviceForm() {
                   type="number"
                   min="0"
                   max="100"
-                  className={`w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.battery_level ? 'ring-2 ring-red-500' : ''}`}
+                  className={`w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.battery_level ? 'ring-2 ring-red-500' : ''}`}
                   required
                 />
                 {errors.battery_level && <p className="text-red-600 text-xs">{errors.battery_level}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Firmware Version
                 </label>
                 <select
                   name="firmware_version"
                   value={formData.firmware_version}
                   onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="v4.2.1-stable">v4.2.1-stable (Latest)</option>
                   <option value="v4.1.0">v4.1.0</option>
@@ -292,14 +292,14 @@ export default function DeviceForm() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Update Interval (minutes)
                 </label>
                 <select
                   name="update_interval"
                   value={formData.update_interval}
                   onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value={5}>5 Minutes</option>
                   <option value={15}>15 Minutes</option>
@@ -308,7 +308,7 @@ export default function DeviceForm() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Advanced Tracking
                 </label>
                 <div className={`flex items-center gap-3 py-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -320,32 +320,32 @@ export default function DeviceForm() {
                       onChange={handleChange}
                       className="sr-only peer"
                     />
-                    <div className="w-14 h-7 bg-white peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-[#002819]" />
+                    <div className="w-14 h-7 bg-white peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-brand-primary" />
                   </label>
-                  <span className="text-sm text-[#404943]">Enable high-frequency GPS polling</span>
+                  <span className="text-sm text-on-surface-variant">Enable high-frequency GPS polling</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Ownership & Assignment */}
-          <div className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+          <div className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
             <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-              <span className="bg-white p-2 rounded-xl text-[#002819]">
+              <span className="bg-white p-2 rounded-xl text-brand-primary">
                 <MaterialSymbol icon="person" size={20} />
               </span>
-              <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Ownership & Assignment</h3>
+              <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Ownership & Assignment</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Owner
                 </label>
                 <select
                   name="owner_id"
                   value={formData.owner_id}
                   onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="">Select Owner</option>
                   {owners.map(owner => (
@@ -354,14 +354,14 @@ export default function DeviceForm() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Assign to Animal
                 </label>
                 <select
                   name="animal_id"
                   value={formData.animal_id}
                   onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="">— Not assigned —</option>
                   {ownerUnassignedAnimals.map(animal => (
@@ -380,32 +380,32 @@ export default function DeviceForm() {
 
           {/* Sidebar */}
         <div className="space-y-6">
-          <div className="bg-[#002819] rounded-3xl p-6 text-white">
+          <div className="bg-brand-primary rounded-3xl p-6 text-white">
             <h3 className="text-lg font-bold mb-4">Quick Tips</h3>
             <ul className={`space-y-4 text-sm text-white/80 ${isRtl ? 'text-right' : ''}`}>
               <li className={`flex gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="check_circle" size={20} className="text-[#D4AF37]" />
+                <MaterialSymbol icon="check_circle" size={20} className="text-brand-accent" />
                 Ensure device is powered on before registration
               </li>
               <li className={`flex gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="check_circle" size={20} className="text-[#D4AF37]" />
+                <MaterialSymbol icon="check_circle" size={20} className="text-brand-accent" />
                 Verify gateway signal strength at location
               </li>
               <li className={`flex gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <MaterialSymbol icon="check_circle" size={20} className="text-[#D4AF37]" />
+                <MaterialSymbol icon="check_circle" size={20} className="text-brand-accent" />
                 Update firmware before first use
               </li>
             </ul>
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#002819] mb-4">Actions</h3>
+            <h3 className="text-lg font-bold text-brand-primary mb-4">Actions</h3>
             <div className={`space-y-3 ${isRtl ? 'text-right' : ''}`}>
               <button
                 type="submit"
                 onClick={(e) => handleSubmit(e, false)}
                 disabled={isSubmitting}
-                className={`w-full py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
+                className={`w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
               >
                 <MaterialSymbol icon="save" size={18} />
                 {isSubmitting ? 'Registering...' : 'Register Device'}
@@ -415,7 +415,7 @@ export default function DeviceForm() {
                   type="submit"
                   onClick={(e) => handleSubmit(e, true)}
                   disabled={isSubmitting}
-                  className="w-full py-3 bg-[#D4AF37] text-white rounded-xl font-bold text-sm hover:bg-[#c9a030] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 bg-brand-accent text-white rounded-xl font-bold text-sm hover:bg-brand-accent transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <MaterialSymbol icon="developer_board" size={18} />
                   {isSubmitting ? 'Provisioning...' : 'Register & Open Simulator'}
@@ -424,7 +424,7 @@ export default function DeviceForm() {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="w-full py-3 bg-[#eeeee9] text-[#002819] rounded-xl font-bold text-sm hover:bg-[#e8e8e3] transition-colors"
+                className="w-full py-3 bg-surface-dim text-brand-primary rounded-xl font-bold text-sm hover:bg-surface-dim transition-colors"
               >
                 Cancel
               </button>

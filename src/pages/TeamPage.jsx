@@ -214,7 +214,7 @@ const handleRemoveMember = async (memberId) => {
     const role = availableRoles.find(r => r.name === roleName);
     const isAdminType = role?.type === 'admin';
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isAdminType ? 'bg-[#D4AF37]/20 text-[#735C00]' : 'bg-[#10B981]/20 text-[#059669]'}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isAdminType ? 'bg-brand-accent/20 text-tertiary-container' : 'bg-[#10B981]/20 text-success'}`}>
         {isAdminType ? 'Staff' : 'Farm'}
       </span>
     );
@@ -232,7 +232,7 @@ const handleRemoveMember = async (memberId) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -241,13 +241,13 @@ const handleRemoveMember = async (memberId) => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#002819]">{t('team.title')}</h1>
-          <p className="text-[#404943] mt-1">{t('teamPage.viewManage')}</p>
+          <h1 className="text-3xl font-bold text-brand-primary">{t('team.title')}</h1>
+          <p className="text-on-surface-variant mt-1">{t('teamPage.viewManage')}</p>
         </div>
         {(isAdmin || user?.role === 'Owner') && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className={`flex items-center gap-2 px-5 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-all shadow-lg shadow-[#002819]/20 ${isRtl ? 'flex-row-reverse' : ''}`}
+                  className={`flex items-center gap-2 px-5 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-all shadow-lg shadow-brand-primary/20 ${isRtl ? 'flex-row-reverse' : ''}`}
                 >
                   <MaterialSymbol icon="person_add" size={20} />
                   {t('teamPage.addMember')}
@@ -269,19 +269,19 @@ const handleRemoveMember = async (memberId) => {
           const isOwnTeam = owner.id === user?.id;
 
           return (
-            <div key={owner.id} className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-[#c0c9c1]/20">
+            <div key={owner.id} className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-outline/20">
               {/* Owner Header */}
               <div 
                 className={`p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors ${isOwnTeam ? 'bg-amber-50/50' : ''}`}
                 onClick={() => toggleOwner(owner.id)}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl ${isOwnTeam ? 'bg-amber-500' : 'bg-[#06402b]'}`}>
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl ${isOwnTeam ? 'bg-amber-500' : 'bg-brand-secondary'}`}>
                     {owner.name?.charAt(0) || '?'}
                   </div>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h3 className="text-xl font-bold text-[#002819]">{owner.name}</h3>
+                      <h3 className="text-xl font-bold text-brand-primary">{owner.name}</h3>
                       {getRoleBadge(owner.role)}
                       {getTypeBadge(owner.role)}
                       {isOwnTeam && (
@@ -289,7 +289,7 @@ const handleRemoveMember = async (memberId) => {
                       )}
                     </div>
                     <p className="text-sm text-[#4f6357]">{owner.email}</p>
-                    <p className="text-xs text-[#717973] mt-1">
+                    <p className="text-xs text-on-surface-subtle mt-1">
                       {members.length} {t('teamPage.members')}
                     </p>
                   </div>
@@ -309,7 +309,7 @@ const handleRemoveMember = async (memberId) => {
                   {members.length === 0 ? (
                     <div className="p-8 text-center">
                       <MaterialSymbol icon="group_off" size={40} className="text-gray-300 mx-auto mb-2" />
-                      <p className="text-[#717973]">{t('teamPage.noMembers')}</p>
+                      <p className="text-on-surface-subtle">{t('teamPage.noMembers')}</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
@@ -322,8 +322,8 @@ const handleRemoveMember = async (memberId) => {
                                 <MaterialSymbol icon={getRoleIcon(member.role)} size={20} />
                               </div>
                               <div>
-                                <p className="font-semibold text-[#002819]">{member.name}</p>
-                                <p className="text-xs text-[#717973]">{member.email}</p>
+                                <p className="font-semibold text-brand-primary">{member.name}</p>
+                                <p className="text-xs text-on-surface-subtle">{member.email}</p>
                               </div>
                             </div>
                 <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -332,7 +332,7 @@ const handleRemoveMember = async (memberId) => {
                     {(isAdmin || isOwnTeam) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); openRoleModal(member); }}
-                        className="p-2 text-[#06402B] hover:bg-[#F4F4EF] rounded-lg transition-colors"
+                        className="p-2 text-brand-secondary hover:bg-surface-light rounded-lg transition-colors"
                         title="Change role"
                       >
                         <MaterialSymbol icon="swap_horiz" size={20} />
@@ -361,21 +361,21 @@ const handleRemoveMember = async (memberId) => {
         {owners.length === 0 && (
           <div className="bg-white rounded-[2rem] p-12 text-center shadow-sm">
             <MaterialSymbol icon="group_off" size={64} className="text-gray-300 mx-auto mb-4" />
-            <p className="text-[#404943] text-lg font-semibold">{t('teamPage.noOwners')}</p>
-            <p className="text-[#717973] text-sm mt-2">{t('teamPage.ownerAppear')}</p>
+            <p className="text-on-surface-variant text-lg font-semibold">{t('teamPage.noOwners')}</p>
+            <p className="text-on-surface-subtle text-sm mt-2">{t('teamPage.ownerAppear')}</p>
           </div>
         )}
       </div>
 
       {/* Admin: Unassigned Users Section */}
       {isAdmin && availableUsers.length > 0 && (
-        <div className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-[#c0c9c1]/20">
+        <div className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-outline/20">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-[#002819] flex items-center gap-3">
+            <h2 className="text-xl font-bold text-brand-primary flex items-center gap-3">
               <MaterialSymbol icon="person_search" size={24} className="text-[#4f6357]" />
               {t('team.unassignedUsers')}
             </h2>
-            <p className="text-sm text-[#717973] mt-1">{t('teamPage.noOwner')}</p>
+            <p className="text-sm text-on-surface-subtle mt-1">{t('teamPage.noOwner')}</p>
           </div>
           <div className="divide-y divide-gray-100">
             {availableUsers.map(u => (
@@ -387,8 +387,8 @@ const handleRemoveMember = async (memberId) => {
                     <MaterialSymbol icon={getRoleIcon(u.role)} size={20} />
                   </div>
                   <div>
-                    <p className="font-semibold text-[#002819]">{u.name}</p>
-                    <p className="text-xs text-[#717973]">{u.email}</p>
+                    <p className="font-semibold text-brand-primary">{u.name}</p>
+                    <p className="text-xs text-on-surface-subtle">{u.email}</p>
                   </div>
                 </div>
               <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -396,7 +396,7 @@ const handleRemoveMember = async (memberId) => {
                 {getTypeBadge(u.role)}
                 <button
                   onClick={(e) => { e.stopPropagation(); openRoleModal(u); }}
-                  className="p-2 text-[#06402B] hover:bg-[#F4F4EF] rounded-lg transition-colors"
+                  className="p-2 text-brand-secondary hover:bg-surface-light rounded-lg transition-colors"
                   title="Change role"
                 >
                   <MaterialSymbol icon="swap_horiz" size={20} />
@@ -423,8 +423,8 @@ const handleRemoveMember = async (memberId) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-[#002819]">{t('teamPage.addMember')}</h2>
-              <p className="text-sm text-[#717973] mt-1">
+              <h2 className="text-xl font-bold text-brand-primary">{t('teamPage.addMember')}</h2>
+              <p className="text-sm text-on-surface-subtle mt-1">
                 {isAdmin ? t('teamPage.assignToOwner') : t('teamPage.addToTeam')}
               </p>
             </div>
@@ -515,7 +515,7 @@ const handleRemoveMember = async (memberId) => {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="flex-1 px-4 py-2 bg-[#002819] text-white rounded-lg hover:bg-[#06402b] disabled:opacity-50 font-medium"
+                  className="flex-1 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary disabled:opacity-50 font-medium"
                 >
                   {actionLoading ? t('teamPage.adding') : t('teamPage.addMember')}
                 </button>
@@ -530,8 +530,8 @@ const handleRemoveMember = async (memberId) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-[#002819]">Change Role</h2>
-              <p className="text-sm text-[#717973] mt-1">
+              <h2 className="text-xl font-bold text-brand-primary">Change Role</h2>
+              <p className="text-sm text-on-surface-subtle mt-1">
                 Update role for {selectedUserForRole.name}
               </p>
             </div>
@@ -577,7 +577,7 @@ const handleRemoveMember = async (memberId) => {
                     setShowRoleModal(false);
                   }}
                   disabled={actionLoading}
-                  className="flex-1 px-4 py-2 bg-[#002819] text-white rounded-lg hover:bg-[#06402b] disabled:opacity-50 font-medium"
+                  className="flex-1 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary disabled:opacity-50 font-medium"
                 >
                   {actionLoading ? t('common.loading') : t('common.save')}
                 </button>

@@ -7,9 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import TranslateButton from '../components/TranslateButton';
 
 const statusConfig = {
-  online: { icon: 'wifi', label: 'Online', color: 'text-[#002819]' },
-  low_signal: { icon: 'signal_cellular_alt_1_bar', label: 'Low Signal', color: 'text-[#735c00]' },
-  offline: { icon: 'wifi_off', label: 'Offline', color: 'text-[#717973]' },
+  online: { icon: 'wifi', label: 'Online', color: 'text-brand-primary' },
+  low_signal: { icon: 'signal_cellular_alt_1_bar', label: 'Low Signal', color: 'text-tertiary-container' },
+  offline: { icon: 'wifi_off', label: 'Offline', color: 'text-on-surface-subtle' },
 };
 
 export default function DeviceEdit() {
@@ -156,7 +156,7 @@ export default function DeviceEdit() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -176,33 +176,33 @@ export default function DeviceEdit() {
     <div className="max-w-7xl mx-auto w-full">
       {/* Breadcrumb */}
       <nav className={`flex text-xs text-[#4f6357] mb-2 uppercase tracking-widest font-bold ${isRtl ? 'flex-row-reverse' : ''}`}>
-        <Link to="/devices" className="hover:text-[#002819] transition-colors">{t('devices.deviceManagement')}</Link>
+        <Link to="/devices" className="hover:text-brand-primary transition-colors">{t('devices.deviceManagement')}</Link>
         <span className="mx-2">/</span>
-        <span className="text-[#002819]">{device.device_id}</span>
+        <span className="text-brand-primary">{device.device_id}</span>
       </nav>
 
       {/* Header */}
       <div className={`flex items-start justify-between mb-8 ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-4xl font-extrabold font-['Manrope'] text-[#002819] tracking-tight">
+            <h2 className="text-4xl font-extrabold font-['Manrope'] text-brand-primary tracking-tight">
               {device.device_id}
             </h2>
             <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-              device.status === 'online' ? 'bg-[#002819]/10 text-[#002819]' :
-              device.status === 'low_signal' ? 'bg-[#D4AF37]/10 text-[#735c00]' :
-              'bg-[#717973]/10 text-[#717973]'
+              device.status === 'online' ? 'bg-brand-primary/10 text-brand-primary' :
+              device.status === 'low_signal' ? 'bg-brand-accent/10 text-tertiary-container' :
+              'bg-on-surface-subtle/10 text-on-surface-subtle'
             }`}>
               {status?.label || device.status}
             </div>
           </div>
-          <p className="text-[#404943] mt-1">{device.name || device.type || 'Device'} <TranslateButton text={device.name || device.type || 'Device'} /></p>
+          <p className="text-on-surface-variant mt-1">{device.name || device.type || 'Device'} <TranslateButton text={device.name || device.type || 'Device'} /></p>
         </div>
         <div className="flex gap-2">
           {!editing && canManageDevices && (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 bg-[#002819] text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all active:scale-95"
+              className="flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all active:scale-95"
             >
               <MaterialSymbol icon="edit" size={20} />
               Edit Device
@@ -212,7 +212,7 @@ export default function DeviceEdit() {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
@@ -224,21 +224,21 @@ export default function DeviceEdit() {
             /* Edit Mode */
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Device Identification */}
-              <section className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+              <section className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-white p-2 rounded-xl text-[#002819]">
+                  <span className="bg-white p-2 rounded-xl text-brand-primary">
                     <MaterialSymbol icon="fingerprint" size={20} />
                   </span>
-                  <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Device Identification</h3>
+                  <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Device Identification</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                       Serial Number
                     </label>
                     <input
-                      className="w-full bg-[#e3e3de] border-none rounded-xl px-4 py-3 text-[#404943]/50 cursor-not-allowed font-mono text-sm"
+                      className="w-full bg-surface-high border-none rounded-xl px-4 py-3 text-on-surface-variant/50 cursor-not-allowed font-mono text-sm"
                       defaultValue={device.device_id}
                       disabled
                       type="text"
@@ -246,11 +246,11 @@ export default function DeviceEdit() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                       Device Name
                     </label>
                     <input
-                      className="w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#06402b] shadow-sm"
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-secondary shadow-sm"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       type="text"
@@ -258,11 +258,11 @@ export default function DeviceEdit() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                       Owner
                     </label>
                     <select
-                      className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.owner_id ? 'ring-2 ring-red-500' : ''}`}
+                      className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.owner_id ? 'ring-2 ring-red-500' : ''}`}
                       value={formData.owner_id}
                       onChange={(e) => setFormData({ ...formData, owner_id: e.target.value })}
                     >
@@ -275,11 +275,11 @@ export default function DeviceEdit() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                       Device Type
                     </label>
                     <select
-                      className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.type ? 'ring-2 ring-red-500' : ''}`}
+                      className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.type ? 'ring-2 ring-red-500' : ''}`}
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     >
@@ -294,19 +294,19 @@ export default function DeviceEdit() {
               </section>
 
               {/* Configuration */}
-              <section className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+              <section className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-white p-2 rounded-xl text-[#002819]">
+                  <span className="bg-white p-2 rounded-xl text-brand-primary">
                     <MaterialSymbol icon="settings_input_component" size={20} />
                   </span>
-                  <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Configuration</h3>
+                  <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Configuration</h3>
                 </div>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white">
                     <div>
-                      <p className="font-bold text-[#002819]">Advanced Tracking Mode</p>
-                      <p className="text-sm text-[#404943]">Enable high-frequency GPS polling for behavioral analysis.</p>
+                      <p className="font-bold text-brand-primary">Advanced Tracking Mode</p>
+                      <p className="text-sm text-on-surface-variant">Enable high-frequency GPS polling for behavioral analysis.</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -315,17 +315,17 @@ export default function DeviceEdit() {
                         onChange={(e) => setFormData({ ...formData, advanced_tracking: e.target.checked })}
                         className="sr-only peer"
                       />
-                      <div className="w-14 h-7 bg-[#e3e3de] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-[#002819]" />
+                      <div className="w-14 h-7 bg-surface-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-brand-primary" />
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                      <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                         Update Interval
                       </label>
                       <select
-                        className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-[#06402b] shadow-sm ${errors.update_interval ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm ${errors.update_interval ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.update_interval}
                         onChange={(e) => setFormData({ ...formData, update_interval: e.target.value })}
                       >
@@ -338,10 +338,10 @@ export default function DeviceEdit() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70 px-1">
+                      <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                         Firmware
                       </label>
-                      <div className="w-full bg-white rounded-xl px-4 py-3 shadow-sm text-sm font-semibold text-[#002819]">
+                      <div className="w-full bg-white rounded-xl px-4 py-3 shadow-sm text-sm font-semibold text-brand-primary">
                         {device.firmware_version || 'v2.4'}
                       </div>
                     </div>
@@ -356,7 +356,7 @@ export default function DeviceEdit() {
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#ba1a1a] font-bold px-6 py-3 rounded-xl hover:bg-[#ffdad6] transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 text-danger font-bold px-6 py-3 rounded-xl hover:bg-danger transition-colors disabled:opacity-50"
                   >
                     <MaterialSymbol icon="delete" size={20} />
                     {deleting ? 'Deleting...' : 'Delete Device'}
@@ -366,7 +366,7 @@ export default function DeviceEdit() {
                   <button
                     type="button"
                     onClick={() => { setEditing(false); setFormData({ name: device.name || '', type: device.type || 'collar', update_interval: device.update_interval || '15', advanced_tracking: device.advanced_tracking ?? false, owner_id: device.owner_id || '' }); setErrors({}); setMessage(null); }}
-                    className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold text-[#404943] hover:bg-[#eeeee9] transition-all"
+                    className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold text-on-surface-variant hover:bg-surface-dim transition-all"
                   >
                     Cancel
                   </button>
@@ -374,7 +374,7 @@ export default function DeviceEdit() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold bg-[#002819] text-white shadow-xl shadow-[#002819]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                      className="flex-1 sm:flex-none px-10 py-3 rounded-xl font-bold bg-brand-primary text-white shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -386,46 +386,46 @@ export default function DeviceEdit() {
             /* View Mode */
             <>
               {/* Hardware Health */}
-              <section className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+              <section className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-white p-2 rounded-xl text-[#002819]">
+                  <span className="bg-white p-2 rounded-xl text-brand-primary">
                     <MaterialSymbol icon="health_and_safety" size={20} />
                   </span>
-                  <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Hardware Health & Status</h3>
+                  <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Hardware Health & Status</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={`bg-white p-6 rounded-2xl border-s-4 shadow-sm ${battery > 50 ? 'border-emerald-500' : battery > 20 ? 'border-[#735c00]' : 'border-[#BA1A1A]'}`}>
-                    <span className="text-xs font-semibold text-[#404943]/60 flex items-center gap-2">
+                  <div className={`bg-white p-6 rounded-2xl border-s-4 shadow-sm ${battery > 50 ? 'border-emerald-500' : battery > 20 ? 'border-tertiary-container' : 'border-danger'}`}>
+                    <span className="text-xs font-semibold text-on-surface-variant/60 flex items-center gap-2">
                       <MaterialSymbol icon="battery_very_low" size={16} />
                       Battery
                     </span>
                     <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-2xl font-bold text-[#002819]">{battery}%</span>
-                      <span className={`text-[10px] font-bold uppercase ${battery > 50 ? 'text-emerald-600' : battery > 20 ? 'text-[#735c00]' : 'text-[#BA1A1A]'}`}>
+                      <span className="text-2xl font-bold text-brand-primary">{battery}%</span>
+                      <span className={`text-[10px] font-bold uppercase ${battery > 50 ? 'text-emerald-600' : battery > 20 ? 'text-tertiary-container' : 'text-danger'}`}>
                         {battery > 50 ? 'Optimal' : battery > 0 ? 'Low' : 'Depleted'}
                       </span>
                     </div>
                   </div>
 
                   <div className="bg-white p-6 rounded-2xl border-s-4 border-emerald-500 shadow-sm">
-                    <span className="text-xs font-semibold text-[#404943]/60 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-on-surface-variant/60 flex items-center gap-2">
                       <MaterialSymbol icon="signal_cellular_alt" size={16} />
                       Signal
                     </span>
                     <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-2xl font-bold text-[#002819]">{device.signal_strength ? `${device.signal_strength} dBm` : 'N/A'}</span>
+                      <span className="text-2xl font-bold text-brand-primary">{device.signal_strength ? `${device.signal_strength} dBm` : 'N/A'}</span>
                       <span className="text-[10px] font-bold uppercase text-emerald-600">{device.signal_strength > -90 ? 'Stable' : 'Weak'}</span>
                     </div>
                   </div>
 
                   <div className="bg-white p-6 rounded-2xl border-s-4 border-emerald-500 shadow-sm">
-                    <span className="text-xs font-semibold text-[#404943]/60 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-on-surface-variant/60 flex items-center gap-2">
                       <MaterialSymbol icon="update" size={16} />
                       Last Ping
                     </span>
                     <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-2xl font-bold text-[#002819]">{device.last_ping ? new Date(device.last_ping).toLocaleDateString() : 'N/A'}</span>
+                      <span className="text-2xl font-bold text-brand-primary">{device.last_ping ? new Date(device.last_ping).toLocaleDateString() : 'N/A'}</span>
                       <span className="text-[10px] font-bold uppercase text-emerald-600">{device.last_ping ? 'Active' : 'Unknown'}</span>
                     </div>
                   </div>
@@ -433,52 +433,61 @@ export default function DeviceEdit() {
               </section>
 
               {/* Device Info */}
-              <section className="bg-[#eeeee9] rounded-3xl p-8 transition-all hover:shadow-md">
+              <section className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-white p-2 rounded-xl text-[#002819]">
+                  <span className="bg-white p-2 rounded-xl text-brand-primary">
                     <MaterialSymbol icon="info" size={20} />
                   </span>
-                  <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">Device Information</h3>
+                  <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Device Information</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Serial Number</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1 font-mono">{device.device_id}</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Serial Number</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-bold text-brand-primary mt-1 font-mono">{device.device_id}</p>
+                      <span className={`mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                        device.data_source === 'real'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {device.data_source === 'real' ? 'LIVE' : 'SIM'}
+                      </span>
+                    </div>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Device Name</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.name || '-'} <TranslateButton text={device.name || '-'} /></p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Device Name</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">{device.name || '-'} <TranslateButton text={device.name || '-'} /></p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Device Type</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1 capitalize">{device.type || '-'}</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Device Type</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1 capitalize">{device.type || '-'}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Owner</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.owner?.name || '-'}</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Owner</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">{device.owner?.name || '-'}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Assigned Animal</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Assigned Animal</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">
                       {assignedAnimal ? (
-                        <Link to={`/animals/${assignedAnimal.id}`} className="hover:text-[#06402b] underline underline-offset-2">
+                        <Link to={`/animals/${assignedAnimal.id}`} className="hover:text-brand-secondary underline underline-offset-2">
                           {assignedAnimal.animal_id}
                         </Link>
                       ) : '-'}
                     </p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Firmware Version</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.firmware_version || 'v2.4'}</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Firmware Version</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">{device.firmware_version || 'v2.4'}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Update Interval</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.update_interval || '15'} min</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Update Interval</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">{device.update_interval || '15'} min</p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-[#404943]/60 uppercase tracking-wider">Advanced Tracking</p>
-                    <p className="text-lg font-bold text-[#002819] mt-1">{device.advanced_tracking ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Advanced Tracking</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">{device.advanced_tracking ? 'Enabled' : 'Disabled'}</p>
                   </div>
                 </div>
               </section>
@@ -489,18 +498,18 @@ export default function DeviceEdit() {
         {/* Sidebar */}
         <div className="lg:col-span-4">
           <div className="sticky top-24 space-y-6">
-            <div className="bg-[#06402b] text-white rounded-3xl p-8 relative overflow-hidden group shadow-2xl">
-              <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#735c00]/20 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700" />
+            <div className="bg-brand-secondary text-white rounded-3xl p-8 relative overflow-hidden group shadow-2xl">
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-tertiary-container/20 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700" />
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-10">
                   <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
-                    <MaterialSymbol icon="router" size={24} className="text-[#D4AF37]" />
+                    <MaterialSymbol icon="router" size={24} className="text-brand-accent" />
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold mb-1">Live Status</p>
                     <div className="flex items-center gap-2 justify-end">
-                      <span className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)] ${device.status === 'online' ? 'bg-emerald-400' : 'bg-[#717973]'}`} />
-                      <span className={`text-xs font-bold ${device.status === 'online' ? 'text-emerald-400' : 'text-[#717973]'}`}>
+                      <span className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)] ${device.status === 'online' ? 'bg-emerald-400' : 'bg-on-surface-subtle'}`} />
+                      <span className={`text-xs font-bold ${device.status === 'online' ? 'text-emerald-400' : 'text-on-surface-subtle'}`}>
                         {device.status === 'online' ? 'ACTIVE' : 'OFFLINE'}
                       </span>
                     </div>
@@ -517,7 +526,7 @@ export default function DeviceEdit() {
                   </div>
                   <div className="flex items-center justify-between pb-4 border-b border-white/10">
                     <span className="text-xs text-white/60">Battery</span>
-                    <span className={`text-sm font-bold ${battery > 50 ? 'text-emerald-400' : battery > 20 ? 'text-[#D4AF37]' : 'text-[#BA1A1A]'}`}>{battery}%</span>
+                    <span className={`text-sm font-bold ${battery > 50 ? 'text-emerald-400' : battery > 20 ? 'text-brand-accent' : 'text-danger'}`}>{battery}%</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-white/60">Last Ping</span>
@@ -527,12 +536,12 @@ export default function DeviceEdit() {
               </div>
             </div>
 
-            <div className="bg-[#eeeee9] rounded-3xl p-6 border border-white/50 shadow-inner">
+            <div className="bg-surface-dim rounded-3xl p-6 border border-white/50 shadow-inner">
               <div className="flex gap-4">
-                <MaterialSymbol icon="info" size={20} className="text-[#002819]/40" />
+                <MaterialSymbol icon="info" size={20} className="text-brand-primary/40" />
                 <div>
-                  <h4 className="text-sm font-bold text-[#002819] mb-1">System Audit Log</h4>
-                  <p className="text-xs text-[#404943] leading-relaxed">
+                  <h4 className="text-sm font-bold text-brand-primary mb-1">System Audit Log</h4>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
                     This device was last configured by <span className="font-bold">{device.owner?.name || 'Admin'}</span> on {device.updated_at ? new Date(device.updated_at).toLocaleDateString() : 'N/A'}.
                   </p>
                 </div>

@@ -93,7 +93,7 @@ export default function AuctionEdit() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -101,8 +101,8 @@ export default function AuctionEdit() {
   if (!auction) {
     return (
       <div className="text-center py-16">
-        <MaterialSymbol icon="error" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
-        <p className="text-[#404943] text-lg">Auction not found</p>
+        <MaterialSymbol icon="error" size={64} className="mx-auto text-outline mb-4" />
+        <p className="text-on-surface-variant text-lg">Auction not found</p>
       </div>
     );
   }
@@ -110,9 +110,9 @@ export default function AuctionEdit() {
   if (!canEdit) {
     return (
       <div className="text-center py-16">
-        <MaterialSymbol icon="lock" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
-        <p className="text-[#404943] text-lg font-semibold">You don't have permission to edit this auction</p>
-        <Link to={`/auctions/${id}`} className="text-[#002819] font-bold hover:underline mt-4 inline-block">
+        <MaterialSymbol icon="lock" size={64} className="mx-auto text-outline mb-4" />
+        <p className="text-on-surface-variant text-lg font-semibold">You don't have permission to edit this auction</p>
+        <Link to={`/auctions/${id}`} className="text-brand-primary font-bold hover:underline mt-4 inline-block">
           Back to Auction
         </Link>
       </div>
@@ -123,12 +123,12 @@ export default function AuctionEdit() {
     <div className="space-y-8">
       <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div>
-          <h2 className="text-3xl font-bold text-[#002819]">Edit Auction</h2>
-          <p className="text-[#404943] mt-1">Update auction details and settings</p>
+          <h2 className="text-3xl font-bold text-brand-primary">Edit Auction</h2>
+          <p className="text-on-surface-variant mt-1">Update auction details and settings</p>
         </div>
         <button
           onClick={() => navigate(`/auctions/${id}`)}
-          className={`px-4 py-2 border border-[#c0c9c1] rounded-xl text-[#404943] font-semibold hover:bg-[#eeeee9] transition-colors flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
+          className={`px-4 py-2 border border-outline rounded-xl text-on-surface-variant font-semibold hover:bg-surface-dim transition-colors flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
         >
           <MaterialSymbol icon="arrow_back" size={18} />
           Back to Auction
@@ -144,45 +144,45 @@ export default function AuctionEdit() {
       <div className="bg-white rounded-[2rem] p-8 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-[#002819] mb-2">Title</label>
+            <label className="block text-sm font-bold text-brand-primary mb-2">Title</label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold"
+              className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold"
               required
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-[#002819] mb-2">Starting Price (SAR)</label>
+              <label className="block text-sm font-bold text-brand-primary mb-2">Starting Price (SAR)</label>
               <input
                 type="number"
                 name="starting_price"
                 value={formData.starting_price}
                 onChange={handleChange}
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#002819] mb-2">Reserve Price (SAR)</label>
+              <label className="block text-sm font-bold text-brand-primary mb-2">Reserve Price (SAR)</label>
               <input
                 type="number"
                 name="reserve_price"
                 value={formData.reserve_price}
                 onChange={handleChange}
                 placeholder="Optional"
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-[#002819] mb-2">Duration (hours)</label>
+              <label className="block text-sm font-bold text-brand-primary mb-2">Duration (hours)</label>
               <input
                 type="number"
                 name="duration_hours"
@@ -190,16 +190,16 @@ export default function AuctionEdit() {
                 onChange={handleChange}
                 min="1"
                 max="168"
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#002819] mb-2">Status</label>
+              <label className="block text-sm font-bold text-brand-primary mb-2">Status</label>
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold"
               >
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
@@ -210,13 +210,13 @@ export default function AuctionEdit() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-[#002819] mb-2">Description</label>
+            <label className="block text-sm font-bold text-brand-primary mb-2">Description</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               rows="4"
-              className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3 text-[#1a1c19] font-semibold resize-none"
+              className="w-full bg-surface-light border-none rounded-xl px-4 py-3 text-on-surface font-semibold resize-none"
             />
           </div>
 
@@ -224,14 +224,14 @@ export default function AuctionEdit() {
               <button
                 type="button"
                 onClick={() => navigate(`/auctions/${id}`)}
-                className="px-6 py-3 border border-[#c0c9c1] rounded-xl text-[#404943] font-bold hover:bg-[#eeeee9] transition-colors"
+                className="px-6 py-3 border border-outline rounded-xl text-on-surface-variant font-bold hover:bg-surface-dim transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className={`px-6 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition-colors disabled:opacity-50 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
+                className={`px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-colors disabled:opacity-50 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
               >
                 {submitting && <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />}
                 Save Changes

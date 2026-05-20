@@ -81,7 +81,7 @@ export default function RolesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -90,8 +90,8 @@ export default function RolesPage() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className={isRtl ? 'text-right' : 'text-left'}>
-            <h1 className="text-3xl font-bold text-[#002819]">{t('roles.title') || 'Roles Management'}</h1>
-            <p className="text-[#404943] mt-1">{t('roles.description') || 'View and manage system roles and permissions'}</p>
+            <h1 className="text-3xl font-bold text-brand-primary">{t('roles.title') || 'Roles Management'}</h1>
+            <p className="text-on-surface-variant mt-1">{t('roles.description') || 'View and manage system roles and permissions'}</p>
           </div>
         </div>
 
@@ -121,17 +121,17 @@ export default function RolesPage() {
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-[#002819] mb-2">{role.name}</h3>
-                <p className="text-sm text-[#717973] mb-4">{ROLE_DESCRIPTIONS[role.name] || ''}</p>
+                <h3 className="text-xl font-bold text-brand-primary mb-2">{role.name}</h3>
+                <p className="text-sm text-on-surface-subtle mb-4">{ROLE_DESCRIPTIONS[role.name] || ''}</p>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-t border-gray-100">
-                    <span className="text-sm text-[#717973]">{t('roles.users') || 'Users'}</span>
-                    <span className="font-bold text-[#002819]">{role.user_count || 0}</span>
+                    <span className="text-sm text-on-surface-subtle">{t('roles.users') || 'Users'}</span>
+                    <span className="font-bold text-brand-primary">{role.user_count || 0}</span>
                   </div>
 
                   <div className="border-t border-gray-100 pt-3">
-                    <span className="text-sm text-[#717973] block mb-2">{t('roles.permissions') || 'Permissions'}</span>
+                    <span className="text-sm text-on-surface-subtle block mb-2">{t('roles.permissions') || 'Permissions'}</span>
                     <div className="flex flex-wrap gap-2">
                       {displayPermissions.map((perm) => (
                         <span
@@ -149,7 +149,7 @@ export default function RolesPage() {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
                 <Link
                   to={`/users?role=${role.name}`}
-                  className="flex items-center justify-center gap-2 text-sm font-semibold text-[#06402B] hover:text-[#002819] transition-colors"
+                  className="flex items-center justify-center gap-2 text-sm font-semibold text-brand-secondary hover:text-brand-primary transition-colors"
                 >
                   <MaterialSymbol icon="people" size={18} />
                   {t('roles.viewUsers') || 'View Users'}

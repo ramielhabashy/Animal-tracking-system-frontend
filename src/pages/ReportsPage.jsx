@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
+import { exportData } from '../utils/export';
 import { useI18n } from '../i18n';
 
 function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey }) {
@@ -13,7 +14,7 @@ function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey })
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
           <div className="w-full flex flex-col items-center justify-end" style={{ height: '100%' }}>
-            <span className="text-[10px] font-bold text-[#002819] mb-1">{d.value}</span>
+            <span className="text-[10px] font-bold text-brand-primary mb-1">{d.value}</span>
             <div
               className="w-full rounded-t-lg transition-all duration-500 hover:opacity-80"
               style={{
@@ -22,7 +23,7 @@ function BarChart({ data, height = 200, color = '#002819', maxValue, labelKey })
                 maxWidth: barWidth,
               }}
             />
-            <span className="text-[9px] text-[#717973] mt-2 truncate w-full text-center font-medium">
+            <span className="text-[9px] text-on-surface-subtle mt-2 truncate w-full text-center font-medium">
               {d.label}
             </span>
           </div>
@@ -60,15 +61,15 @@ function DonutChart({ segments, total, size = 160 }) {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black text-[#002819]">{total}</span>
-        <span className="text-[9px] uppercase font-bold text-[#717973] tracking-widest">points</span>
+        <span className="text-2xl font-black text-brand-primary">{total}</span>
+        <span className="text-[9px] uppercase font-bold text-on-surface-subtle tracking-widest">points</span>
       </div>
     </div>
   );
 }
 
 function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' }) {
-  if (!data || data.length === 0) return <div className="text-center py-12 text-[#717973] text-sm">No data</div>;
+  if (!data || data.length === 0) return <div className="text-center py-12 text-on-surface-subtle text-sm">No data</div>;
 
   const values = data.map(d => d[valueKey] || 0);
   const max = Math.max(...values, 1);
@@ -98,7 +99,7 @@ function TrendChart({ data, height = 200, valueKey = 'value', color = '#002819' 
           <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="white" strokeWidth="1.5" />
         ))}
       </svg>
-      <div className="absolute -bottom-6 w-full flex justify-between text-[10px] text-[#717973] font-bold uppercase tracking-widest px-1">
+      <div className="absolute -bottom-6 w-full flex justify-between text-[10px] text-on-surface-subtle font-bold uppercase tracking-widest px-1">
         {data.filter((_, i) => i === 0 || i === Math.floor(data.length / 2) || i === data.length - 1).map((d, i) => (
           <span key={i}>{d.label}</span>
         ))}
@@ -123,16 +124,60 @@ export default function ReportsPage() {
   const [activityDistribution, setActivityDistribution] = useState({ grazing: 0, moving: 0, resting: 0, total_points: 0 });
   const [distanceByGroup, setDistanceByGroup] = useState([]);
   const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [groupFilter, setGroupFilter] = useState('all');
+  const [animalIdFilter, setAnimalIdFilter] = useState('all');
+  const [groups, setGroups] = useState([]);
+  const [animals, setAnimals] = useState([]);
 
   useEffect(() => {
     fetchData();
+    apiFetch('/api/animal-groups').then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        setGroups(data.data || []);
+      }
+    });
+    apiFetch('/api/animals').then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        setAnimals(data.data || []);
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [groupFilter, animalIdFilter]);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (groupFilter !== 'all') params.append('group_id', groupFilter);
+      if (animalIdFilter !== 'all') params.append('animal_id', animalIdFilter);
+      const ok = await exportData(`/api/reports/export?${params.toString()}`, `report-${new Date().toISOString().split('T')[0]}.csv`);
+      if (!ok) setError('Export failed');
+    } catch (err) {
+      setError(err.message || 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiFetch('/api/reports');
+      const params = new URLSearchParams();
+      if (groupFilter !== 'all') params.append('group_id', groupFilter);
+      if (animalIdFilter !== 'all') params.append('animal_id', animalIdFilter);
+      const queryString = params.toString();
+      const response = await apiFetch(`/api/reports${queryString ? '?' + queryString : ''}`);
       if (response.ok) {
         const data = await response.json();
         setStats({
@@ -168,7 +213,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin w-10 h-10 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -185,20 +230,46 @@ export default function ReportsPage() {
 
       <div className={`flex flex-col md:flex-row md:items-end justify-between gap-6 ${isRtl ? 'text-right' : ''}`}>
         <div className="space-y-1">
-          <h2 className="text-3xl font-black text-[#002819] tracking-tight font-['Manrope']">
+          <h2 className="text-3xl font-black text-brand-primary tracking-tight font-['Manrope']">
             {t('reportsPage.fleetReports')}
           </h2>
           <p className="text-[#4f6357] font-medium">{t('reportsPage.herdDescription')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-white px-4 py-2 rounded-xl border border-stone-100 shadow-sm">
-            <MaterialSymbol icon="pets" className="text-[#717973] mr-2 text-xl" />
-            <span className="text-sm font-bold text-[#002819]">{stats.totalAnimals} {t('reportsPage.animals')}</span>
+            <MaterialSymbol icon="pets" className="text-on-surface-subtle mr-2 text-xl" />
+            <span className="text-sm font-bold text-brand-primary">{stats.totalAnimals} {t('reportsPage.animals')}</span>
           </div>
-          <button className="bg-gradient-to-b from-[#e9c349] to-[#cba72f] text-[#241a00] px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-shadow">
-            <MaterialSymbol icon="ios_share" />
-            {t('reports.export')}
+          <button onClick={handleExport} disabled={exporting} className="bg-gradient-to-b from-[#e9c349] to-[#cba72f] text-[#241a00] px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-shadow disabled:opacity-50">
+            <MaterialSymbol icon={exporting ? 'sync' : 'ios_share'} />
+            {exporting ? t('common.exporting') : t('reports.export')}
           </button>
+        </div>
+      </div>
+
+      <div className={`flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-stone-100 shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.from')}</label>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 text-brand-primary focus:outline-none focus:ring-2 focus:ring-[#002819]/20" />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.to')}</label>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 text-brand-primary focus:outline-none focus:ring-2 focus:ring-[#002819]/20" />
+        </div>
+        <div className="w-px h-6 bg-stone-200" />
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.group')}</label>
+          <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 text-brand-primary focus:outline-none focus:ring-2 focus:ring-[#002819]/20 bg-white">
+            <option value="all">{t('reportsPage.allGroups')}</option>
+            {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.animalLabel')}</label>
+          <select value={animalIdFilter} onChange={e => setAnimalIdFilter(e.target.value)} className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 text-brand-primary focus:outline-none focus:ring-2 focus:ring-[#002819]/20 bg-white">
+            <option value="all">{t('reportsPage.allAnimals')}</option>
+            {animals.map(a => <option key={a.id} value={a.id}>{a.name ? `${a.name} (${a.animal_id})` : a.animal_id}</option>)}
+          </select>
         </div>
       </div>
 
@@ -207,8 +278,8 @@ export default function ReportsPage() {
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`pb-4 px-2 border-b-2 font-bold text-sm transition-colors ${
               activeTab === tab
-                ? 'border-[#002819] text-[#002819]'
-                : 'border-transparent text-[#717973] hover:text-stone-600'
+                ? 'border-brand-primary text-brand-primary'
+                : 'border-transparent text-on-surface-subtle hover:text-stone-600'
             }`}
           >
             {t(`reportsPage.${tab === 'activity' ? 'activity' : tab === 'temperature' ? 'temp' : 'healthTrends'}`)}
@@ -218,23 +289,23 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-stone-100 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-[#002819]">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-brand-primary">
             <MaterialSymbol icon="directions_walk" />
           </div>
           <div>
             <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.avgMovement')}</p>
-            <h4 className="text-2xl font-black text-[#002819]">
+            <h4 className="text-2xl font-black text-brand-primary">
               {stats.avgMovement} <span className="text-sm font-normal text-stone-400">{t('reportsPage.km')}</span>
             </h4>
           </div>
         </div>
         <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-stone-100 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-[#002819]">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-brand-primary">
             <MaterialSymbol icon="thermostat" />
           </div>
           <div>
             <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.avgTemp')}</p>
-            <h4 className="text-2xl font-black text-[#002819]">
+            <h4 className="text-2xl font-black text-brand-primary">
               {stats.avgTemp} <span className="text-sm font-normal text-stone-400">{t('reportsPage.celsius')}</span>
             </h4>
           </div>
@@ -249,12 +320,12 @@ export default function ReportsPage() {
           </div>
         </div>
         <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-stone-100 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-[#002819]">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-brand-primary">
             <MaterialSymbol icon="bolt" />
           </div>
           <div>
             <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.connectivity')}</p>
-            <h4 className="text-2xl font-black text-[#002819]">{stats.connectivity}%</h4>
+            <h4 className="text-2xl font-black text-brand-primary">{stats.connectivity}%</h4>
           </div>
         </div>
       </div>
@@ -264,7 +335,7 @@ export default function ReportsPage() {
           <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h3 className="text-xl font-bold text-[#002819] font-['Manrope']">{t('reportsPage.activityTrend')}</h3>
+                <h3 className="text-xl font-bold text-brand-primary font-['Manrope']">{t('reportsPage.activityTrend')}</h3>
                 <p className="text-sm text-stone-500">{t('reportsPage.dailyDistance')}</p>
               </div>
             </div>
@@ -279,20 +350,20 @@ export default function ReportsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-              <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.distanceByGroup')}</h3>
+              <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.distanceByGroup')}</h3>
               {distanceByGroup.length === 0 ? (
-                <div className="text-center py-8 text-[#717973] text-sm">{t('reportsPage.noGroupData')}</div>
+                <div className="text-center py-8 text-on-surface-subtle text-sm">{t('reportsPage.noGroupData')}</div>
               ) : (
                 <div className="space-y-5">
                   {distanceByGroup.map((group, i) => (
                     <div key={i} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="font-bold text-stone-700">{group.name}</span>
-                        <span className="font-bold text-[#002819]">{group.distance} km</span>
+                        <span className="font-bold text-brand-primary">{group.distance} km</span>
                       </div>
                       <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#002819] rounded-full transition-all duration-700"
+                          className="h-full bg-brand-primary rounded-full transition-all duration-700"
                           style={{ width: `${group.percentage}%` }}
                         />
                       </div>
@@ -303,9 +374,9 @@ export default function ReportsPage() {
             </div>
 
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-              <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.activityDistribution')}</h3>
+              <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.activityDistribution')}</h3>
               {activityDistribution.total_points === 0 ? (
-                <div className="text-center py-8 text-[#717973] text-sm">{t('reportsPage.noActivityData')}</div>
+                <div className="text-center py-8 text-on-surface-subtle text-sm">{t('reportsPage.noActivityData')}</div>
               ) : (
                 <div className="flex items-center gap-8 md:gap-12">
                   <DonutChart
@@ -327,7 +398,7 @@ export default function ReportsPage() {
                           <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="text-sm font-semibold text-stone-600">{item.label}</span>
                         </div>
-                        <span className="text-sm font-bold text-[#002819]">{item.value}%</span>
+                        <span className="text-sm font-bold text-brand-primary">{item.value}%</span>
                       </div>
                     ))}
                   </div>
@@ -338,7 +409,7 @@ export default function ReportsPage() {
 
           {speciesDistribution.length > 0 && (
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-              <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.speciesBreed')}</h3>
+              <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.speciesBreed')}</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
                   <h4 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-4">{t('reportsPage.bySpecies')}</h4>
@@ -347,9 +418,9 @@ export default function ReportsPage() {
                       <div key={i} className="flex items-center gap-3">
                         <span className="w-24 text-sm font-semibold text-stone-700 capitalize">{s.species}</span>
                         <div className="flex-1 h-3 bg-stone-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#002819] rounded-full transition-all duration-700" style={{ width: `${s.percentage}%` }} />
+                          <div className="h-full bg-brand-primary rounded-full transition-all duration-700" style={{ width: `${s.percentage}%` }} />
                         </div>
-                        <span className="text-xs font-bold text-[#002819] w-12 text-right">{s.count}</span>
+                        <span className="text-xs font-bold text-brand-primary w-12 text-right">{s.count}</span>
                       </div>
                     ))}
                   </div>
@@ -361,9 +432,9 @@ export default function ReportsPage() {
                       <div key={i} className="flex items-center gap-3">
                         <span className="w-24 text-sm font-semibold text-stone-700 truncate">{b.breed}</span>
                         <div className="flex-1 h-3 bg-stone-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#D4AF37] rounded-full transition-all duration-700" style={{ width: `${b.percentage}%` }} />
+                          <div className="h-full bg-brand-accent rounded-full transition-all duration-700" style={{ width: `${b.percentage}%` }} />
                         </div>
-                        <span className="text-xs font-bold text-[#002819] w-12 text-right">{b.count}</span>
+                        <span className="text-xs font-bold text-brand-primary w-12 text-right">{b.count}</span>
                       </div>
                     ))}
                   </div>
@@ -377,7 +448,7 @@ export default function ReportsPage() {
       {activeTab === 'temperature' && (
         <>
           <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-            <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.tempTrend')}</h3>
+            <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.tempTrend')}</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
                 <div className="flex items-center gap-4 mb-6">
@@ -386,11 +457,11 @@ export default function ReportsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('reportsPage.currentAvg')}</p>
-                    <p className="text-4xl font-black text-[#002819]">
+                    <p className="text-4xl font-black text-brand-primary">
                       {temperatureTrend?.avg_temp || stats.avgTemp}
                       <span className="text-lg font-normal text-stone-400">°C</span>
                     </p>
-                    <p className="text-xs text-[#717973] mt-0.5">{t('reportsPage.baselineTemp')}</p>
+                    <p className="text-xs text-on-surface-subtle mt-0.5">{t('reportsPage.baselineTemp')}</p>
                   </div>
                 </div>
                 <p className="text-sm text-stone-500 mb-4">{t('reportsPage.tempDesc')}</p>
@@ -401,7 +472,7 @@ export default function ReportsPage() {
                     <div key={i} className="space-y-1.5">
                       <div className="flex justify-between text-sm">
                         <span className="font-semibold text-stone-700">{r.label}</span>
-                        <span className="font-bold text-[#002819]">{r.count}</span>
+                        <span className="font-bold text-brand-primary">{r.count}</span>
                       </div>
                       <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(2, (r.count / Math.max(stats.totalAnimals, 1)) * 100)}%`, backgroundColor: r.color }} />
@@ -419,30 +490,30 @@ export default function ReportsPage() {
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <MaterialSymbol icon="thermostat" className="text-emerald-600" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.currentAvg')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.currentAvg')}</span>
               </div>
-              <p className="text-3xl font-black text-[#002819]">{temperatureTrend?.avg_temp || stats.avgTemp}°C</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.baselineTemp')}</p>
+              <p className="text-3xl font-black text-brand-primary">{temperatureTrend?.avg_temp || stats.avgTemp}°C</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.baselineTemp')}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                   <MaterialSymbol icon="warning" className="text-red-500" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.criticalAlerts')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.criticalAlerts')}</span>
               </div>
               <p className="text-3xl font-black text-red-500">{temperatureTrend?.critical_count || healthMetrics?.critical_temp_count || 0}</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.animalsAboveThreshold')}</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.animalsAboveThreshold')}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                   <MaterialSymbol icon="devices" className="text-blue-500" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.connectivity')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.connectivity')}</span>
               </div>
-              <p className="text-3xl font-black text-[#002819]">{stats.connectivity}%</p>
-              <p className="text-xs text-[#717973] mt-1">{stats.totalDevices} {t('reportsPage.totalDevices')}</p>
+              <p className="text-3xl font-black text-brand-primary">{stats.connectivity}%</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{stats.totalDevices} {t('reportsPage.totalDevices')}</p>
             </div>
           </div>
         </>
@@ -456,45 +527,45 @@ export default function ReportsPage() {
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                   <MaterialSymbol icon="medical_services" className="text-blue-600" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.records30d')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.records30d')}</span>
               </div>
-              <p className="text-3xl font-black text-[#002819]">{healthMetrics?.total_records || 0}</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.totalMedicalRecords')}</p>
+              <p className="text-3xl font-black text-brand-primary">{healthMetrics?.total_records || 0}</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.totalMedicalRecords')}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                   <MaterialSymbol icon="syringe" className="text-green-600" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.vaccinations')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.vaccinations')}</span>
               </div>
               <p className="text-3xl font-black text-green-600">{healthMetrics?.vaccinations || 0}</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.last30d')}</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.last30d')}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
                   <MaterialSymbol icon="stethoscope" className="text-amber-600" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.checkups')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.checkups')}</span>
               </div>
               <p className="text-3xl font-black text-amber-600">{healthMetrics?.checkups || 0}</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.last30d')}</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.last30d')}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                   <MaterialSymbol icon="healing" className="text-red-600" size={20} />
                 </div>
-                <span className="font-bold text-[#002819]">{t('reportsPage.treatments')}</span>
+                <span className="font-bold text-brand-primary">{t('reportsPage.treatments')}</span>
               </div>
               <p className="text-3xl font-black text-red-600">{healthMetrics?.treatments || 0}</p>
-              <p className="text-xs text-[#717973] mt-1">{t('reportsPage.last30d')}</p>
+              <p className="text-xs text-on-surface-subtle mt-1">{t('reportsPage.last30d')}</p>
             </div>
           </div>
 
           <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-            <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.healthCoverage')}</h3>
+            <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.healthCoverage')}</h3>
             <div className="flex items-center gap-8 md:gap-16">
               <div className="relative">
                 <svg className="w-40 h-40 -rotate-90" viewBox="0 0 36 36">
@@ -504,20 +575,20 @@ export default function ReportsPage() {
                     strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-700" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-[#002819]">{healthMetrics?.coverage_percentage || 0}%</span>
-                  <span className="text-[9px] uppercase font-bold text-[#717973] tracking-widest">{t('reportsPage.coverage')}</span>
+                  <span className="text-2xl font-black text-brand-primary">{healthMetrics?.coverage_percentage || 0}%</span>
+                  <span className="text-[9px] uppercase font-bold text-on-surface-subtle tracking-widest">{t('reportsPage.coverage')}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#002819]"></span>
+                  <span className="w-3 h-3 rounded-full bg-brand-primary"></span>
                   <span className="text-sm text-stone-600">{t('reportsPage.animalsWithRecords')}</span>
-                  <span className="text-sm font-bold text-[#002819] ml-auto">{healthMetrics?.animals_with_records || 0}</span>
+                  <span className="text-sm font-bold text-brand-primary ml-auto">{healthMetrics?.animals_with_records || 0}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#eeeee9]"></span>
+                  <span className="w-3 h-3 rounded-full bg-surface-dim"></span>
                   <span className="text-sm text-stone-600">{t('reportsPage.totalAnimals')}</span>
-                  <span className="text-sm font-bold text-[#002819] ml-auto">{stats.totalAnimals}</span>
+                  <span className="text-sm font-bold text-brand-primary ml-auto">{stats.totalAnimals}</span>
                 </div>
               </div>
             </div>
@@ -525,7 +596,7 @@ export default function ReportsPage() {
 
           {breedDistribution.length > 0 && (
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
-              <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">{t('reportsPage.breedDistribution')}</h3>
+              <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">{t('reportsPage.breedDistribution')}</h3>
               <BarChart
                 data={breedDistribution.map(b => ({ label: b.breed, value: b.count, color: '#D4AF37' }))}
                 color="#D4AF37"

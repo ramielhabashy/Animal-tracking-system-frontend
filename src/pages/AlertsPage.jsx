@@ -4,47 +4,85 @@ import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
 
 export default function AlertsPage() {
   const { t, dir } = useI18n();
+  const { user } = useAuth();
   const isRtl = dir === 'rtl';
+  const role = user?.role;
+
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('list');
+
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [groupFilter, setGroupFilter] = useState('all');
+  const [animalIdFilter, setAnimalIdFilter] = useState('all');
+  const [animalNameFilter, setAnimalNameFilter] = useState('');
+
+  const [owners, setOwners] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [animals, setAnimals] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [unresolvedCount, setUnresolvedCount] = useState(0);
   const [error, setError] = useState(null);
 
+  const isAdmin = role === 'Admin';
+  const isOwner = role === 'Owner';
+  const isManager = role === 'Manager';
+  const canViewOwnerFilter = isAdmin;
+  const canViewGroupFilter = isAdmin || isOwner || isManager;
+
+  useEffect(() => {
+    if (canViewOwnerFilter) {
+      apiFetch('/api/users/owners/list').then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setOwners(data.data || data.owners || []);
+        }
+      });
+    }
+    apiFetch('/api/animal-groups').then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        setGroups(data.data || []);
+      }
+    });
+    apiFetch('/api/animals').then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        setAnimals(data.data || []);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     fetchAlerts();
-  }, [currentPage, perPage, typeFilter, statusFilter]);
+  }, [currentPage, perPage, typeFilter, statusFilter, severityFilter, ownerFilter, groupFilter, animalIdFilter, animalNameFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter, severityFilter, ownerFilter, groupFilter, animalIdFilter, animalNameFilter]);
 
   const buildParams = () => {
-    const params = new URLSearchParams({
-      per_page: perPage,
-      page: currentPage,
-    });
-    if (typeFilter !== 'all') {
-      if (typeFilter === 'geofence') {
-        params.append('type', 'entry,exit');
-      } else {
-        params.append('type', typeFilter);
-      }
-    }
-    if (statusFilter === 'unresolved') {
-      params.append('is_acknowledged', '0');
-    } else if (statusFilter === 'resolved') {
-      params.append('is_acknowledged', '1');
-    }
+    const params = new URLSearchParams({ per_page: perPage, page: currentPage });
+    if (typeFilter === 'geofence') params.append('type', 'entry,exit');
+    else if (typeFilter === 'temperature') params.append('type', 'temperature');
+    if (statusFilter === 'unresolved') params.append('is_acknowledged', '0');
+    else if (statusFilter === 'resolved') params.append('is_acknowledged', '1');
+    if (severityFilter !== 'all') params.append('severity', severityFilter);
+    if (canViewOwnerFilter && ownerFilter !== 'all') params.append('owner_id', ownerFilter);
+    if (canViewGroupFilter && groupFilter !== 'all') params.append('group_id', groupFilter);
+    if (animalIdFilter !== 'all') params.append('animal_id', animalIdFilter);
+    if (animalNameFilter) params.append('animal_name', animalNameFilter);
     return params;
   };
 
@@ -52,21 +90,15 @@ export default function AlertsPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = buildParams();
-      const response = await apiFetch(`/api/geofence-alerts?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        const alertsArray = data.data || [];
-        setAlerts(alertsArray);
+      const res = await apiFetch(`/api/geofence-alerts?${buildParams()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.data || []);
         setTotalAlerts(data.total || 0);
-        setUnresolvedCount(data.unresolved_count ?? alertsArray.filter(a => !a.is_acknowledged).length);
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        setError(errData.message || 'Failed to fetch alerts');
+        setUnresolvedCount(data.unresolved_count || 0);
       }
-    } catch (error) {
-      console.error('Failed to fetch alerts:', error);
-      setError(error.message || 'Failed to fetch alerts');
+    } catch (err) {
+      setError(err.message || 'Failed to fetch alerts');
     } finally {
       setLoading(false);
     }
@@ -76,17 +108,14 @@ export default function AlertsPage() {
     try {
       const response = await apiFetch(`/api/geofence-alerts/${alertId}/acknowledge`, { method: 'PATCH' });
       if (response.ok) {
-        setAlerts(alerts.map(a => 
-          a.id === alertId ? { ...a, is_acknowledged: true } : a
-        ));
+        setAlerts(alerts.map(a => a.id === alertId ? { ...a, is_acknowledged: true } : a));
         setUnresolvedCount(prev => Math.max(0, prev - 1));
       } else {
         const errData = await response.json().catch(() => ({}));
         setError(errData.message || 'Failed to acknowledge alert');
       }
-    } catch (error) {
-      console.error('Failed to acknowledge alert:', error);
-      setError(error.message || 'Failed to acknowledge alert');
+    } catch (err) {
+      setError(err.message || 'Failed to acknowledge alert');
     }
   };
 
@@ -100,9 +129,8 @@ export default function AlertsPage() {
         const errData = await response.json().catch(() => ({}));
         setError(errData.message || 'Failed to delete alert');
       }
-    } catch (error) {
-      console.error('Failed to delete alert:', error);
-      setError(error.message || 'Failed to delete alert');
+    } catch (err) {
+      setError(err.message || 'Failed to delete alert');
     }
   };
 
@@ -111,31 +139,14 @@ export default function AlertsPage() {
     try {
       const response = await apiFetch('/api/geofence-alerts/deactivate-all', { method: 'POST' });
       if (response.ok) {
-        const data = await response.json();
         setAlerts(alerts.map(a => ({ ...a, is_acknowledged: true })));
         setUnresolvedCount(0);
       } else {
         const errData = await response.json().catch(() => ({}));
         setError(errData.message || 'Failed to deactivate alerts');
       }
-    } catch (error) {
-      console.error('Failed to deactivate alerts:', error);
-      setError(error.message || 'Failed to deactivate alerts');
-    }
-  };
-
-  const sendNotification = async (alertId) => {
-    try {
-      const response = await apiFetch(`/api/geofence-alerts/${alertId}/send-notification`, { method: 'POST' });
-      if (response.ok) {
-        alert(t('alertsPage.notificationSuccess'));
-      } else {
-        const data = await response.json().catch(() => ({}));
-        setError(data.message || t('alertsPage.notificationFailed'));
-      }
-    } catch (error) {
-      console.error('Failed to send notification:', error);
-      setError(error.message || 'Failed to send notification');
+    } catch (err) {
+      setError(err.message || 'Failed to deactivate alerts');
     }
   };
 
@@ -158,21 +169,81 @@ export default function AlertsPage() {
     }
   };
 
-  const getAlertColors = (type, isAcknowledged) => getAlertColor(type);
-
-  const getAlertSeverity = (type) => {
-    if (type === 'exit') return { label: t('alerts.critical'), color: 'text-red-600', bg: 'bg-red-50' };
-    if (type === 'temperature') return { label: t('alertsPage.warning'), color: 'text-amber-600', bg: 'bg-amber-50' };
-    return { label: t('alertsPage.routine'), color: 'text-stone-600', bg: 'bg-stone-50' };
-  };
-
-  const getSeverity = (alert) => {
-    if (alert.type === 'exit') return { label: t('alerts.critical'), color: 'text-red-600', bg: 'bg-red-50' };
-    if (alert.type === 'temperature') return { label: t('alertsPage.warning'), color: 'text-amber-600', bg: 'bg-amber-50' };
-    return { label: t('alertsPage.routine'), color: 'text-stone-600', bg: 'bg-stone-50' };
+  const getSeverityInfo = (type, severity) => {
+    if (type === 'exit' || severity === 'critical') return { label: t('alerts.critical'), color: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500' };
+    if (type === 'temperature' || severity === 'warning') return { label: t('alertsPage.warning'), color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-500' };
+    return { label: t('alertsPage.routine'), color: 'text-stone-600', bg: 'bg-stone-50', dot: 'bg-stone-500' };
   };
 
   const totalPages = Math.ceil(totalAlerts / perPage);
+
+  const renderAlertCard = (alert) => {
+    const colors = getAlertColor(alert.type);
+    const severity = getSeverityInfo(alert.type, alert.severity);
+    return (
+      <div key={alert.id} className="card p-4 space-y-3">
+        <div className={`flex items-start gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center ${colors.icon} flex-shrink-0`}>
+            <MaterialSymbol icon={getAlertIcon(alert.type)} />
+          </div>
+          <div className={`flex-1 min-w-0 ${isRtl ? 'text-right' : ''}`}>
+            <p className="text-sm font-bold text-brand-primary truncate">
+              {alert.type === 'entry' ? t('alerts.geofenceEntry') :
+               alert.type === 'exit' ? t('alerts.geofenceExit') :
+               alert.type === 'temperature' ? t('alerts.temperature') :
+               alert.type === 'offline' ? t('alerts.deviceOffline') :
+               t(`alerts.${alert.type}`)}
+            </p>
+            <p className="text-[10px] text-on-surface-subtle">{alert.geofence?.name || t('alertsPage.unknownZone')}</p>
+          </div>
+          <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md flex-shrink-0 ${
+            alert.is_acknowledged ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-red-100 text-red-700'
+          }`}>
+            {alert.is_acknowledged ? t('alertsPage.resolved') : t('alertsPage.unresolved')}
+          </span>
+        </div>
+        <div className={`flex items-center gap-4 text-xs text-on-surface-variant ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {alert.animal ? (
+            <Link to={`/animals/${alert.animal.id}`} className="font-bold text-brand-primary hover:underline">
+              {alert.animal.animal_id}
+            </Link>
+          ) : <span className="text-on-surface-subtle">-</span>}
+          <span className="text-[10px] text-on-surface-subtle">{(alert.animal_name || alert.animal?.name) && `(${alert.animal_name || alert.animal?.name})`}</span>
+          <span className={`w-2 h-2 rounded-full ${severity.dot} ${!alert.is_acknowledged && alert.type === 'exit' ? 'animate-pulse' : ''}`} />
+          <span className={`font-bold uppercase ${severity.color}`}>{severity.label}</span>
+          {alert.latitude && <span className="font-mono text-on-surface-subtle">{parseFloat(alert.latitude).toFixed(4)}, {parseFloat(alert.longitude).toFixed(4)}</span>}
+        </div>
+        <div className={`flex items-center gap-2 pt-2 border-t border-[#eeeee9] ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {!alert.is_acknowledged && (
+            <button onClick={() => acknowledgeAlert(alert.id)} className="bg-brand-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-secondary transition-colors">
+              <MaterialSymbol icon="check" size={12} className="inline mr-1" />
+              {t('alertsPage.resolve')}
+            </button>
+          )}
+          <Link to="/map" className="border border-outline text-on-surface-variant text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-surface-dim transition-colors">
+            <MaterialSymbol icon="map" size={12} className="inline mr-1" />
+            {t('common.view')}
+          </Link>
+          <button onClick={() => deleteAlert(alert.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors ml-auto" title="Delete alert">
+            <MaterialSymbol icon="delete" size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFilterSelect = (label, value, onChange, options) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="bg-white border border-[#e0e0e0] rounded-lg px-3 py-2 text-xs font-medium text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-brand-secondary/20"
+    >
+      <option value="all">{label}</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  );
 
   return (
     <div className="space-y-8">
@@ -186,351 +257,236 @@ export default function AlertsPage() {
         </div>
       )}
 
-      {/* Header Section */}
-      <div className={`flex justify-between items-end ${isRtl ? 'flex-row-reverse' : ''}`}>
+      {/* Header */}
+      <div className={`flex flex-wrap justify-between items-end gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className={isRtl ? 'text-right' : ''}>
-          <h2 className="text-3xl font-black text-[#002819] tracking-tight font-['Manrope']">
-            {t('alertsPage.title')}
-          </h2>
-          <p className={`text-[#404943] mt-1 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <span className="inline-flex items-center justify-center bg-[#D4AF37]/20 text-[#735c00] px-2 py-0.5 rounded-full text-xs font-bold">
+          <h2 className="text-3xl font-black text-brand-primary tracking-tight font-['Manrope']">{t('alertsPage.title')}</h2>
+          <p className={`text-on-surface-variant mt-1 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <span className="inline-flex items-center justify-center bg-brand-accent/20 text-tertiary-container px-2 py-0.5 rounded-full text-xs font-bold">
               {totalAlerts} {t('alertsPage.totalAlerts')}
             </span>
-            {t('alertsPage.sendNotifications')}
+            {unresolvedCount > 0 && (
+              <span className="inline-flex items-center justify-center bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                {unresolvedCount} {t('alertsPage.unresolved')}
+              </span>
+            )}
           </p>
         </div>
-        <div className={`flex gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          {unresolvedCount > 0 && (
-            <button 
-              onClick={deactivateAllAlerts}
-              className="bg-amber-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-amber-600 transition-colors"
-            >
+        <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {/* View Toggle */}
+          <div className="flex bg-gray-100 rounded-xl p-0.5">
+            <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg text-sm transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`} title={t('common.list')}>
+              <MaterialSymbol icon="table_rows" size={18} />
+            </button>
+            <button onClick={() => setViewMode('tiles')} className={`p-2 rounded-lg text-sm transition-all ${viewMode === 'tiles' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`} title={t('dashboard.regionalView')}>
+              <MaterialSymbol icon="grid_view" size={18} />
+            </button>
+          </div>
+          {unresolvedCount > 0 ? (
+            <button onClick={deactivateAllAlerts} className="bg-amber-500 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-amber-600 transition-colors text-sm">
               <MaterialSymbol icon="notifications_off" size={18} />
               {t('alertsPage.deactivateAll', { count: unresolvedCount })}
             </button>
-          )}
-          {unresolvedCount === 0 && (
-            <button 
-              className="bg-amber-500/50 text-white/70 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed"
-              disabled
-            >
+          ) : (
+            <button className="bg-amber-500/50 text-white/70 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed text-sm" disabled>
               <MaterialSymbol icon="notifications_off" size={18} />
               {t('alertsPage.deactivateAll', { count: 0 })}
             </button>
           )}
-          <button className="bg-[#002819] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-[#06402b] transition-colors">
+          <button className="bg-brand-primary text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-brand-secondary transition-colors text-sm">
             <MaterialSymbol icon="file_download" size={18} />
             {t('alertsPage.exportReport')}
           </button>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#002819]/5">
-          <div className={`flex items-center gap-3 mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-              <MaterialSymbol icon="notifications_active" className="text-blue-600" size={20} />
-            </div>
-            <span className="font-bold text-[#002819]">{t('alertsPage.notify')}</span>
-          </div>
-          <p className={`text-xs text-[#404943] ${isRtl ? 'text-right' : ''}`}>{t('alertsPage.notifyDesc')}</p>
+      {/* Filter Bar */}
+      <div className={`bg-surface-light p-3 rounded-2xl flex flex-wrap items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+        {/* Type */}
+        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('alertsPage.alertType')}</span>
+          {['all', 'geofence', 'temperature'].map((type) => (
+            <button key={type} onClick={() => setTypeFilter(type)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${typeFilter === type ? 'bg-brand-primary text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              {type === 'all' ? t('common.all') : t(`alertsPage.${type}`)}
+            </button>
+          ))}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#002819]/5">
-          <div className={`flex items-center gap-3 mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-              <MaterialSymbol icon="check_circle" className="text-green-600" size={20} />
-            </div>
-            <span className="font-bold text-[#002819]">{t('alertsPage.resolve')}</span>
-          </div>
-          <p className={`text-xs text-[#404943] ${isRtl ? 'text-right' : ''}`}>{t('alertsPage.resolveDesc')}</p>
+        {/* Status */}
+        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('common.status')}</span>
+          {['all', 'unresolved', 'resolved'].map((s) => (
+            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${statusFilter === s ? 'bg-[#cfe5d6] text-brand-primary' : 'text-stone-600 hover:bg-stone-100'}`}>
+              {s === 'all' ? t('common.all') : t(`alertsPage.${s}`)}
+            </button>
+          ))}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#002819]/5">
-          <div className={`flex items-center gap-3 mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-              <MaterialSymbol icon="notifications_off" className="text-amber-600" size={20} />
-            </div>
-            <span className="font-bold text-[#002819]">{t('alertsPage.deactivateAllDesc')}</span>
-          </div>
-          <p className={`text-xs text-[#404943] ${isRtl ? 'text-right' : ''}`}>{t('alertsPage.deactivateAllDescText')}</p>
+        {/* Severity */}
+        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('alertsPage.severity')}</span>
+          {['all', 'critical', 'warning', 'routine'].map((sev) => (
+            <button key={sev} onClick={() => setSeverityFilter(sev)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${severityFilter === sev ? 'bg-brand-primary text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              {sev === 'all' ? t('common.all') : sev.charAt(0).toUpperCase() + sev.slice(1)}
+            </button>
+          ))}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#002819]/5">
-          <div className={`flex items-center gap-3 mb-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-              <MaterialSymbol icon="delete" className="text-red-600" size={20} />
-            </div>
-            <span className="font-bold text-[#002819]">{t('common.delete')}</span>
+        {/* Owner Filter (Admin only) */}
+        {canViewOwnerFilter && (
+          <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('animals.owner')}</span>
+            <select value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)} className="bg-transparent border-none text-xs font-semibold text-stone-600 px-2 py-1 focus:outline-none cursor-pointer">
+              <option value="all">{t('common.all')}</option>
+              {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
           </div>
-          <p className={`text-xs text-[#404943] ${isRtl ? 'text-right' : ''}`}>{t('alertsPage.deleteDesc')}</p>
+        )}
+        {/* Group Filter (Admin, Owner, Manager) */}
+        {canViewGroupFilter && (
+          <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('dashboard.groups')}</span>
+            <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className="bg-transparent border-none text-xs font-semibold text-stone-600 px-2 py-1 focus:outline-none cursor-pointer">
+              <option value="all">{t('common.all')}</option>
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+          </div>
+        )}
+        {/* Animal Filter */}
+        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] font-bold text-stone-400 px-2 uppercase">{t('alertsPage.animalId')}</span>
+          <select value={animalIdFilter} onChange={(e) => setAnimalIdFilter(e.target.value)} className="bg-transparent border-none text-xs font-semibold text-stone-600 px-2 py-1 focus:outline-none cursor-pointer max-w-[120px]">
+            <option value="all">{t('common.all')}</option>
+            {animals.map((a) => <option key={a.id} value={a.id}>{a.animal_id}{a.name ? ` - ${a.name}` : ''}</option>)}
+          </select>
+        </div>
+        {/* Animal Name Search */}
+        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+          <MaterialSymbol icon="search" size={16} className="text-stone-400 ml-1" />
+          <input
+            type="text"
+            value={animalNameFilter}
+            onChange={(e) => setAnimalNameFilter(e.target.value)}
+            placeholder={t('alertsPage.animalName')}
+            className="bg-transparent border-none text-xs font-semibold text-stone-600 px-2 py-1 focus:outline-none w-[130px] placeholder:text-stone-400"
+          />
+        </div>
+        <div className={`${isRtl ? 'mr-auto ml-0' : 'ml-auto'} text-[10px] text-stone-400 font-medium`}>
+          {t('alertsPage.sortedNewest')}
         </div>
       </div>
 
-      {/* Bento Filter Bar */}
-      <div className={`bg-[#f4f4ef] p-2 rounded-2xl flex flex-wrap items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <span className="text-xs font-bold text-stone-400 px-3 uppercase tracking-tighter">{t('alertsPage.alertType')}</span>
-          <button 
-            onClick={() => setTypeFilter('all')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${typeFilter === 'all' ? 'bg-[#002819] text-white shadow-md' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('common.all')}
-          </button>
-          <button 
-            onClick={() => setTypeFilter('geofence')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${typeFilter === 'geofence' ? 'bg-[#002819] text-white' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('alertsPage.geofence')}
-          </button>
-          <button 
-            onClick={() => setTypeFilter('temperature')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${typeFilter === 'temperature' ? 'bg-[#002819] text-white' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('alertsPage.temperature')}
-          </button>
-          <button 
-            onClick={() => setTypeFilter('offline')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${typeFilter === 'offline' ? 'bg-[#002819] text-white' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('alertsPage.offline')}
-          </button>
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
         </div>
-        <div className={`flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <span className="text-xs font-bold text-stone-400 px-3 uppercase tracking-tighter">{t('common.status')}</span>
-          <button 
-            onClick={() => setStatusFilter('all')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${statusFilter === 'all' ? 'bg-[#cfe5d6] text-[#002819]' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('common.all')}
-          </button>
-          <button 
-            onClick={() => setStatusFilter('unresolved')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${statusFilter === 'unresolved' ? 'bg-[#cfe5d6] text-[#002819]' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('alertsPage.unresolved')}
-          </button>
-          <button 
-            onClick={() => setStatusFilter('resolved')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${statusFilter === 'resolved' ? 'bg-[#cfe5d6] text-[#002819]' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            {t('alertsPage.resolved')}
-          </button>
+      ) : alerts.length === 0 ? (
+        <div className="bg-white rounded-3xl py-20 text-center text-on-surface-subtle">
+          <MaterialSymbol icon="notifications_off" size={48} className="mx-auto mb-4 opacity-50" />
+          <p>{t('common.noData')}</p>
         </div>
-        <div className={`${isRtl ? 'mr-auto ml-0' : 'ml-auto'} flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <button className="p-2 text-stone-400 hover:text-[#002819] transition-colors">
-            <MaterialSymbol icon="filter_list" />
-          </button>
-          <div className="w-[1px] h-6 bg-stone-300"></div>
-          <p className="text-xs font-medium text-stone-500">
-            {t('alertsPage.sortedNewest')}
-          </p>
-        </div>
-      </div>
-
-      {/* Alerts Table */}
-      <div className="bg-white rounded-3xl overflow-hidden shadow-sm">
-        <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
-          <thead className="bg-[#f4f4ef]/50 border-b border-[#eeeee9]">
-            <tr>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('alertsPage.alertType')}</th>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('alertsPage.animalId')}</th>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('alertsPage.location')}</th>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('alertsPage.timestamp')}</th>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('alertsPage.severity')}</th>
-              <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943]">{t('common.status')}</th>
-              <th className={`px-6 py-4 text-xs font-black uppercase tracking-widest text-[#404943] ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#eeeee9]/50">
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
-                    <div className={`flex items-center justify-center ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
-                    </div>
-                  </td>
-                </tr>
-              ) : alerts.length === 0 ? (
+      ) : viewMode === 'list' ? (
+        /* List View */
+        <div className="bg-white rounded-3xl overflow-hidden shadow-sm">
+          <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
+            <thead className="bg-surface-light/50 border-b border-[#eeeee9]">
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-[#717973]">
-                  <MaterialSymbol icon="notifications_off" size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>{t('common.noData')}</p>
-                </td>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.alertType')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.animalId')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.animalName')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.location')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.timestamp')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('alertsPage.severity')}</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant">{t('common.status')}</th>
+                <th className={`px-6 py-4 text-xs font-black uppercase tracking-widest text-on-surface-variant ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
               </tr>
-            ) : alerts.map((alert) => {
-              const colors = getAlertColors(alert.type, alert.is_acknowledged);
-              const severity = getAlertSeverity(alert.type);
-              return (
-                  <tr key={alert.id} className="group hover:bg-[#f4f4ef]/30 transition-colors">
+            </thead>
+            <tbody className="divide-y divide-[#eeeee9]/50">
+              {alerts.map((alert) => {
+                const colors = getAlertColor(alert.type);
+                const severity = getSeverityInfo(alert.type, alert.severity);
+                return (
+                  <tr key={alert.id} className="hover:bg-surface-light/30 transition-colors">
                     <td className="px-6 py-5">
                       <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center ${colors.icon}`}>
-                        <MaterialSymbol icon={getAlertIcon(alert.type)} />
+                          <MaterialSymbol icon={getAlertIcon(alert.type)} />
+                        </div>
+                        <div className={isRtl ? 'text-right' : ''}>
+                          <p className="text-sm font-bold text-brand-primary">
+                            {alert.type === 'entry' ? t('alerts.geofenceEntry') :
+                             alert.type === 'exit' ? t('alerts.geofenceExit') :
+                             alert.type === 'temperature' ? t('alerts.temperature') :
+                             alert.type === 'offline' ? t('alerts.deviceOffline') :
+                             t(`alerts.${alert.type}`)}
+                          </p>
+                          <p className="text-[10px] text-on-surface-subtle">{alert.geofence?.name || t('alertsPage.unknownZone')}</p>
+                        </div>
                       </div>
-                      <div className={isRtl ? 'text-right' : ''}>
-                        <p className="text-sm font-bold text-[#002819]">
-                          {alert.type === 'entry' ? t('alerts.geofenceEntry') : 
-                           alert.type === 'exit' ? t('alerts.geofenceExit') : 
-                           alert.type === 'temperature' ? t('alerts.temperature') : 
-                           alert.type === 'offline' ? t('alerts.deviceOffline') : 
-                           t(`alerts.${alert.type}`)}
-                        </p>
-                        <p className="text-[10px] text-[#717973]">{alert.geofence?.name || t('alertsPage.unknownZone')}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    {alert.animal ? (
-                      <Link to={`/animals/${alert.animal.id}`} className="font-bold text-sm text-[#002819] hover:underline">
-                        {alert.animal.animal_id}
-                      </Link>
-                    ) : (
-                      <span className="text-[#717973]">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-xs font-mono text-[#404943]">
-                      {alert.latitude ? `${parseFloat(alert.latitude).toFixed(4)}, ${parseFloat(alert.longitude).toFixed(4)}` : '-'}
-                    </p>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-xs font-medium text-[#404943]">
-                      {new Date(alert.triggered_at).toLocaleDateString()}
-                    </p>
-                    <p className="text-[10px] text-[#717973] font-bold">
-                      {new Date(alert.triggered_at).toLocaleTimeString()}
-                    </p>
-                  </td>
+                    </td>
+                    <td className="px-6 py-5">
+                      {alert.animal ? (
+                        <Link to={`/animals/${alert.animal.id}`} className="font-bold text-sm text-brand-primary hover:underline">{alert.animal.animal_id}</Link>
+                      ) : <span className="text-on-surface-subtle">-</span>}
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs text-on-surface-variant">{alert.animal_name || alert.animal?.name || '-'}</p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs font-mono text-on-surface-variant">
+                        {alert.latitude ? `${parseFloat(alert.latitude).toFixed(4)}, ${parseFloat(alert.longitude).toFixed(4)}` : '-'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs font-medium text-on-surface-variant">{new Date(alert.triggered_at).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-on-surface-subtle font-bold">{new Date(alert.triggered_at).toLocaleTimeString()}</p>
+                    </td>
                     <td className="px-6 py-5">
                       <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <span className={`w-2 h-2 rounded-full ${colors.dot} ${!alert.is_acknowledged && alert.type === 'exit' ? 'animate-pulse' : ''}`}></span>
-                        <span className={`text-xs font-bold uppercase ${severity.color}`}>
-                          {severity.label}
-                        </span>
+                        <span className={`w-2 h-2 rounded-full ${severity.dot} ${!alert.is_acknowledged && alert.type === 'exit' ? 'animate-pulse' : ''}`} />
+                        <span className={`text-xs font-bold uppercase ${severity.color}`}>{severity.label}</span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
                       <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
-                        alert.is_acknowledged 
-                          ? 'bg-[#cfe5d6] text-[#002819]' 
-                          : 'bg-red-100 text-red-700'
+                        alert.is_acknowledged ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-red-100 text-red-700'
                       }`}>
                         {alert.is_acknowledged ? t('alertsPage.resolved') : t('alertsPage.unresolved')}
                       </span>
                     </td>
                     <td className="px-6 py-5">
-                      <div className={`flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
-                      {!alert.is_acknowledged && (
-                        <>
-                          <button 
-                            onClick={() => sendNotification(alert.id)}
-                            className="bg-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
-                            title="Send SMS/Call notification"
-                          >
-                            <MaterialSymbol icon="notifications_active" size={12} />
-                            {t('alertsPage.notify')}
-                          </button>
-                          <button 
-                            onClick={() => acknowledgeAlert(alert.id)}
-                            className="bg-[#002819] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#06402b] transition-colors"
-                          >
+                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse ml-auto' : 'ml-auto'}`}>
+                        {!alert.is_acknowledged && (
+                          <button onClick={() => acknowledgeAlert(alert.id)} className="bg-brand-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-secondary transition-colors flex items-center gap-1">
+                            <MaterialSymbol icon="check" size={12} />
                             {t('alertsPage.resolve')}
                           </button>
-                        </>
-                      )}
-                      <Link 
-                        to="/map"
-                        className="border border-[#c0c9c1] text-[#404943] text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#eeeee9] transition-colors"
-                      >
-                        {t('common.view')}
-                      </Link>
-                      <button 
-                        onClick={() => deleteAlert(alert.id)}
-                        className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Delete alert"
-                      >
-                        <MaterialSymbol icon="delete" size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {alerts.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            perPage={perPage}
-            total={totalAlerts}
-            dir={dir}
-            onPageChange={setCurrentPage}
-            onPerPageChange={(value) => { setPerPage(value); setCurrentPage(1); }}
-          />
-        )}
-      </div>
-
-      {/* Dashboard Analytics Preview */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-1 bg-[#06402b] text-white p-6 rounded-3xl relative overflow-hidden group">
-          <div className="relative z-10">
-            <MaterialSymbol icon="verified" className="text-[#D4AF37] text-4xl mb-4" />
-            <h3 className="text-2xl font-black font-['Manrope']">{t('alertsPage.safetyScore')}</h3>
-            <p className="text-white/60 text-xs mt-2 font-medium">
-              {t('alertsPage.containmentEfficiency')}
-            </p>
-            <div className="mt-6 flex items-end gap-2">
-              <span className="text-4xl font-black">98.4%</span>
-              <span className="text-[#D4AF37] font-bold text-xs pb-1">+2.1% ↑</span>
-            </div>
-          </div>
-          <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-            <MaterialSymbol icon="language" className="text-[180px]" />
-          </div>
+                        )}
+                        <Link to="/map" className="border border-outline text-on-surface-variant text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-surface-dim transition-colors flex items-center gap-1">
+                          <MaterialSymbol icon="map" size={12} />
+                          {t('common.view')}
+                        </Link>
+                        <button onClick={() => deleteAlert(alert.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete alert">
+                          <MaterialSymbol icon="delete" size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {alerts.length > 0 && (
+            <Pagination currentPage={currentPage} totalPages={totalPages} perPage={perPage} total={totalAlerts} dir={dir}
+              onPageChange={setCurrentPage} onPerPageChange={(v) => { setPerPage(v); setCurrentPage(1); }} />
+          )}
         </div>
-        <div className="col-span-2 bg-white border border-[#eeeee9] p-6 rounded-3xl flex gap-8">
-          <div className="w-2/3 h-full flex flex-col justify-between">
-            <div>
-              <h3 className="text-lg font-black text-[#002819] font-['Manrope']">{t('alertsPage.geofenceHotspots')}</h3>
-              <p className="text-[#717973] text-xs mt-1">{t('alertsPage.breachLocations')}</p>
-            </div>
-            <div className="space-y-3 mt-4">
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-bold text-[#717973] w-20">NORTH GATE</span>
-                <div className="flex-1 h-2 bg-[#eeeee9] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#002819] w-[85%] rounded-full"></div>
-                </div>
-                <span className="text-xs font-black text-[#002819]">85%</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-bold text-[#717973] w-20">WATERING HOLE</span>
-                <div className="flex-1 h-2 bg-[#eeeee9] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#002819] w-[12%] rounded-full"></div>
-                </div>
-                <span className="text-xs font-black text-[#002819]">12%</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-bold text-[#717973] w-20">EAST SECTOR</span>
-                <div className="flex-1 h-2 bg-[#eeeee9] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#002819] w-[3%] rounded-full"></div>
-                </div>
-                <span className="text-xs font-black text-[#002819]">3%</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-1/3 h-full rounded-2xl overflow-hidden relative border border-[#eeeee9]">
-            <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-              <MaterialSymbol icon="map" size={48} className="text-emerald-300" />
-            </div>
-            <Link to="/map" className="absolute inset-0 bg-[#002819]/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-              <button className="bg-white/90 backdrop-blur-sm text-[#002819] text-[10px] font-black px-3 py-2 rounded-lg shadow-lg">
-                {t('alertsPage.viewMap')}
-              </button>
-            </Link>
-          </div>
+      ) : (
+        /* Tile View */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {alerts.map(renderAlertCard)}
+          <Pagination currentPage={currentPage} totalPages={totalPages} perPage={perPage} total={totalAlerts} dir={dir}
+            onPageChange={setCurrentPage} onPerPageChange={(v) => { setPerPage(v); setCurrentPage(1); }} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

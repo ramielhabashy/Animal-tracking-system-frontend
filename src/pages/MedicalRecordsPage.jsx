@@ -296,7 +296,7 @@ export default function MedicalRecordsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -308,19 +308,19 @@ export default function MedicalRecordsPage() {
           <nav className={`flex text-xs text-[#4f6357] mb-2 uppercase tracking-widest font-bold ${isRtl ? 'flex-row-reverse' : ''}`}>
             <span>{t('nav.veterinary')}</span>
             <span className="mx-2">/</span>
-            <span className="text-[#002819]">{t('nav.medicalRecords')}</span>
+            <span className="text-brand-primary">{t('nav.medicalRecords')}</span>
           </nav>
-          <h2 className="text-4xl font-bold text-[#002819]">{t('medicalRecords.title')}</h2>
-          <p className="text-[#404943] mt-1">{t('medicalRecords.subtitle') || 'Track and manage herd medical history'}</p>
+          <h2 className="text-4xl font-bold text-brand-primary">{t('medicalRecords.title')}</h2>
+          <p className="text-on-surface-variant mt-1">{t('medicalRecords.subtitle') || 'Track and manage herd medical history'}</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex bg-[#eeeee9] p-1 rounded-xl">
+          <div className="flex bg-surface-dim p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('records')}
               className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
                 activeTab === 'records' 
-                  ? 'bg-white text-[#002819] font-bold shadow-sm' 
-                  : 'text-[#404943] hover:bg-[#e8e8e3]'
+                  ? 'bg-white text-brand-primary font-bold shadow-sm' 
+                  : 'text-on-surface-variant hover:bg-surface-dim'
               }`}
             >
               {t('medicalRecords.title')}
@@ -329,8 +329,8 @@ export default function MedicalRecordsPage() {
               onClick={() => setActiveTab('vaccinations')}
               className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
                 activeTab === 'vaccinations' 
-                  ? 'bg-white text-[#002819] font-bold shadow-sm' 
-                  : 'text-[#404943] hover:bg-[#e8e8e3]'
+                  ? 'bg-white text-brand-primary font-bold shadow-sm' 
+                  : 'text-on-surface-variant hover:bg-surface-dim'
               }`}
             >
               {t('vaccination.title')}
@@ -339,7 +339,7 @@ export default function MedicalRecordsPage() {
           {canAdd && (
             <button
               onClick={() => { resetForm(); setEditingRecord(null); setShowModal(true); }}
-              className="px-6 py-3 bg-[#002819] text-white rounded-xl font-bold flex items-center gap-2 hover:bg-[#06402b] transition shadow-lg"
+              className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold flex items-center gap-2 hover:bg-brand-secondary transition shadow-lg"
             >
               <MaterialSymbol icon="add" size={20} />
               {t('medicalRecords.addRecord')}
@@ -358,8 +358,8 @@ export default function MedicalRecordsPage() {
       {activeTab === 'records' ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">{t('medicalRecords.total') || 'Total Records'}</p>
-            <p className="text-2xl font-black text-[#002819]">{stats.total || 0}</p>
+            <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">{t('medicalRecords.total') || 'Total Records'}</p>
+            <p className="text-2xl font-black text-brand-primary">{stats.total || 0}</p>
           </div>
           <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
             <p className="text-xs text-emerald-600 uppercase tracking-wider font-bold">{t('medicalRecords.vaccination')}</p>
@@ -382,8 +382,8 @@ export default function MedicalRecordsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">{t('vaccination.total')}</p>
-              <p className="text-2xl font-black text-[#002819]">{vaccinations.length + scheduledRecords.length}</p>
+              <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">{t('vaccination.total')}</p>
+              <p className="text-2xl font-black text-brand-primary">{vaccinations.length + scheduledRecords.length}</p>
             </div>
             <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
               <p className="text-xs text-emerald-600 uppercase tracking-wider font-bold">{t('vaccination.administered')}</p>
@@ -402,11 +402,11 @@ export default function MedicalRecordsPage() {
               <p className="text-2xl font-black text-red-700">{vaccinations.filter(v => v.status === 'overdue' || (v.status === 'scheduled' && new Date(v.scheduled_date) < new Date())).length}</p>
             </div>
           </div>
-          <div className="bg-[#F4F4EF] rounded-xl p-4 flex items-center justify-between">
-            <p className="text-sm text-[#404943]">{t('vaccination.manageInFullPage')}</p>
+          <div className="bg-surface-light rounded-xl p-4 flex items-center justify-between">
+            <p className="text-sm text-on-surface-variant">{t('vaccination.manageInFullPage')}</p>
             <Link
               to="/vaccination-schedule"
-              className="px-4 py-2 bg-[#002819] text-white rounded-lg text-sm font-bold hover:bg-[#06402b] transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-bold hover:bg-brand-secondary transition-colors flex items-center gap-2"
             >
               <MaterialSymbol icon="open_in_new" size={16} />
               {t('vaccination.manageLink')}
@@ -416,30 +416,30 @@ export default function MedicalRecordsPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-[#E3E3DE]">
+      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-surface-high">
         <div className={`flex flex-wrap items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''} flex-1 min-w-[200px]`}>
-            <MaterialSymbol icon="search" size={18} className="text-[#002819]/60" />
+          <div className={`flex items-center gap-2 px-4 py-2 bg-surface-light rounded-lg ${isRtl ? 'flex-row-reverse' : ''} flex-1 min-w-[200px]`}>
+            <MaterialSymbol icon="search" size={18} className="text-brand-primary/60" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('common.search') || 'Search records...'}
-              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0 w-full"
+              className="bg-transparent border-none text-brand-primary font-semibold text-sm focus:ring-0 w-full"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="text-[#002819]/60 hover:text-[#002819]">
+              <button onClick={() => setSearch('')} className="text-brand-primary/60 hover:text-brand-primary">
                 <MaterialSymbol icon="close" size={16} />
               </button>
             )}
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <MaterialSymbol icon="calendar_month" size={18} className="text-[#002819]/60" />
+          <div className={`flex items-center gap-2 px-4 py-2 bg-surface-light rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="calendar_month" size={18} className="text-brand-primary/60" />
             <select
               value={filters.date_range}
               onChange={(e) => setFilters({ ...filters, date_range: e.target.value })}
-              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
+              className="bg-transparent border-none text-brand-primary font-semibold text-sm focus:ring-0"
             >
               <option value="30">{t('common.last30Days') || 'Last 30 Days'}</option>
               <option value="90">{t('common.last3Months') || 'Last 3 Months'}</option>
@@ -448,12 +448,12 @@ export default function MedicalRecordsPage() {
             </select>
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <MaterialSymbol icon="medical_information" size={18} className="text-[#002819]/60" />
+          <div className={`flex items-center gap-2 px-4 py-2 bg-surface-light rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="medical_information" size={18} className="text-brand-primary/60" />
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
+              className="bg-transparent border-none text-brand-primary font-semibold text-sm focus:ring-0"
             >
               <option value="all">{t('common.allTypes') || 'All Types'}</option>
               {recordTypes.filter(rt => rt.is_active !== false).map(rt => (
@@ -462,12 +462,12 @@ export default function MedicalRecordsPage() {
             </select>
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <MaterialSymbol icon="checklist" size={18} className="text-[#002819]/60" />
+          <div className={`flex items-center gap-2 px-4 py-2 bg-surface-light rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="checklist" size={18} className="text-brand-primary/60" />
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
+              className="bg-transparent border-none text-brand-primary font-semibold text-sm focus:ring-0"
             >
               <option value="all">{t('common.allStatuses')}</option>
               <option value="completed">{t('medicalRecords.completed')}</option>
@@ -477,12 +477,12 @@ export default function MedicalRecordsPage() {
             </select>
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-2 bg-[#F4F4EF] rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <MaterialSymbol icon="pets" size={18} className="text-[#002819]/60" />
+          <div className={`flex items-center gap-2 px-4 py-2 bg-surface-light rounded-lg ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <MaterialSymbol icon="pets" size={18} className="text-brand-primary/60" />
             <select
               value={filters.animal_id}
               onChange={(e) => setFilters({ ...filters, animal_id: e.target.value })}
-              className="bg-transparent border-none text-[#002819] font-semibold text-sm focus:ring-0"
+              className="bg-transparent border-none text-brand-primary font-semibold text-sm focus:ring-0"
             >
               <option value="all">{t('vaccination.allAnimals')}</option>
               {animals.map((animal) => (
@@ -495,7 +495,7 @@ export default function MedicalRecordsPage() {
 
           <button
             onClick={() => { setFilters({ type: 'all', status: 'all', animal_id: 'all', date_range: '30' }); setSearch(''); }}
-            className={`ml-auto text-[#002819]/60 font-semibold hover:text-[#002819] transition-colors flex items-center gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}
+            className={`ml-auto text-brand-primary/60 font-semibold hover:text-brand-primary transition-colors flex items-center gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}
           >
             <MaterialSymbol icon="filter_list_off" size={18} />
             {t('common.clearFilters') || 'Clear Filters'}
@@ -505,15 +505,15 @@ export default function MedicalRecordsPage() {
 
       {/* Records Table */}
       <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-[#E3E3DE] flex justify-between items-center">
-          <h3 className="text-xl font-bold text-[#002819]">{activeTab === 'records' ? t('medicalRecords.recentRecords') : t('vaccination.upcomingAll')}</h3>
+        <div className="p-6 border-b border-surface-high flex justify-between items-center">
+          <h3 className="text-xl font-bold text-brand-primary">{activeTab === 'records' ? t('medicalRecords.recentRecords') : t('vaccination.upcomingAll')}</h3>
         </div>
 
         {activeTab === 'records' ? (
         <div className="overflow-x-auto">
           <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
             <thead>
-              <tr className="bg-[#F4F4EF]">
+              <tr className="bg-surface-light">
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.date')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">ID</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('nav.animals')}</th>
@@ -528,13 +528,13 @@ export default function MedicalRecordsPage() {
             <tbody className="divide-y divide-[#E3E3DE]">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-12 text-center text-[#717973]">
+                  <td colSpan="9" className="px-6 py-12 text-center text-on-surface-subtle">
                     <MaterialSymbol icon="medical_services" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('medicalRecords.noRecords')}</p>
                     {canAdd && (
                       <button
                         onClick={() => { resetForm(); setShowModal(true); }}
-                        className="mt-4 text-[#002819] font-bold hover:underline"
+                        className="mt-4 text-brand-primary font-bold hover:underline"
                       >
                         {t('medicalRecords.addFirst')}
                       </button>
@@ -543,16 +543,16 @@ export default function MedicalRecordsPage() {
                 </tr>
               ) : (
                 records.map((record) => (
-                  <tr key={record.id} className="hover:bg-[#F4F4EF]/50 transition-colors">
-                    <td className="px-6 py-5 font-medium text-[#002819]">
+                  <tr key={record.id} className="hover:bg-surface-light/50 transition-colors">
+                    <td className="px-6 py-5 font-medium text-brand-primary">
                       {new Date(record.record_date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-5 font-mono text-xs font-bold text-[#002819]">
+                    <td className="px-6 py-5 font-mono text-xs font-bold text-brand-primary">
                       {record.record_id || `#${record.id}`}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#CFE5D6] flex items-center justify-center text-[#002819] font-black text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-[#CFE5D6] flex items-center justify-center text-brand-primary font-black text-xs">
                           {record.animal?.name?.charAt(0) || 'A'}
                         </div>
                         <span className="font-semibold">{record.animal?.name || record.animal?.animal_id || 'Unknown'}</span>
@@ -564,22 +564,22 @@ export default function MedicalRecordsPage() {
                         {record.record_type}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-[#404943]">{record.title} <TranslateButton text={record.title} /></td>
-                    <td className="px-6 py-5 text-[#404943]">{record.veterinarian || '-'}</td>
+                    <td className="px-6 py-5 text-on-surface-variant">{record.title} <TranslateButton text={record.title} /></td>
+                    <td className="px-6 py-5 text-on-surface-variant">{record.veterinarian || '-'}</td>
                     <td className="px-6 py-5 text-center">
                       {record.attachments && record.attachments.length > 0 ? (
                         <a
                           href={record.attachments[0].file_path}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[#002819] hover:text-[#06402b] transition-colors"
+                          className="inline-flex items-center gap-1 text-brand-primary hover:text-brand-secondary transition-colors"
                           title={record.attachments.map(a => a.original_name).join(', ')}
                         >
                           <MaterialSymbol icon="attach_file" size={18} />
                           <span className="text-xs font-bold">{record.attachments.length}</span>
                         </a>
                       ) : (
-                        <span className="text-[#717973]/40">-</span>
+                        <span className="text-on-surface-subtle/40">-</span>
                       )}
                     </td>
                     <td className="px-6 py-5">
@@ -592,9 +592,9 @@ export default function MedicalRecordsPage() {
                         {canEdit && (
                           <button
                             onClick={() => openEditModal(record)}
-                            className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
+                            className="p-2 hover:bg-surface-high rounded-lg transition-colors"
                           >
-                            <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
+                            <MaterialSymbol icon="edit" size={18} className="text-brand-primary" />
                           </button>
                         )}
                         {canEdit && (
@@ -617,7 +617,7 @@ export default function MedicalRecordsPage() {
         <div className="overflow-x-auto">
           <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
             <thead>
-              <tr className="bg-[#F4F4EF]">
+              <tr className="bg-surface-light">
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.date')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('nav.animals')}</th>
                 <th className="px-6 py-4 text-[#4f6357] font-bold text-sm">{t('common.type')}</th>
@@ -629,12 +629,12 @@ export default function MedicalRecordsPage() {
             <tbody className="divide-y divide-[#E3E3DE]">
               {combinedScheduled.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-[#717973]">
+                  <td colSpan="6" className="px-6 py-12 text-center text-on-surface-subtle">
                     <MaterialSymbol icon="vaccines" size={48} className="mx-auto mb-2 opacity-50" />
                     <p>{t('vaccination.noRecords')}</p>
                     <button
                       onClick={() => { resetForm(); setShowModal(true); }}
-                      className="mt-4 text-[#002819] font-bold hover:underline"
+                      className="mt-4 text-brand-primary font-bold hover:underline"
                     >
                       {t('vaccination.addFirst')}
                     </button>
@@ -648,8 +648,8 @@ export default function MedicalRecordsPage() {
                   const animalName = item.animal?.name || item.animal?.animal_id || 'Unknown';
                   const isOverdue = item.status === 'overdue' || (item.status === 'scheduled' && new Date(date) < new Date());
                   return (
-                  <tr key={item.id} className="hover:bg-[#F4F4EF]/50 transition-colors">
-                    <td className="px-6 py-5 font-medium text-[#002819]">
+                  <tr key={item.id} className="hover:bg-surface-light/50 transition-colors">
+                    <td className="px-6 py-5 font-medium text-brand-primary">
                       {new Date(date).toLocaleDateString()}
                       <span className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${isVacc ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                         {isVacc ? 'Vaccination' : t('medicalRecords.title')}
@@ -657,7 +657,7 @@ export default function MedicalRecordsPage() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#CFE5D6] flex items-center justify-center text-[#002819] font-black text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-[#CFE5D6] flex items-center justify-center text-brand-primary font-black text-xs">
                           {animalName.charAt(0)}
                         </div>
                         <span className="font-semibold">{animalName}</span>
@@ -666,21 +666,21 @@ export default function MedicalRecordsPage() {
                     <td className="px-6 py-5">
                       {isVacc ? (
                         <div>
-                          <p className="font-medium text-[#002819]">{item.vaccine_name} <TranslateButton text={item.vaccine_name} /></p>
+                          <p className="font-medium text-brand-primary">{item.vaccine_name} <TranslateButton text={item.vaccine_name} /></p>
                           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.vaccination_type === 'routine' ? 'bg-blue-100 text-blue-700' : item.vaccination_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
                             {item.vaccination_type}
                           </span>
                         </div>
                       ) : (
                         <div>
-                          <p className="font-medium text-[#002819]">{item.title || item.description || '-'} <TranslateButton text={item.title || item.description} /></p>
+                          <p className="font-medium text-brand-primary">{item.title || item.description || '-'} <TranslateButton text={item.title || item.description} /></p>
                           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${item.record_type === 'checkup' ? 'bg-blue-100 text-blue-700' : item.record_type === 'surgery' ? 'bg-purple-100 text-purple-700' : item.record_type === 'emergency' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
                             {item.record_type || 'appointment'}
                           </span>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-5 text-[#404943]">{vet}</td>
+                    <td className="px-6 py-5 text-on-surface-variant">{vet}</td>
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
                         isVacc && item.status === 'administered' ? 'bg-emerald-100 text-emerald-700' :
@@ -699,9 +699,9 @@ export default function MedicalRecordsPage() {
                         {canEdit && !isVacc && (
                           <button
                             onClick={() => openEditModal(item)}
-                            className="p-2 hover:bg-[#E3E3DE] rounded-lg transition-colors"
+                            className="p-2 hover:bg-surface-high rounded-lg transition-colors"
                           >
-                            <MaterialSymbol icon="edit" size={18} className="text-[#002819]" />
+                            <MaterialSymbol icon="edit" size={18} className="text-brand-primary" />
                           </button>
                         )}
                         {canEdit && !isVacc && (
@@ -729,7 +729,7 @@ export default function MedicalRecordsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-[#002819]">
+              <h3 className="text-xl font-bold text-brand-primary">
                 {editingRecord ? t('medicalRecords.editRecord') : t('medicalRecords.addRecord')}
               </h3>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -739,11 +739,11 @@ export default function MedicalRecordsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('nav.animals')} *</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('nav.animals')} *</label>
                 <select
                   value={formData.animal_id}
                   onChange={(e) => setFormData({ ...formData, animal_id: e.target.value })}
-                  className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                   required
                 >
                   <option value="">{t('vaccination.selectAnimal') || 'Select Animal'}</option>
@@ -759,22 +759,22 @@ export default function MedicalRecordsPage() {
                 {activeTab === 'vaccinations' ? (
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('vaccination.vaccine')} *</label>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('vaccination.vaccine')} *</label>
                       <input
                         type="text"
                         value={formData.vaccine_name}
                         onChange={(e) => setFormData({ ...formData, vaccine_name: e.target.value, title: e.target.value })}
-                        className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                        className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                         placeholder="e.g., FMD Vaccine"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('vaccination.vaccinationType')}</label>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('vaccination.vaccinationType')}</label>
                         <select
                           value={formData.vaccination_type}
                           onChange={(e) => setFormData({ ...formData, vaccination_type: e.target.value })}
-                          className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                          className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                         >
                           {vaccinationTypes.map((vt) => (
                             <option key={vt.slug} value={vt.slug}>{vt.name}</option>
@@ -785,11 +785,11 @@ export default function MedicalRecordsPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.recordType')} *</label>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.recordType')} *</label>
                       <select
                         value={formData.record_type}
                         onChange={(e) => setFormData({ ...formData, record_type: e.target.value })}
-                        className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                        className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                       >
                         {recordTypes.filter(rt => rt.is_active !== false).map(rt => (
                           <option key={rt.slug} value={rt.slug}>{rt.name}</option>
@@ -797,11 +797,11 @@ export default function MedicalRecordsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('common.status')}</label>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('common.status')}</label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                        className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                       >
                         <option value="completed">{t('medicalRecords.completed')}</option>
                         <option value="scheduled">{t('medicalRecords.scheduled')}</option>
@@ -815,12 +815,12 @@ export default function MedicalRecordsPage() {
 
               {activeTab !== 'vaccinations' && (
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.title')} *</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.title')} *</label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                    className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     placeholder={t('medicalRecords.titlePlaceholder') || 'Enter title'}
                     required
                   />
@@ -828,19 +828,19 @@ export default function MedicalRecordsPage() {
               )}
 
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('common.date')} *</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('common.date')} *</label>
                 <input
                   type="date"
                   value={formData.record_date}
                   onChange={(e) => setFormData({ ...formData, record_date: e.target.value })}
-                  className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.veterinarian')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.veterinarian')}</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -851,13 +851,13 @@ export default function MedicalRecordsPage() {
                       }}
                       onFocus={() => setShowVetDropdown(true)}
                       onBlur={() => setTimeout(() => setShowVetDropdown(false), 200)}
-                      className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                      className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                       placeholder="Dr. Name"
                     />
                     {doctors.length > 0 && showVetDropdown && (
                       <div className="absolute z-20 top-full mt-1 w-full bg-white rounded-xl shadow-xl border border-stone-100 max-h-48 overflow-y-auto">
                         <div className="p-2 border-b border-stone-50">
-                          <span className="text-[10px] font-bold text-[#717973] uppercase tracking-wider px-2">Internal Doctors</span>
+                          <span className="text-[10px] font-bold text-on-surface-subtle uppercase tracking-wider px-2">Internal Doctors</span>
                         </div>
                         {doctors
                           .filter(d => {
@@ -874,9 +874,9 @@ export default function MedicalRecordsPage() {
                                 setFormData({ ...formData, veterinarian: d.name });
                                 setShowVetDropdown(false);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-[#002819] hover:bg-[#F4F4EF] transition-colors flex items-center gap-2"
+                              className="w-full text-left px-4 py-2.5 text-sm text-brand-primary hover:bg-surface-light transition-colors flex items-center gap-2"
                             >
-                              <span className="w-6 h-6 rounded-full bg-[#06402B]/10 flex items-center justify-center text-[10px] font-bold text-[#06402B]">
+                              <span className="w-6 h-6 rounded-full bg-brand-secondary/10 flex items-center justify-center text-[10px] font-bold text-brand-secondary">
                                 {d.name.charAt(0)}
                               </span>
                               {d.name}
@@ -888,8 +888,8 @@ export default function MedicalRecordsPage() {
                           return true;
                         }).some(d => d.name.toLowerCase() === formData.veterinarian.toLowerCase()) && (
                           <div className="px-4 py-2 border-t border-stone-50">
-                            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">External</span>
-                            <p className="text-xs text-[#717973] mt-0.5">Using external veterinarian: <strong>{formData.veterinarian}</strong></p>
+                            <span className="text-[10px] font-bold text-brand-accent uppercase tracking-wider">External</span>
+                            <p className="text-xs text-on-surface-subtle mt-0.5">Using external veterinarian: <strong>{formData.veterinarian}</strong></p>
                           </div>
                         )}
                       </div>
@@ -897,12 +897,12 @@ export default function MedicalRecordsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.medication')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.medication')}</label>
                   <input
                     type="text"
                     value={formData.medication}
                     onChange={(e) => setFormData({ ...formData, medication: e.target.value })}
-                    className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                    className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     placeholder="Medication name"
                   />
                 </div>
@@ -911,11 +911,11 @@ export default function MedicalRecordsPage() {
               {activeTab !== 'vaccinations' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.healthStatus')}</label>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.healthStatus')}</label>
                     <select
                       value={formData.health_status}
                       onChange={(e) => setFormData({ ...formData, health_status: e.target.value })}
-                      className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                      className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     >
                       <option value="">{t('common.none') || '-'}</option>
                       <option value="stable">{t('medicalRecords.stable')}</option>
@@ -925,12 +925,12 @@ export default function MedicalRecordsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.dosage')}</label>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.dosage')}</label>
                     <input
                       type="text"
                       value={formData.dosage}
                       onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                      className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                      className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                       placeholder="e.g., 10ml"
                     />
                   </div>
@@ -939,7 +939,7 @@ export default function MedicalRecordsPage() {
 
               {/* File Upload */}
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('common.attachments') || 'Attachments'}</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('common.attachments') || 'Attachments'}</label>
 
                 {/* Existing attachments in edit mode */}
                 {editingRecord && editingRecord.attachments && editingRecord.attachments.length > 0 && (
@@ -947,12 +947,12 @@ export default function MedicalRecordsPage() {
                     {editingRecord.attachments
                       .filter(a => !deleteAttachmentIds.includes(a.id))
                       .map((att) => (
-                        <div key={att.id} className="flex items-center justify-between bg-[#F4F4EF] rounded-lg px-3 py-2">
+                        <div key={att.id} className="flex items-center justify-between bg-surface-light rounded-lg px-3 py-2">
                           <a
                             href={att.file_path}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-[#002819] font-medium hover:underline"
+                            className="flex items-center gap-2 text-sm text-brand-primary font-medium hover:underline"
                           >
                             <MaterialSymbol icon={att.mime_type?.startsWith('image/') ? 'image' : 'description'} size={18} />
                             {att.original_name}
@@ -976,7 +976,7 @@ export default function MedicalRecordsPage() {
 
                 {/* New file upload */}
                 <div className="flex flex-wrap gap-2">
-                  <label className="flex items-center gap-2 px-4 py-3 bg-[#F4F4EF] rounded-xl cursor-pointer hover:bg-[#E3E3DE] transition-colors border-2 border-dashed border-[#E3E3DE] text-[#404943] text-sm font-medium">
+                  <label className="flex items-center gap-2 px-4 py-3 bg-surface-light rounded-xl cursor-pointer hover:bg-surface-high transition-colors border-2 border-dashed border-surface-high text-on-surface-variant text-sm font-medium">
                     <MaterialSymbol icon="upload_file" size={20} />
                     {t('common.upload') || 'Upload files'}
                     <input
@@ -997,11 +997,11 @@ export default function MedicalRecordsPage() {
                 {newAttachments.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {newAttachments.map((file, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-[#F4F4EF] rounded-lg px-3 py-2">
-                        <div className="flex items-center gap-2 text-sm text-[#002819]">
+                      <div key={idx} className="flex items-center justify-between bg-surface-light rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-sm text-brand-primary">
                           <MaterialSymbol icon={file.type?.startsWith('image/') ? 'image' : 'description'} size={18} />
                           <span className="font-medium truncate max-w-[200px]">{file.name}</span>
-                          <span className="text-[#717973] text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
+                          <span className="text-on-surface-subtle text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
                         </div>
                         <button
                           type="button"
@@ -1017,22 +1017,22 @@ export default function MedicalRecordsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.description')}</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.description')}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20 h-20 resize-none"
+                  className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20 h-20 resize-none"
                   placeholder="Medical notes..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase mb-2">{t('medicalRecords.nextFollowUp')}</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">{t('medicalRecords.nextFollowUp')}</label>
                 <input
                   type="date"
                   value={formData.next_follow_up}
                   onChange={(e) => setFormData({ ...formData, next_follow_up: e.target.value })}
-                  className="w-full bg-[#F4F4EF] rounded-xl p-3 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light rounded-xl p-3 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                 />
               </div>
 
@@ -1040,13 +1040,13 @@ export default function MedicalRecordsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 bg-[#F4F4EF] text-[#002819] rounded-xl font-bold hover:bg-[#E3E3DE] transition"
+                  className="flex-1 py-3 bg-surface-light text-brand-primary rounded-xl font-bold hover:bg-surface-high transition"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition shadow-lg"
+                  className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition shadow-lg"
                 >
                   {editingRecord ? t('medicalRecords.editRecord') : t('medicalRecords.addRecord')}
                 </button>

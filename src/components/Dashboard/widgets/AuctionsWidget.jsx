@@ -66,7 +66,7 @@ export default function AuctionsWidget({ dashboardData }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="animate-spin w-6 h-6 border-2 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -78,12 +78,12 @@ export default function AuctionsWidget({ dashboardData }) {
   if (isAdmin) {
     return (
       <div className="grid grid-cols-3 gap-4">
-        <Link to="/auctions?status=active" className={`p-4 rounded-2xl bg-[#002819]/5 hover:bg-[#002819]/10 transition-colors ${isRtl ? 'text-right' : ''}`}>
-          <div className="w-10 h-10 rounded-xl bg-[#002819] flex items-center justify-center mb-3">
-            <MaterialSymbol icon="gavel" size={20} className="text-[#D4AF37]" />
+        <Link to="/auctions?status=active" className={`p-4 rounded-2xl bg-brand-primary/5 hover:bg-brand-primary/10 transition-colors ${isRtl ? 'text-right' : ''}`}>
+          <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center mb-3">
+            <MaterialSymbol icon="gavel" size={20} className="text-brand-accent" />
           </div>
-          <p className="text-2xl font-black text-[#002819]">{formatCount(data.active)}</p>
-          <p className="text-xs font-medium text-[#404943] mt-1">{t('auctions.activeAuctions')}</p>
+          <p className="text-2xl font-black text-brand-primary">{formatCount(data.active)}</p>
+          <p className="text-xs font-medium text-on-surface-variant mt-1">{t('auctions.activeAuctions')}</p>
         </Link>
         <Link to="/auctions?status=sold" className={`p-4 rounded-2xl bg-emerald-50 hover:bg-emerald-100 transition-colors ${isRtl ? 'text-right' : ''}`}>
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center mb-3">
@@ -105,12 +105,12 @@ export default function AuctionsWidget({ dashboardData }) {
 
   return (
     <div className="grid grid-cols-3 gap-4">
-      <Link to="/auctions" className={`p-4 rounded-2xl bg-[#002819]/5 hover:bg-[#002819]/10 transition-colors ${isRtl ? 'text-right' : ''}`}>
-        <div className="w-10 h-10 rounded-xl bg-[#002819] flex items-center justify-center mb-3">
-          <MaterialSymbol icon="gavel" size={20} className="text-[#D4AF37]" />
+      <Link to="/auctions" className={`p-4 rounded-2xl bg-brand-primary/5 hover:bg-brand-primary/10 transition-colors ${isRtl ? 'text-right' : ''}`}>
+        <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center mb-3">
+          <MaterialSymbol icon="gavel" size={20} className="text-brand-accent" />
         </div>
-        <p className="text-2xl font-black text-[#002819]">{formatCount(data.myAuctions)}</p>
-        <p className="text-xs font-medium text-[#404943] mt-1">{t('auctions.myAuctions')}</p>
+        <p className="text-2xl font-black text-brand-primary">{formatCount(data.myAuctions)}</p>
+        <p className="text-xs font-medium text-on-surface-variant mt-1">{t('auctions.myAuctions')}</p>
       </Link>
       <Link to="/auctions?all" className={`p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors ${isRtl ? 'text-right' : ''}`}>
         <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center mb-3">

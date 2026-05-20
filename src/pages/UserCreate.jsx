@@ -180,19 +180,19 @@ export default function UserCreate() {
     <div className="max-w-2xl mx-auto p-8">
       <div className={`flex items-center gap-4 mb-8 ${isRtl ? 'flex-row-reverse' : ''}`}>
         <button onClick={() => navigate('/users')} className="p-2 hover:bg-gray-100 rounded-full transition">
-          <MaterialSymbol icon={isRtl ? "arrow_forward" : "arrow_back"} className="text-[#06402B]" />
+          <MaterialSymbol icon={isRtl ? "arrow_forward" : "arrow_back"} className="text-brand-secondary" />
         </button>
         <div className={isRtl ? 'text-right' : ''}>
-          <h1 className="text-2xl font-bold text-[#002819]">{t('users.addUser')}</h1>
-          <p className="text-sm text-[#717973] mt-1">{t('users.createTeamMember')}</p>
+          <h1 className="text-2xl font-bold text-brand-primary">{t('users.addUser')}</h1>
+          <p className="text-sm text-on-surface-subtle mt-1">{t('users.createTeamMember')}</p>
         </div>
       </div>
 
-      <div className={`flex gap-2 mb-6 bg-[#e8e8e3] p-1 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
+      <div className={`flex gap-2 mb-6 bg-surface-dim p-1 rounded-xl ${isRtl ? 'flex-row-reverse' : ''}`}>
         <button
           onClick={() => { setMode('create'); setMsg(null); setInvitationLink(''); }}
           className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition ${
-            mode === 'create' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973] hover:text-[#002819]'
+            mode === 'create' ? 'bg-white text-brand-primary shadow-sm' : 'text-on-surface-subtle hover:text-brand-primary'
           } ${isRtl ? 'text-center' : ''}`}
         >
           <MaterialSymbol icon="person_add" size={16} className="inline mr-1" />
@@ -201,7 +201,7 @@ export default function UserCreate() {
         <button
           onClick={() => { setMode('invite'); setMsg(null); setInvitationLink(''); }}
           className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition ${
-            mode === 'invite' ? 'bg-white text-[#002819] shadow-sm' : 'text-[#717973] hover:text-[#002819]'
+            mode === 'invite' ? 'bg-white text-brand-primary shadow-sm' : 'text-on-surface-subtle hover:text-brand-primary'
           } ${isRtl ? 'text-center' : ''}`}
         >
           <MaterialSymbol icon="mail" size={16} className="inline mr-1" />
@@ -211,23 +211,23 @@ export default function UserCreate() {
 
       <form onSubmit={submit} className="bg-white rounded-2xl p-8 shadow-sm space-y-6">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-[#D4AF37]/20 rounded-xl">
-            <MaterialSymbol icon={mode === 'invite' ? "mail" : "person_add"} size={24} className="text-[#735c00]" />
+          <div className="p-3 bg-brand-accent/20 rounded-xl">
+            <MaterialSymbol icon={mode === 'invite' ? "mail" : "person_add"} size={24} className="text-tertiary-container" />
           </div>
           <div>
-            <h2 className="font-bold text-[#002819]">{mode === 'invite' ? 'Send Invitation' : t('users.userDetails')}</h2>
-            <p className="text-sm text-[#717973]">{mode === 'invite' ? 'Invite a team member via email' : t('users.enterUserInfo')}</p>
+            <h2 className="font-bold text-brand-primary">{mode === 'invite' ? 'Send Invitation' : t('users.userDetails')}</h2>
+            <p className="text-sm text-on-surface-subtle">{mode === 'invite' ? 'Invite a team member via email' : t('users.enterUserInfo')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {mode === 'create' && (
             <div>
-              <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.name')} *</label>
+              <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.name')} *</label>
               <input
                 value={form.name}
                 onChange={e => set('name', e.target.value)}
-                className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 focus:bg-white transition outline-none ${errors.name ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
+                className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 focus:bg-white transition outline-none ${errors.name ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
                 placeholder="Ahmed Al-Khalidi"
                 required
               />
@@ -236,12 +236,12 @@ export default function UserCreate() {
           )}
 
           <div>
-            <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('auth.email')} *</label>
+            <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('auth.email')} *</label>
             <input
               type="email"
               value={form.email}
               onChange={e => set('email', e.target.value)}
-              className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 focus:bg-white transition outline-none ${errors.email ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
+              className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 focus:bg-white transition outline-none ${errors.email ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
               placeholder="ahmed@oasis.com"
               required
             />
@@ -250,24 +250,24 @@ export default function UserCreate() {
 
           {mode === 'create' && (
             <div>
-              <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.phone')}</label>
+              <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.phone')}</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={e => set('phone', e.target.value)}
-                className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 transition outline-none ${isRtl ? 'text-right' : ''}`}
+                className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 transition outline-none ${isRtl ? 'text-right' : ''}`}
                 placeholder="+971 50 123 4567"
               />
             </div>
           )}
 
 <div>
-            <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.role')}</label>
+            <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.role')}</label>
 
             <div className="space-y-4">
               {isAdmin && adminRoles.length > 0 && (
                 <div>
-                  <p className={`text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <p className={`text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <MaterialSymbol icon="admin_panel_settings" size={16} />
                     Administration Staff
                   </p>
@@ -279,13 +279,13 @@ export default function UserCreate() {
                         onClick={() => set('role', r.name)}
                         className={`p-3 rounded-xl border-2 text-left transition ${
                           form.role === r.name
-                            ? 'border-[#D4AF37] bg-[#D4AF37]/10'
-                            : 'border-transparent bg-[#e8e8e3] hover:border-[#D4AF37]/30'
+                            ? 'border-brand-accent bg-brand-accent/10'
+                            : 'border-transparent bg-surface-dim hover:border-brand-accent/30'
                         } ${isRtl ? 'text-right' : ''}`}
                       >
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{t(`users.${r.name.toLowerCase()}`) || r.name}</span>
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#D4AF37]/20 text-[#735C00]">Staff</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-brand-accent/20 text-tertiary-container">Staff</span>
                         </div>
                       </button>
                     ))}
@@ -295,7 +295,7 @@ export default function UserCreate() {
 
               {userRoles.length > 0 && (
                 <div>
-                  <p className={`text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                  <p className={`text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <MaterialSymbol icon="agriculture" size={16} />
                     Farm Users
                   </p>
@@ -308,12 +308,12 @@ export default function UserCreate() {
                         className={`p-3 rounded-xl border-2 text-left transition ${
                           form.role === r.name
                             ? 'border-[#10B981] bg-[#10B981]/10'
-                            : 'border-transparent bg-[#e8e8e3] hover:border-[#10B981]/30'
+                            : 'border-transparent bg-surface-dim hover:border-[#10B981]/30'
                         } ${isRtl ? 'text-right' : ''}`}
                       >
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{t(`users.${r.name.toLowerCase()}`) || r.name}</span>
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#10B981]/20 text-[#059669]">Farm</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#10B981]/20 text-success">Farm</span>
                         </div>
                       </button>
                     ))}
@@ -325,18 +325,18 @@ export default function UserCreate() {
 
           {isAdmin && form.role && selectedRoleType !== 'admin' && form.role !== 'Owner' && (
             <div className="md:col-span-2">
-              <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.assignToOwner') || 'Assign to Owner'}</label>
+              <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('users.assignToOwner') || 'Assign to Owner'}</label>
               <select
                 value={form.managed_by}
                 onChange={e => set('managed_by', e.target.value)}
-                className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 transition outline-none appearance-none ${isRtl ? 'pl-10 pr-4 text-right' : 'pr-10 pl-4'}`}
+                className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 transition outline-none appearance-none ${isRtl ? 'pl-10 pr-4 text-right' : 'pr-10 pl-4'}`}
               >
                 <option value="">{t('teamPage.selectOwner') || 'Not assigned to any owner'}</option>
                 {owners.map(owner => (
                   <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
                 ))}
               </select>
-              <p className={`text-xs text-[#717973] mt-1 ${isRtl ? 'text-right' : ''}`}>
+              <p className={`text-xs text-on-surface-subtle mt-1 ${isRtl ? 'text-right' : ''}`}>
                 {t('users.ownerAssignHint') || 'The user will be managed by this owner'}
               </p>
             </div>
@@ -345,12 +345,12 @@ export default function UserCreate() {
           {mode === 'create' && (
             <>
               <div>
-                <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('auth.password')} *</label>
+                <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>{t('auth.password')} *</label>
                 <input
                   type="password"
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
-                  className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 focus:bg-white transition outline-none ${errors.password ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
+                  className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 focus:bg-white transition outline-none ${errors.password ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
                   placeholder="Min 8 characters"
                   required
                 />
@@ -358,12 +358,12 @@ export default function UserCreate() {
               </div>
 
               <div>
-                <label className={`block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>Confirm Password *</label>
+                <label className={`block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ${isRtl ? 'mr-1 ml-0 text-right' : 'ml-1'}`}>Confirm Password *</label>
                 <input
                   type="password"
                   value={form.password_confirmation}
                   onChange={e => set('password_confirmation', e.target.value)}
-                  className={`w-full bg-[#e8e8e3] border-none rounded-xl p-4 focus:ring-2 focus:ring-[#06402B]/20 focus:bg-white transition outline-none ${errors.password_confirmation ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
+                  className={`w-full bg-surface-dim border-none rounded-xl p-4 focus:ring-2 focus:ring-brand-secondary/20 focus:bg-white transition outline-none ${errors.password_confirmation ? 'ring-2 ring-red-500' : ''} ${isRtl ? 'text-right' : ''}`}
                   placeholder="Confirm password"
                   required
                 />
@@ -374,31 +374,31 @@ export default function UserCreate() {
         </div>
 
         {msg && (
-          <div className={`p-4 rounded-xl ${msg.ok ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+          <div className={`p-4 rounded-xl ${msg.ok ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
             {msg.text}
           </div>
         )}
 
         {invitationLink && (
-          <div className="p-4 bg-[#f4f4ef] rounded-xl">
-            <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Invitation Link</label>
+          <div className="p-4 bg-surface-light rounded-xl">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Invitation Link</label>
             <div className={`flex gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
               <input
                 type="text"
                 value={invitationLink}
                 readOnly
-                className="flex-1 bg-white border border-[#e8e8e3] rounded-xl p-3 text-sm text-[#404943] outline-none"
+                className="flex-1 bg-white border border-[#e8e8e3] rounded-xl p-3 text-sm text-on-surface-variant outline-none"
               />
               <button
                 type="button"
                 onClick={copyLink}
-                className="px-4 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition flex items-center gap-2"
+                className="px-4 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition flex items-center gap-2"
               >
                 <MaterialSymbol icon={copied ? "check" : "content_copy"} size={16} />
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
-            <p className="text-xs text-[#717973] mt-2">
+            <p className="text-xs text-on-surface-subtle mt-2">
               <MaterialSymbol icon="info" size={14} className="inline mr-1" />
               The invitation link has also been sent to {form.email}. It expires in 7 days.
             </p>
@@ -409,7 +409,7 @@ export default function UserCreate() {
           <button
             type="button"
             onClick={() => navigate('/users')}
-            className="flex-1 py-4 bg-[#e8e8e3] text-[#002819] rounded-xl font-bold hover:bg-gray-200 transition"
+            className="flex-1 py-4 bg-surface-dim text-brand-primary rounded-xl font-bold hover:bg-gray-200 transition"
           >
             {t('common.cancel')}
           </button>
@@ -417,7 +417,7 @@ export default function UserCreate() {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-4 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] shadow-lg shadow-[#002819]/20 transition disabled:opacity-50"
+              className="flex-1 py-4 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary shadow-lg shadow-brand-primary/20 transition disabled:opacity-50"
             >
               {saving ? t('common.loading') : (mode === 'invite' ? 'Send Invitation' : t('users.createUser'))}
             </button>

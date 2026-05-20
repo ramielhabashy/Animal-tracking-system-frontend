@@ -99,41 +99,41 @@ export default function AuctionCreate() {
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Header */}
       <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-        <Link to="/auctions" className={`p-2 hover:bg-[#eeeee9] rounded-full transition-colors ${isRtl ? 'order-last' : ''}`}>
+        <Link to="/auctions" className={`p-2 hover:bg-surface-dim rounded-full transition-colors ${isRtl ? 'order-last' : ''}`}>
           <MaterialSymbol icon="arrow_back" />
         </Link>
         <div>
-          <h2 className="text-3xl font-['Manrope'] font-extrabold text-[#002819] tracking-tight">
+          <h2 className="text-3xl font-['Manrope'] font-extrabold text-brand-primary tracking-tight">
             {t('auctionsPage.startNew')}
           </h2>
-          <p className="text-[#404943] mt-1">{t('auctionsPage.listForBidding', 'List your animal for bidding')}</p>
+          <p className="text-on-surface-variant mt-1">{t('auctionsPage.listForBidding', 'List your animal for bidding')}</p>
         </div>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Select Animal */}
-        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-[#c0c9c1]/10">
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-outline/10">
           <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <span className="material-symbols-outlined text-[#002819] bg-[#f4f4ef] p-2 rounded-xl">pets</span>
-            <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">{t('auctionsPage.selectAnimal')}</h3>
+            <span className="material-symbols-outlined text-brand-primary bg-surface-light p-2 rounded-xl">pets</span>
+            <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">{t('auctionsPage.selectAnimal')}</h3>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+              <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
             </div>
           ) : animals.length === 0 ? (
-            <div className="text-center py-12 bg-[#f4f4ef] rounded-2xl">
-              <MaterialSymbol icon="pets" size={48} className="mx-auto text-[#c0c9c1] mb-4" />
-              <p className="text-[#404943] font-semibold">{t('auctionsPage.noAnimalsAvailable')}</p>
-              <p className="text-[#717973] text-sm mt-2">{t('auctionsPage.noAnimalsHint')}</p>
-              <Link to="/animals/new" className="inline-block mt-4 px-4 py-2 bg-[#002819] text-white rounded-xl text-sm font-bold">
+            <div className="text-center py-12 bg-surface-light rounded-2xl">
+              <MaterialSymbol icon="pets" size={48} className="mx-auto text-outline mb-4" />
+              <p className="text-on-surface-variant font-semibold">{t('auctionsPage.noAnimalsAvailable')}</p>
+              <p className="text-on-surface-subtle text-sm mt-2">{t('auctionsPage.noAnimalsHint')}</p>
+              <Link to="/animals/new" className="inline-block mt-4 px-4 py-2 bg-brand-primary text-white rounded-xl text-sm font-bold">
                 {t('animals.addAnimal')}
               </Link>
             </div>
@@ -151,26 +151,26 @@ export default function AuctionCreate() {
                   }}
                   className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
                     parseInt(formData.animal_id) === animal.id
-                      ? 'border-[#002819] bg-[#f4f4ef]'
-                      : 'border-[#eeeee9] hover:border-[#002819]/30'
+                      ? 'border-brand-primary bg-surface-light'
+                      : 'border-[#eeeee9] hover:border-brand-primary/30'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#eeeee9] flex-shrink-0">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-dim flex-shrink-0">
                     {animal.identification_photo ? (
                       <img src={storageUrl(animal.identification_photo)} alt={animal.animal_id} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <MaterialSymbol icon="pets" className="text-[#002819]/20" />
+                        <MaterialSymbol icon="pets" className="text-brand-primary/20" />
                       </div>
                     )}
                   </div>
                   <div className="flex-grow">
-                    <p className="font-bold text-[#002819]">{animal.animal_id}</p>
-                    <p className="text-sm text-[#404943]">{animal.species} {animal.breed && `• ${animal.breed}`}</p>
-                    <p className="text-xs text-[#717973]">{animal.gender} | Temp: {animal.baseline_temperature || '38.5'}°C</p>
+                    <p className="font-bold text-brand-primary">{animal.animal_id}</p>
+                    <p className="text-sm text-on-surface-variant">{animal.species} {animal.breed && `• ${animal.breed}`}</p>
+                    <p className="text-xs text-on-surface-subtle">{animal.gender} | Temp: {animal.baseline_temperature || '38.5'}°C</p>
                   </div>
                   {parseInt(formData.animal_id) === animal.id && (
-                    <MaterialSymbol icon="check_circle" className="text-[#002819]" />
+                    <MaterialSymbol icon="check_circle" className="text-brand-primary" />
                   )}
                 </div>
               ))}
@@ -179,28 +179,28 @@ export default function AuctionCreate() {
         </div>
 
         {/* Auction Details */}
-        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-[#c0c9c1]/10">
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-outline/10">
           <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <span className="material-symbols-outlined text-[#002819] bg-[#f4f4ef] p-2 rounded-xl">gavel</span>
-            <h3 className="text-xl font-bold font-['Manrope'] text-[#002819]">{t('auctionsPage.auctionDetails')}</h3>
+            <span className="material-symbols-outlined text-brand-primary bg-surface-light p-2 rounded-xl">gavel</span>
+            <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">{t('auctionsPage.auctionDetails')}</h3>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70">{t('auctionsPage.auctionTitle')}</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">{t('auctionsPage.auctionTitle')}</label>
               <input
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
                 required
                 placeholder={t('auctionsPage.titlePlaceholder')}
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3.5 text-[#002819] font-semibold focus:ring-2 focus:ring-[#002819]/20"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3.5 text-brand-primary font-semibold focus:ring-2 focus:ring-[#002819]/20"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70">{t('auctionsPage.startingPriceLabel')}</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">{t('auctionsPage.startingPriceLabel')}</label>
                 <input
                   name="starting_price"
                   type="number"
@@ -209,12 +209,12 @@ export default function AuctionCreate() {
                   required
                   min="1"
                   placeholder="25000"
-                  className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3.5 text-[#002819] font-semibold focus:ring-2 focus:ring-[#002819]/20"
+                  className="w-full bg-surface-light border-none rounded-xl px-4 py-3.5 text-brand-primary font-semibold focus:ring-2 focus:ring-[#002819]/20"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70">{t('auctionsPage.reservePriceLabel')}</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">{t('auctionsPage.reservePriceLabel')}</label>
                 <input
                   name="reserve_price"
                   type="number"
@@ -222,18 +222,18 @@ export default function AuctionCreate() {
                   onChange={handleChange}
                   min="0"
                   placeholder="50000"
-                  className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3.5 text-[#002819] font-semibold focus:ring-2 focus:ring-[#002819]/20"
+                  className="w-full bg-surface-light border-none rounded-xl px-4 py-3.5 text-brand-primary font-semibold focus:ring-2 focus:ring-[#002819]/20"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70">{t('auctionsPage.auctionDuration')}</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">{t('auctionsPage.auctionDuration')}</label>
               <select
                 name="duration_hours"
                 value={formData.duration_hours}
                 onChange={handleChange}
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3.5 text-[#002819] font-semibold focus:ring-2 focus:ring-[#002819]/20"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3.5 text-brand-primary font-semibold focus:ring-2 focus:ring-[#002819]/20"
               >
                 <option value={24}>24 {t('auctionsPage.hours')} (1 {t('auctionsPage.days')})</option>
                 <option value={48}>48 {t('auctionsPage.hours')} (2 {t('auctionsPage.days')})</option>
@@ -243,14 +243,14 @@ export default function AuctionCreate() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#404943]/70">{t('auctionsPage.description')} <span className="text-[#717973] font-normal">Optional</span></label>
+              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">{t('auctionsPage.description')} <span className="text-on-surface-subtle font-normal">Optional</span></label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 rows="4"
                 placeholder={t('auctionsPage.descriptionPlaceholder')}
-                className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-3.5 text-[#002819] font-medium focus:ring-2 focus:ring-[#002819]/20 resize-none"
+                className="w-full bg-surface-light border-none rounded-xl px-4 py-3.5 text-brand-primary font-medium focus:ring-2 focus:ring-[#002819]/20 resize-none"
               />
             </div>
           </div>
@@ -258,10 +258,10 @@ export default function AuctionCreate() {
 
         {/* Preview */}
         {selectedAnimal && formData.title && (
-          <div className="bg-[#06402b] rounded-[2rem] p-8 text-white relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#D4AF37]/20 rounded-full blur-3xl"></div>
+          <div className="bg-brand-secondary rounded-[2rem] p-8 text-white relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand-accent/20 rounded-full blur-3xl"></div>
             <div className="relative z-10">
-              <h4 className="text-sm font-bold text-[#D4AF37] uppercase tracking-widest mb-4">{t('auctionsPage.preview')}</h4>
+              <h4 className="text-sm font-bold text-brand-accent uppercase tracking-widest mb-4">{t('auctionsPage.preview')}</h4>
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <p className="text-white/60 text-xs uppercase tracking-widest mb-1">{t('auctionsPage.startingPrice')}</p>
@@ -280,14 +280,14 @@ export default function AuctionCreate() {
         <div className="flex gap-4">
           <Link
             to="/auctions"
-            className="flex-1 py-4 bg-[#eeeee9] text-[#002819] rounded-xl font-bold text-center hover:bg-[#e8e8e3] transition-all"
+            className="flex-1 py-4 bg-surface-dim text-brand-primary rounded-xl font-bold text-center hover:bg-surface-dim transition-all"
           >
             {t('auctionsPage.cancel')}
           </Link>
             <button
               type="submit"
               disabled={submitting || !formData.animal_id || !formData.title || !formData.starting_price}
-              className={`flex-1 py-4 bg-[#002819] text-white rounded-xl font-bold shadow-xl shadow-[#002819]/20 hover:bg-[#06402b] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
+              className={`flex-1 py-4 bg-brand-primary text-white rounded-xl font-bold shadow-xl shadow-brand-primary/20 hover:bg-brand-secondary active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}
             >
               {submitting ? (
                 <>

@@ -49,7 +49,7 @@ export default function ForgotPassword() {
         <LanguageSwitcher />
       </div>
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[#eeeee9]/30" />
+        <div className="absolute inset-0 bg-surface-dim/30" />
         <div
           className="w-full h-full bg-cover bg-center"
           style={{
@@ -62,13 +62,13 @@ export default function ForgotPassword() {
         <div className="relative z-10 w-full max-w-md">
           <div className="bg-white/95 backdrop-blur-xl p-10 md:p-12 rounded-3xl shadow-[0_24px_64px_rgba(6,64,43,0.15)]">
             <div className="flex flex-col items-center mb-10">
-              <div className="w-18 h-18 bg-gradient-to-br from-[#002819] to-[#06402B] rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-[#002819]/30">
-                <MaterialSymbol icon="lock_reset" size={36} className="text-[#D4AF37]" weight="fill" />
+              <div className="w-18 h-18 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-brand-primary/30">
+                <MaterialSymbol icon="lock_reset" size={36} className="text-brand-accent" weight="fill" />
               </div>
-              <h1 className="text-4xl font-black text-[#002819] font-['Manrope'] tracking-tight mb-2">
+              <h1 className="text-4xl font-black text-brand-primary font-['Manrope'] tracking-tight mb-2">
                 {t('auth.forgotPassword')}
               </h1>
-              <p className="text-[#404943] font-medium">{platformName}</p>
+              <p className="text-on-surface-variant font-medium">{platformName}</p>
             </div>
 
             {success ? (
@@ -76,31 +76,31 @@ export default function ForgotPassword() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                   <MaterialSymbol icon="mark_email_read" size={32} className="text-green-600" weight="fill" />
                 </div>
-                <p className="text-[#404943] font-medium">
+                <p className="text-on-surface-variant font-medium">
                   {t('auth.resetEmailSent') || 'Password reset email sent! Check your inbox.'}
                 </p>
                 <Link
                   to="/login"
-                  className="inline-block w-full bg-gradient-to-br from-[#002819] to-[#06402B] text-[#D4AF37] font-bold py-4 rounded-2xl text-center hover:opacity-95 transition-all"
+                  className="inline-block w-full bg-gradient-to-br from-brand-primary to-brand-secondary text-brand-accent font-bold py-4 rounded-2xl text-center hover:opacity-95 transition-all"
                 >
                   {t('auth.backToLogin') || 'Back to Login'}
                 </Link>
               </div>
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>
-                <p className={`text-sm text-[#404943] ${isRtl ? 'text-right' : 'text-left'}`}>
+                <p className={`text-sm text-on-surface-variant ${isRtl ? 'text-right' : 'text-left'}`}>
                   {t('auth.forgotPasswordInstructions') || 'Enter your email address and we\'ll send you a link to reset your password.'}
                 </p>
 
                 <div className="space-y-3">
-                  <label className={`block text-sm font-bold text-[#002819] px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
+                  <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
                     {t('auth.email')}
                   </label>
                   <div className="relative">
                     <MaterialSymbol
                       icon="mail"
                       size={20}
-                      className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
+                      className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
                     />
                     <input
                       type="email"
@@ -108,7 +108,7 @@ export default function ForgotPassword() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="example@oasis.com"
                       required
-                      className={`w-full bg-[#F4F4EF] rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#06402B]/20 transition-all font-medium text-[#1a1c19] placeholder:text-[#c0c9c1] ${
+                      className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
                         isRtl ? 'pr-14 pl-5 text-right' : 'pl-14 pr-5 text-left'
                       }`}
                     />
@@ -116,7 +116,7 @@ export default function ForgotPassword() {
                 </div>
 
                 {error && (
-                  <div className="p-4 bg-[#BA1A1A]/10 text-[#BA1A1A] rounded-xl text-sm font-medium">
+                  <div className="p-4 bg-danger/10 text-danger rounded-xl text-sm font-medium">
                     {error}
                   </div>
                 )}
@@ -124,11 +124,11 @@ export default function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-br from-[#002819] to-[#06402B] text-[#D4AF37] font-bold py-5 rounded-2xl shadow-xl shadow-[#002819]/25 transition-all duration-200 hover:opacity-95 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+                  className="w-full bg-gradient-to-br from-brand-primary to-brand-secondary text-brand-accent font-bold py-5 rounded-2xl shadow-xl shadow-brand-primary/25 transition-all duration-200 hover:opacity-95 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
                 >
                   <span className="font-bold">{loading ? t('common.loading') : (t('auth.sendResetLink') || 'Send Reset Link')}</span>
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-brand-accent border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <MaterialSymbol icon="send" size={20} weight="fill" />
                   )}
@@ -136,7 +136,7 @@ export default function ForgotPassword() {
 
                 <Link
                   to="/login"
-                  className={`flex items-center justify-center gap-2 text-sm text-[#404943] hover:text-[#002819] transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+                  className={`flex items-center justify-center gap-2 text-sm text-on-surface-variant hover:text-brand-primary transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
                 >
                   <MaterialSymbol icon="arrow_back" size={16} />
                   {t('auth.backToLogin') || 'Back to Login'}

@@ -117,8 +117,8 @@ function GeofenceDrawer({ coordinates, onCoordinatesChange, animals, devices, ge
           >
             <Popup>
               <div className="p-2 min-w-[150px]">
-                <div className="font-bold text-[#002819]">{animal.animal_id}</div>
-                <div className="text-xs text-[#717973]">{animal.species} - {animal.breed}</div>
+                <div className="font-bold text-brand-primary">{animal.animal_id}</div>
+                <div className="text-xs text-on-surface-subtle">{animal.species} - {animal.breed}</div>
                 <div className={`text-xs ${isInside ? 'text-green-600 font-bold' : 'text-gray-500'} mt-1`}>
                   {isInside ? '✓ Inside Geofence' : (isOnline ? '🟢 Online - Outside' : '⚫ Offline - Outside')}
                 </div>
@@ -429,7 +429,7 @@ export default function GeofenceList() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className={`flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-white rounded-lg hover:bg-[#c9a030] transition-colors disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
+              className={`flex items-center gap-2 px-4 py-2 bg-brand-accent text-white rounded-lg hover:bg-brand-accent transition-colors disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
             >
               <MaterialSymbol icon="download" size={20} />
               {exporting ? t('common.exporting') : t('common.export')}
@@ -469,13 +469,13 @@ export default function GeofenceList() {
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => setViewMode('tiles')}
-            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'tiles' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <MaterialSymbol icon="grid_view" size={18} />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-[#002819]' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-2 rounded-md text-sm transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <MaterialSymbol icon="table_rows" size={18} />
           </button>

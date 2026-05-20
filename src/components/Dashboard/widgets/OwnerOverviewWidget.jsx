@@ -16,7 +16,7 @@ export default function OwnerOverviewWidget({ dashboardData }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-5">
-        <Link to="/users" className="text-sm font-bold text-[#D4AF37] hover:underline flex items-center gap-1">
+        <Link to="/users" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
           {t('team.manageTeam')}
           <MaterialSymbol icon="arrow_forward" size={16} />
         </Link>
@@ -25,27 +25,27 @@ export default function OwnerOverviewWidget({ dashboardData }) {
       <div className="card overflow-hidden">
         {ownerStatsLoading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="animate-spin w-8 h-8 border-2 border-[#002819] border-t-transparent rounded-full" />
+            <div className="animate-spin w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full" />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#E3E3DE]">
-                  <th className="text-left py-4 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('user.name')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('dashboard.totalAnimals')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('nav.devices')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('team.teamMembers')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('subscription.tier')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('subscription.status')}</th>
-                  <th className="text-center py-4 px-3 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('subscription.expiry')}</th>
-                  <th className="text-right py-4 px-5 font-bold text-[#002819] text-xs uppercase tracking-wider">{t('common.actions')}</th>
+                <tr className="border-b border-surface-high">
+                  <th className="text-left py-4 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('user.name')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('dashboard.totalAnimals')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('nav.devices')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('team.teamMembers')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('subscription.tier')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('subscription.status')}</th>
+                  <th className="text-center py-4 px-3 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('subscription.expiry')}</th>
+                  <th className="text-right py-4 px-5 font-bold text-brand-primary text-xs uppercase tracking-wider">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {ownerStatsData.data?.length === 0 && (
                   <tr>
-                    <td colSpan="8" className="text-center py-12 text-[#717973]">{t('common.noData')}</td>
+                    <td colSpan="8" className="text-center py-12 text-on-surface-subtle">{t('common.noData')}</td>
                   </tr>
                 )}
                 {ownerStatsData.data?.map((owner) => {
@@ -55,62 +55,62 @@ export default function OwnerOverviewWidget({ dashboardData }) {
                     cancelled: 'bg-red-100 text-red-800',
                     pending_payment: 'bg-purple-100 text-purple-800',
                     past_due: 'bg-orange-100 text-orange-800',
-                  }[owner.subscription_status] || 'bg-[#F4F4EF] text-[#717973]';
+                  }[owner.subscription_status] || 'bg-surface-light text-on-surface-subtle';
 
                   const expiryWarning = owner.subscription_days_remaining !== null && owner.subscription_days_remaining <= 7;
                   const isExpired = owner.subscription_days_remaining === 0 && owner.subscription_status === 'active';
 
                   return (
-                    <tr key={owner.id} className="border-b border-[#F4F4EF] hover:bg-[#F4F4EF]/50 transition-colors">
+                    <tr key={owner.id} className="border-b border-[#F4F4EF] hover:bg-surface-light/50 transition-colors">
                       <td className="py-4 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#002819] to-[#06402B] flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white text-sm font-bold shrink-0">
                             {owner.name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                           <div>
-                            <p className="font-semibold text-[#002819]">{owner.name}</p>
-                            <p className="text-xs text-[#717973]">{owner.email}</p>
+                            <p className="font-semibold text-brand-primary">{owner.name}</p>
+                            <p className="text-xs text-on-surface-subtle">{owner.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="text-center py-4 px-3">
-                        <span className="font-semibold text-[#002819]">{owner.animals_count}</span>
+                        <span className="font-semibold text-brand-primary">{owner.animals_count}</span>
                       </td>
                       <td className="text-center py-4 px-3">
-                        <span className="font-semibold text-[#002819]">{owner.devices_count}</span>
+                        <span className="font-semibold text-brand-primary">{owner.devices_count}</span>
                       </td>
                       <td className="text-center py-4 px-3">
-                        <span className="font-semibold text-[#002819]">{owner.team_count}</span>
+                        <span className="font-semibold text-brand-primary">{owner.team_count}</span>
                       </td>
                       <td className="text-center py-4 px-3">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F4F4EF] text-[#404943]">{owner.tier_name}</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-light text-on-surface-variant">{owner.tier_name}</span>
                       </td>
                       <td className="text-center py-4 px-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColor}`}>
                           {owner.subscription_status || 'none'}
                         </span>
                         {isExpired && (
-                          <span className="block text-[10px] text-[#BA1A1A] font-semibold mt-0.5">{t('subscription.expired')}</span>
+                          <span className="block text-[10px] text-danger font-semibold mt-0.5">{t('subscription.expired')}</span>
                         )}
                         {expiryWarning && owner.subscription_days_remaining > 0 && (
                           <span className="block text-[10px] text-amber-600 font-semibold mt-0.5">{owner.subscription_days_remaining}d {t('subscription.remaining')}</span>
                         )}
                       </td>
-                      <td className="text-center py-4 px-3 text-xs text-[#717973]">
+                      <td className="text-center py-4 px-3 text-xs text-on-surface-subtle">
                         {owner.subscription_ends_at ? new Date(owner.subscription_ends_at).toLocaleDateString() : '-'}
                       </td>
                       <td className="text-right py-4 px-5">
                         <div className="flex items-center gap-1.5 justify-end">
-                          <Link to={`/users/${owner.id}/edit`} className="p-2 rounded-lg hover:bg-[#F4F4EF] text-[#717973] hover:text-[#002819] transition-colors" title={t('common.edit')}>
+                          <Link to={`/users/${owner.id}/edit`} className="p-2 rounded-lg hover:bg-surface-light text-on-surface-subtle hover:text-brand-primary transition-colors" title={t('common.edit')}>
                             <MaterialSymbol icon="edit" size={16} />
                           </Link>
-                          <Link to={`/animals?owner_id=${owner.id}`} className="p-2 rounded-lg hover:bg-[#F4F4EF] text-[#717973] hover:text-[#002819] transition-colors" title={t('dashboard.manageAnimals')}>
+                          <Link to={`/animals?owner_id=${owner.id}`} className="p-2 rounded-lg hover:bg-surface-light text-on-surface-subtle hover:text-brand-primary transition-colors" title={t('dashboard.manageAnimals')}>
                             <MaterialSymbol icon="pets" size={16} />
                           </Link>
-                          <Link to={`/devices?owner_id=${owner.id}`} className="p-2 rounded-lg hover:bg-[#F4F4EF] text-[#717973] hover:text-[#002819] transition-colors" title={t('nav.devices')}>
+                          <Link to={`/devices?owner_id=${owner.id}`} className="p-2 rounded-lg hover:bg-surface-light text-on-surface-subtle hover:text-brand-primary transition-colors" title={t('nav.devices')}>
                             <MaterialSymbol icon="sensors" size={16} />
                           </Link>
-                          <Link to={`/subscription?user_id=${owner.id}`} className="p-2 rounded-lg hover:bg-[#F4F4EF] text-[#717973] hover:text-[#D4AF37] transition-colors" title={t('subscription.title')}>
+                          <Link to={`/subscription?user_id=${owner.id}`} className="p-2 rounded-lg hover:bg-surface-light text-on-surface-subtle hover:text-brand-accent transition-colors" title={t('subscription.title')}>
                             <MaterialSymbol icon="stars" size={16} />
                           </Link>
                         </div>
@@ -120,11 +120,11 @@ export default function OwnerOverviewWidget({ dashboardData }) {
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-[#F4F4EF]">
-                  <td className="py-4 px-5 font-bold text-[#002819]">{t('dashboard.total')}</td>
-                  <td className="text-center py-4 px-3 font-bold text-[#002819]">{ownerStatsData.total_animals || 0}</td>
-                  <td className="text-center py-4 px-3 font-bold text-[#002819]">{ownerStatsData.total_devices || 0}</td>
-                  <td className="text-center py-4 px-3 font-bold text-[#002819]">{ownerStatsData.total_team || 0}</td>
+                <tr className="bg-surface-light">
+                  <td className="py-4 px-5 font-bold text-brand-primary">{t('dashboard.total')}</td>
+                  <td className="text-center py-4 px-3 font-bold text-brand-primary">{ownerStatsData.total_animals || 0}</td>
+                  <td className="text-center py-4 px-3 font-bold text-brand-primary">{ownerStatsData.total_devices || 0}</td>
+                  <td className="text-center py-4 px-3 font-bold text-brand-primary">{ownerStatsData.total_team || 0}</td>
                   <td colSpan="4" />
                 </tr>
               </tfoot>

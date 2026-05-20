@@ -61,7 +61,7 @@ export default function TranslateButton({ text, className = '' }) {
     <span ref={ref} className={`relative inline-flex ${className}`}>
       <button
         onClick={handleTranslate}
-        className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[#D4AF37]/20 text-[#717973] hover:text-[#D4AF37] transition-colors"
+        className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-brand-accent/20 text-on-surface-subtle hover:text-brand-accent transition-colors"
         title="Translate"
       >
         <MaterialSymbol
@@ -72,10 +72,10 @@ export default function TranslateButton({ text, className = '' }) {
       </button>
       {show && translation && (
         <div
-          className={`absolute z-50 top-6 bg-white border border-[#D4AF37]/30 rounded-xl px-4 py-3 shadow-[0_8px_24px_rgba(6,64,43,0.12)] text-sm text-[#002819] min-w-[200px] max-w-[320px] ${isRtl ? 'left-0' : 'right-0'}`}
+          className={`absolute z-50 top-6 bg-white border border-brand-accent/30 rounded-xl px-4 py-3 shadow-[0_8px_24px_rgba(6,64,43,0.12)] text-sm text-brand-primary min-w-[200px] max-w-[320px] ${isRtl ? 'left-0' : 'right-0'}`}
         >
           <div className={`flex items-start gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-            <MaterialSymbol icon="g_translate" size={16} className="text-[#D4AF37] shrink-0 mt-0.5" />
+            <MaterialSymbol icon="g_translate" size={16} className="text-brand-accent shrink-0 mt-0.5" />
             <p className="leading-relaxed">{translation}</p>
           </div>
         </div>

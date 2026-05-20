@@ -24,7 +24,6 @@ export default function ProfilePage() {
   const [payments, setPayments] = useState([]);
   const [notifications, setNotifications] = useState({
     email: true,
-    sms: false,
     push: true,
   });
   const [passwordForm, setPasswordForm] = useState({
@@ -213,7 +212,7 @@ if (res.ok) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -231,9 +230,9 @@ if (res.ok) {
         <nav className="flex text-xs text-[#4f6357] mb-2 uppercase tracking-widest font-bold">
           <span>{t('common.settings')}</span>
           <span className="mx-2">/</span>
-          <span className="text-[#002819]">{t('nav.profile')}</span>
+          <span className="text-brand-primary">{t('nav.profile')}</span>
         </nav>
-        <h2 className="text-3xl font-bold text-[#002819]">{t('profile.accountSettings')}</h2>
+        <h2 className="text-3xl font-bold text-brand-primary">{t('profile.accountSettings')}</h2>
       </div>
 
       {msg && (
@@ -243,15 +242,15 @@ if (res.ok) {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-[#F4F4EF] p-1 rounded-xl w-fit">
+      <div className="flex gap-2 bg-surface-light p-1 rounded-xl w-fit">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               activeTab === tab.id
-                ? 'bg-white text-[#002819] shadow-sm'
-                : 'text-[#404943] hover:text-[#002819]'
+                ? 'bg-white text-brand-primary shadow-sm'
+                : 'text-on-surface-variant hover:text-brand-primary'
             }`}
           >
             <MaterialSymbol icon={tab.icon} size={18} />
@@ -264,57 +263,57 @@ if (res.ok) {
       {activeTab === 'profile' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-              <MaterialSymbol icon="person" size={24} className="text-[#06402B]" />
+            <h3 className="text-xl font-bold text-brand-primary mb-6 flex items-center gap-2">
+              <MaterialSymbol icon="person" size={24} className="text-brand-secondary" />
               {t('profile.profileInfo')}
             </h3>
 
             <form onSubmit={handleSaveProfile} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('users.name')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">{t('users.name')}</label>
                   <input
                     type="text"
                     value={profile.name}
                     onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                    className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('auth.email')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">{t('auth.email')}</label>
                   <input
                     type="email"
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                    className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     required
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('users.phone')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">{t('users.phone')}</label>
                   <input
                     type="tel"
                     value={profile.phone}
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                    className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                     placeholder="+971 50 123 4567"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">{t('users.role')}</label>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">{t('users.role')}</label>
                   <input
                     type="text"
                     value={user?.role || 'Owner'}
-                    className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819]/50"
+                    className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary/50"
                     disabled
                   />
                 </div>
               </div>
               <div className="flex justify-end">
-                <button type="submit" disabled={saving} className="bg-[#002819] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50">
+                <button type="submit" disabled={saving} className="bg-brand-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-secondary transition disabled:opacity-50">
                   {saving ? t('common.loading') : t('common.save')}
                 </button>
               </div>
@@ -323,25 +322,25 @@ if (res.ok) {
 
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-[2rem] p-6 shadow-sm">
-              <h4 className="font-bold text-[#002819] mb-4">{t('profile.quickStats')}</h4>
+              <h4 className="font-bold text-brand-primary mb-4">{t('profile.quickStats')}</h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[#717973]">{t('common.devices')}</span>
-                  <span className="font-bold text-[#002819]">{devices.length}</span>
+                  <span className="text-on-surface-subtle">{t('common.devices')}</span>
+                  <span className="font-bold text-brand-primary">{devices.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#717973]">{t('common.subscription')}</span>
-                  <span className="font-bold text-[#D4AF37]">{subscription?.tier?.name || 'Free'}</span>
+                  <span className="text-on-surface-subtle">{t('common.subscription')}</span>
+                  <span className="font-bold text-brand-accent">{subscription?.tier?.name || 'Free'}</span>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-[2rem] p-6 shadow-sm">
-              <h4 className="font-bold text-[#002819] mb-4">{t('profile.language')}</h4>
+              <h4 className="font-bold text-brand-primary mb-4">{t('profile.language')}</h4>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819]"
+                className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary"
               >
                 <option value="en">English (US)</option>
                 <option value="ar">Arabic (العربية)</option>
@@ -355,42 +354,42 @@ if (res.ok) {
       {activeTab === 'security' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-              <MaterialSymbol icon="lock" size={24} className="text-[#06402B]" />
+            <h3 className="text-xl font-bold text-brand-primary mb-6 flex items-center gap-2">
+              <MaterialSymbol icon="lock" size={24} className="text-brand-secondary" />
               Change Password
             </h3>
 
             <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Current Password</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Current Password</label>
                 <input
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
-                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                   required
                   autoComplete="current-password"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">New Password</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">New Password</label>
                 <input
                   type="password"
                   value={passwordForm.password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
-                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                   required
                   minLength={8}
                   autoComplete="new-password"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#404943] uppercase tracking-wider mb-2">Confirm New Password</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   value={passwordForm.password_confirmation}
                   onChange={(e) => setPasswordForm({ ...passwordForm, password_confirmation: e.target.value })}
-                  className="w-full bg-[#F4F4EF] border-none rounded-xl p-4 text-[#002819] focus:ring-2 focus:ring-[#06402B]/20"
+                  className="w-full bg-surface-light border-none rounded-xl p-4 text-brand-primary focus:ring-2 focus:ring-brand-secondary/20"
                   required
                   minLength={8}
                   autoComplete="new-password"
@@ -400,7 +399,7 @@ if (res.ok) {
                 <button
                   type="submit"
                   disabled={changingPassword || !passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation}
-                  className="bg-[#002819] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50 flex items-center gap-2"
+                  className="bg-brand-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-brand-secondary transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {changingPassword ? (
                     <>
@@ -434,16 +433,16 @@ if (res.ok) {
         <div className="space-y-6">
           {subscription && ['active', 'pending', 'cancelled', 'pending_payment'].includes(subscription.status) && (
             <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-                <MaterialSymbol icon="workspace_premium" size={24} className="text-[#D4AF37]" />
+              <h3 className="text-xl font-bold text-brand-primary mb-6 flex items-center gap-2">
+                <MaterialSymbol icon="workspace_premium" size={24} className="text-brand-accent" />
                 {t('subscription.title')}
               </h3>
 
-              <div className="border-2 border-[#D4AF37] rounded-2xl p-6 bg-[#D4AF37]/5">
+              <div className="border-2 border-brand-accent rounded-2xl p-6 bg-brand-accent/5">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h4 className="text-2xl font-bold text-[#002819]">{subscription.tier?.name || 'Plan'}</h4>
+                      <h4 className="text-2xl font-bold text-brand-primary">{subscription.tier?.name || 'Plan'}</h4>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                         subscription.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
                         subscription.status === 'cancelled' ? 'bg-red-100 text-red-700' :
@@ -456,13 +455,13 @@ if (res.ok) {
                          'Free Plan'}
                       </span>
                     </div>
-                    <p className="text-3xl font-black text-[#002819]">
+                    <p className="text-3xl font-black text-brand-primary">
                       {subscription.tier?.price_monthly === '0.00' || subscription.tier?.price_monthly == 0 ? 'Free' : `$${subscription.tier?.price_monthly}`}
                       {subscription.tier?.price_monthly !== '0.00' && subscription.tier?.price_monthly != 0 && (
-                        <span className="text-base font-normal text-[#717973]">/month</span>
+                        <span className="text-base font-normal text-on-surface-subtle">/month</span>
                       )}
                     </p>
-                    <p className="text-sm text-[#717973] mt-1">{subscription.tier?.description}</p>
+                    <p className="text-sm text-on-surface-subtle mt-1">{subscription.tier?.description}</p>
                   </div>
                   {subscription.status === 'active' && (
                     <button
@@ -480,45 +479,45 @@ if (res.ok) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-[#D4AF37]/20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-brand-accent/20">
                   <div>
-                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Started</p>
-                    <p className="font-bold text-[#002819] mt-1">
+                    <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">Started</p>
+                    <p className="font-bold text-brand-primary mt-1">
                       {subscription.started_at ? new Date(subscription.started_at).toLocaleDateString() : '-'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Renewal Date</p>
-                    <p className="font-bold text-[#002819] mt-1">
+                    <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">Renewal Date</p>
+                    <p className="font-bold text-brand-primary mt-1">
                       {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : '-'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Billing Cycle</p>
-                    <p className="font-bold text-[#002819] mt-1 capitalize">{subscription.billing_cycle || 'Monthly'}</p>
+                    <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">Billing Cycle</p>
+                    <p className="font-bold text-brand-primary mt-1 capitalize">{subscription.billing_cycle || 'Monthly'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#717973] uppercase tracking-wider font-bold">Payment Method</p>
-                    <p className="font-bold text-[#002819] mt-1 capitalize">{subscription.payment_method || 'Card'}</p>
+                    <p className="text-xs text-on-surface-subtle uppercase tracking-wider font-bold">Payment Method</p>
+                    <p className="font-bold text-brand-primary mt-1 capitalize">{subscription.payment_method || 'Card'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#D4AF37]/20">
+                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-brand-accent/20">
                   <div className="flex items-center gap-2">
-                    <MaterialSymbol icon="pets" size={18} className="text-[#717973]" />
-                    <span className="text-sm text-[#404943]">
+                    <MaterialSymbol icon="pets" size={18} className="text-on-surface-subtle" />
+                    <span className="text-sm text-on-surface-variant">
                       {subscription.tier?.max_animals === 0 ? 'Unlimited' : subscription.tier?.max_animals} animals
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MaterialSymbol icon="sensors" size={18} className="text-[#717973]" />
-                    <span className="text-sm text-[#404943]">
+                    <MaterialSymbol icon="sensors" size={18} className="text-on-surface-subtle" />
+                    <span className="text-sm text-on-surface-variant">
                       {subscription.tier?.max_devices === 0 ? 'Unlimited' : subscription.tier?.max_devices} devices
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MaterialSymbol icon="group" size={18} className="text-[#717973]" />
-                    <span className="text-sm text-[#404943]">
+                    <MaterialSymbol icon="group" size={18} className="text-on-surface-subtle" />
+                    <span className="text-sm text-on-surface-variant">
                       {subscription.tier?.max_users === 0 ? 'Unlimited' : subscription.tier?.max_users} users
                     </span>
                   </div>
@@ -529,21 +528,21 @@ if (res.ok) {
 
           {(!subscription || subscription.status === 'none') && subscription?.status !== 'pending_payment' && (
             <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-                <MaterialSymbol icon="workspace_premium" size={24} className="text-[#D4AF37]" />
+              <h3 className="text-xl font-bold text-brand-primary mb-6 flex items-center gap-2">
+                <MaterialSymbol icon="workspace_premium" size={24} className="text-brand-accent" />
                 {t('subscription.title')}
               </h3>
               <div className="text-center py-8">
-                <MaterialSymbol icon="credit_card_off" size={48} className="text-[#717973] mx-auto mb-3" />
-                <h4 className="text-lg font-bold text-[#002819] mb-2">No Active Subscription</h4>
-                <p className="text-[#717973] mb-6">Choose a plan below to get started</p>
+                <MaterialSymbol icon="credit_card_off" size={48} className="text-on-surface-subtle mx-auto mb-3" />
+                <h4 className="text-lg font-bold text-brand-primary mb-2">No Active Subscription</h4>
+                <p className="text-on-surface-subtle mb-6">Choose a plan below to get started</p>
               </div>
             </div>
           )}
 
           {tiers.length > 0 && (
             <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-              <h4 className="text-lg font-bold text-[#002819] mb-4">Available Plans</h4>
+              <h4 className="text-lg font-bold text-brand-primary mb-4">Available Plans</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {tiers.map((tier) => {
                   const effectiveTierId = subscription?.tier?.id ?? subscription?.tier_id;
@@ -555,32 +554,32 @@ if (res.ok) {
                   return (
                     <div
                       key={tier.id}
-                      className={`p-6 rounded-2xl border-2 ${isCurrent ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-gray-100 bg-[#F4F4EF]'}`}
+                      className={`p-6 rounded-2xl border-2 ${isCurrent ? 'border-brand-accent bg-brand-accent/5' : 'border-gray-100 bg-surface-light'}`}
                     >
                       {isCurrent && (
-                        <span className="inline-block bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
+                        <span className="inline-block bg-brand-accent text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
                           Current
                         </span>
                       )}
-                      <h4 className="text-xl font-bold text-[#002819]">{tier.name}</h4>
-                      <p className="text-3xl font-black text-[#002819] mt-2">
+                      <h4 className="text-xl font-bold text-brand-primary">{tier.name}</h4>
+                      <p className="text-3xl font-black text-brand-primary mt-2">
                         {tier.price_monthly === '0.00' || tier.price_monthly == 0 ? 'Free' : `$${tier.price_monthly}`}
                         {tier.price_monthly !== '0.00' && tier.price_monthly != 0 && (
-                          <span className="text-base font-normal text-[#717973]">/mo</span>
+                          <span className="text-base font-normal text-on-surface-subtle">/mo</span>
                         )}
                       </p>
-                      <p className="text-sm text-[#717973] mt-1">{tier.description}</p>
-                      <ul className="mt-4 space-y-2 text-sm text-[#404943]">
+                      <p className="text-sm text-on-surface-subtle mt-1">{tier.description}</p>
+                      <ul className="mt-4 space-y-2 text-sm text-on-surface-variant">
                         <li className="flex items-center gap-2">
-                          <MaterialSymbol icon="pets" size={16} className="text-[#D4AF37]" />
+                          <MaterialSymbol icon="pets" size={16} className="text-brand-accent" />
                           {tier.max_animals === 0 ? 'Unlimited' : tier.max_animals} animals
                         </li>
                         <li className="flex items-center gap-2">
-                          <MaterialSymbol icon="sensors" size={16} className="text-[#D4AF37]" />
+                          <MaterialSymbol icon="sensors" size={16} className="text-brand-accent" />
                           {tier.max_devices === 0 ? 'Unlimited' : tier.max_devices} devices
                         </li>
                         <li className="flex items-center gap-2">
-                          <MaterialSymbol icon="group" size={16} className="text-[#D4AF37]" />
+                          <MaterialSymbol icon="group" size={16} className="text-brand-accent" />
                           {tier.max_users === 0 ? 'Unlimited' : tier.max_users} users
                         </li>
                       </ul>
@@ -588,7 +587,7 @@ if (res.ok) {
                         <button
                           onClick={() => handleSaveSubscription(tier.id)}
                           disabled={saving}
-                          className="w-full mt-4 py-2 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+                          className="w-full mt-4 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition disabled:opacity-50"
                         >
                           Upgrade
                         </button>
@@ -597,7 +596,7 @@ if (res.ok) {
                         <button
                           onClick={() => handleSaveSubscription(tier.id)}
                           disabled={saving}
-                          className="w-full mt-4 py-2 border-2 border-[#002819] text-[#002819] rounded-xl font-bold hover:bg-[#002819]/5 transition disabled:opacity-50"
+                          className="w-full mt-4 py-2 border-2 border-brand-primary text-brand-primary rounded-xl font-bold hover:bg-brand-primary/5 transition disabled:opacity-50"
                         >
                           Downgrade
                         </button>
@@ -606,7 +605,7 @@ if (res.ok) {
                         <button
                           onClick={() => handleSaveSubscription(tier.id)}
                           disabled={saving}
-                          className="w-full mt-4 py-2 bg-[#002819] text-white rounded-xl font-bold hover:bg-[#06402b] transition disabled:opacity-50"
+                          className="w-full mt-4 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition disabled:opacity-50"
                         >
                           {tier.price_monthly === '0.00' || tier.price_monthly == 0 ? 'Select Free Plan' : 'Subscribe'}
                         </button>
@@ -620,8 +619,8 @@ if (res.ok) {
 
           {tiers.length === 0 && !loading && (
             <div className="bg-white rounded-[2rem] p-8 shadow-sm text-center">
-              <MaterialSymbol icon="error_outline" size={40} className="text-[#717973] mx-auto mb-3" />
-              <p className="text-[#717973]">No subscription plans are available at this time.</p>
+              <MaterialSymbol icon="error_outline" size={40} className="text-on-surface-subtle mx-auto mb-3" />
+              <p className="text-on-surface-subtle">No subscription plans are available at this time.</p>
             </div>
           )}
         </div>
@@ -630,57 +629,41 @@ if (res.ok) {
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#002819] mb-6 flex items-center gap-2">
-            <MaterialSymbol icon="notifications_active" size={24} className="text-[#06402B]" />
+          <h3 className="text-xl font-bold text-brand-primary mb-6 flex items-center gap-2">
+            <MaterialSymbol icon="notifications_active" size={24} className="text-brand-secondary" />
             Notification Preferences
           </h3>
 
           <div className="space-y-4">
-            <label className="flex items-center justify-between p-4 bg-[#F4F4EF] rounded-xl cursor-pointer">
+            <label className="flex items-center justify-between p-4 bg-surface-light rounded-xl cursor-pointer">
               <div className="flex gap-3 items-center">
-                <MaterialSymbol icon="mail" size={20} className="text-[#002819]/60" />
+                <MaterialSymbol icon="mail" size={20} className="text-brand-primary/60" />
                 <div>
-                  <p className="font-bold text-[#002819]">{t('profile.emailNotifications')}</p>
-                  <p className="text-xs text-[#717973]">{t('profile.healthAlerts')}</p>
+                  <p className="font-bold text-brand-primary">{t('profile.emailNotifications')}</p>
+                  <p className="text-xs text-on-surface-subtle">{t('profile.healthAlerts')}</p>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={notifications.email}
                 onChange={() => toggleNotification('email')}
-                className="w-5 h-5 rounded-lg border-2 border-[#D4AF37] text-[#D4AF37] focus:ring-[#D4AF37] cursor-pointer"
+                className="w-5 h-5 rounded-lg border-2 border-brand-accent text-brand-accent focus:ring-brand-accent cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-4 bg-[#F4F4EF] rounded-xl cursor-pointer">
+            <label className="flex items-center justify-between p-4 bg-surface-light rounded-xl cursor-pointer">
               <div className="flex gap-3 items-center">
-                <MaterialSymbol icon="sms" size={20} className="text-[#002819]/60" />
+                <MaterialSymbol icon="notifications" size={20} className="text-brand-primary/60" />
                 <div>
-                  <p className="font-bold text-[#002819]">{t('profile.smsUpdates')}</p>
-                  <p className="text-xs text-[#717973]">{t('profile.urgentLocation')}</p>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={notifications.sms}
-                onChange={() => toggleNotification('sms')}
-                className="w-5 h-5 rounded-lg border-2 border-[#D4AF37] text-[#D4AF37] focus:ring-[#D4AF37] cursor-pointer"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-4 bg-[#F4F4EF] rounded-xl cursor-pointer">
-              <div className="flex gap-3 items-center">
-                <MaterialSymbol icon="notifications" size={20} className="text-[#002819]/60" />
-                <div>
-                  <p className="font-bold text-[#002819]">{t('profile.pushNotifications')}</p>
-                  <p className="text-xs text-[#717973]">{t('profile.platformActivities')}</p>
+                  <p className="font-bold text-brand-primary">{t('profile.pushNotifications')}</p>
+                  <p className="text-xs text-on-surface-subtle">{t('profile.platformActivities')}</p>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={notifications.push}
                 onChange={() => toggleNotification('push')}
-                className="w-5 h-5 rounded-lg border-2 border-[#D4AF37] text-[#D4AF37] focus:ring-[#D4AF37] cursor-pointer"
+                className="w-5 h-5 rounded-lg border-2 border-brand-accent text-brand-accent focus:ring-brand-accent cursor-pointer"
               />
             </label>
           </div>

@@ -28,7 +28,7 @@ export default function UserList() {
    const [totalUsers, setTotalUsers] = useState(0);
    
    useEffect(() => {
-     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
      return () => clearTimeout(timer);
    }, [searchQuery]);
    
@@ -80,6 +80,13 @@ const fetchData = async () => {
      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
      if (statusFilter === 'active' && u.is_active === false) return false;
      if (statusFilter === 'inactive' && u.is_active !== false) return false;
+     if (debouncedSearch) {
+       const q = debouncedSearch.toLowerCase();
+       const name = (u.name || '').toLowerCase();
+       const email = (u.email || '').toLowerCase();
+       const role = (u.role || '').toLowerCase();
+       if (!name.includes(q) && !email.includes(q) && !role.includes(q)) return false;
+     }
      return true;
    });
 
@@ -91,7 +98,7 @@ const fetchData = async () => {
     const tier = tiers.find(t => t.id === tierId);
     return tier?.name || null;
   };
-  const roleColors = { Admin: 'bg-[#002819]/5 text-[#002819]', Manager: 'bg-[#eeeee9] text-[#404943]', Owner: 'bg-[#D4AF37]/20 text-[#735c00]', Shepherd: 'bg-[#eeeee9] text-[#404943]' };
+  const roleColors = { Admin: 'bg-brand-primary/5 text-brand-primary', Manager: 'bg-surface-dim text-on-surface-variant', Owner: 'bg-brand-accent/20 text-tertiary-container', Shepherd: 'bg-surface-dim text-on-surface-variant' };
 
   const handleDelete = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
@@ -126,8 +133,8 @@ const fetchData = async () => {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
-      <span className="ml-3 text-[#404943]">Loading users...</span>
+      <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
+      <span className="ml-3 text-on-surface-variant">Loading users...</span>
     </div>
   );
 
@@ -135,15 +142,15 @@ const fetchData = async () => {
     <div className="space-y-8">
       <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 ${isRtl ? 'text-right' : ''}`}>
         <div>
-          <h2 className="text-4xl font-black text-[#002819]">{t('users.title')}</h2>
-          <p className="text-[#404943] mt-2 font-medium">Coordinate access for your digital oasis ecosystem.</p>
+          <h2 className="text-4xl font-black text-brand-primary">{t('users.title')}</h2>
+          <p className="text-on-surface-variant mt-2 font-medium">Coordinate access for your digital oasis ecosystem.</p>
         </div>
         <div className="flex gap-3">
           {isAdmin && (
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="px-4 py-2 bg-[#D4AF37] text-white rounded-xl font-bold hover:bg-[#c9a030] transition flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-accent text-white rounded-xl font-bold hover:bg-brand-accent transition flex items-center gap-2 disabled:opacity-50"
             >
               <MaterialSymbol icon="download" size={20} />
               {exporting ? t('common.exporting') : t('common.export')}
@@ -159,27 +166,27 @@ const fetchData = async () => {
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
 
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[240px] relative">
-          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
           <input 
             type="text" 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
             placeholder={t('common.search')}
-            className={`w-full bg-white border-none rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
+            className={`w-full bg-white border-none rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`} 
           />
         </div>
 
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">{t('users.role') || 'Role'} — All</option>
           {allRoles.map(role => (
@@ -190,7 +197,7 @@ const fetchData = async () => {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">Status — All</option>
           <option value="active">Active</option>
@@ -202,30 +209,30 @@ const fetchData = async () => {
         <div className="overflow-x-auto">
           <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
             <thead>
-              <tr className="bg-[#F4F4EF]/50">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">{t('users.name')}</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">{t('users.role')}</th>
-                {showSubscriptionColumn && <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">{t('users.subscription')}</th>}
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Status</th>
-                <th className={`px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943] ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
+              <tr className="bg-surface-light/50">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('users.name')}</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('users.role')}</th>
+                {showSubscriptionColumn && <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('users.subscription')}</th>}
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Status</th>
+                <th className={`px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ${isRtl ? 'text-left' : 'text-right'}`}>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F4F4EF]">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-[#F4F4EF]/30 transition-colors">
+                <tr key={user.id} className="hover:bg-surface-light/30 transition-colors">
                   <td className="px-6 py-5">
                     <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#002819] to-[#06402B] flex items-center justify-center text-white font-bold text-lg shadow-md">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg shadow-md">
                         {user.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <div>
-                        <p className="font-bold text-[#002819]">{user.name}</p>
-                        <p className="text-sm text-[#717973]">{user.email}</p>
+                        <p className="font-bold text-brand-primary">{user.name}</p>
+                        <p className="text-sm text-on-surface-subtle">{user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleColors[user.role] || 'bg-[#eeeee9] text-[#404943]'}`}>
+                    <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleColors[user.role] || 'bg-surface-dim text-on-surface-variant'}`}>
                       {user.role || 'User'}
                     </span>
                   </td>
@@ -233,22 +240,22 @@ const fetchData = async () => {
                     <td className="px-6 py-5">
                       {canHaveSubscription(user.role) ? (
                         getTierName(user.subscription_tier_id) ? (
-                          <span className="px-4 py-2 rounded-full text-xs font-bold bg-[#D4AF37]/20 text-[#735c00]">
+                          <span className="px-4 py-2 rounded-full text-xs font-bold bg-brand-accent/20 text-tertiary-container">
                             {getTierName(user.subscription_tier_id)}
                           </span>
                         ) : (
-                          <span className="text-sm text-[#717973]">No tier</span>
+                          <span className="text-sm text-on-surface-subtle">No tier</span>
                         )
                       ) : (
-                        <span className="text-sm text-[#717973]/60 italic">Inherited</span>
+                        <span className="text-sm text-on-surface-subtle/60 italic">Inherited</span>
                       )}
                     </td>
                   )}
                   <td className="px-6 py-5">
                     <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-                      user.is_active !== false ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'
+                      user.is_active !== false ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'
                     }`}>
-                      <span className={`w-2 h-2 rounded-full ${user.is_active !== false ? 'bg-[#002819]' : 'bg-[#93000a]'}`} />
+                      <span className={`w-2 h-2 rounded-full ${user.is_active !== false ? 'bg-brand-primary' : 'bg-[#93000a]'}`} />
                       {user.is_active !== false ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -256,10 +263,10 @@ const fetchData = async () => {
                     <div className={`flex items-center gap-1 ${isRtl ? 'justify-start' : 'justify-end'}`}>
                       {isAdmin || (isOwner && user.role !== 'Admin') ? (
                         <>
-                          <Link to={`/users/${user.id}/edit`} className="p-3 text-[#717973] hover:text-[#002819] hover:bg-[#F4F4EF] rounded-xl transition-all">
+                          <Link to={`/users/${user.id}/edit`} className="p-3 text-on-surface-subtle hover:text-brand-primary hover:bg-surface-light rounded-xl transition-all">
                             <MaterialSymbol icon="edit" size={20} />
                           </Link>
-                          <button onClick={() => handleDelete(user.id)} className="p-3 text-[#717973] hover:text-[#BA1A1A] hover:bg-[#ffdad6]/50 rounded-xl transition-all">
+                          <button onClick={() => handleDelete(user.id)} className="p-3 text-on-surface-subtle hover:text-danger hover:bg-danger/50 rounded-xl transition-all">
                             <MaterialSymbol icon="delete" size={20} />
                           </button>
                         </>
@@ -272,7 +279,7 @@ const fetchData = async () => {
           </table>
         </div>
         {filteredUsers.length === 0 && (
-          <div className="p-12 text-center text-[#717973]">
+          <div className="p-12 text-center text-on-surface-subtle">
             <MaterialSymbol icon="person_off" size={48} className="mx-auto mb-4 opacity-50" />
             <p>{t('common.noData')}</p>
           </div>

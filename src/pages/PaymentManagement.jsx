@@ -110,8 +110,8 @@ export default function PaymentManagement() {
     <div className="space-y-6">
       <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div>
-          <h2 className="text-3xl font-bold text-[#002819]">Payment Management</h2>
-          <p className="text-[#404943] mt-1">Manage auction winner payments</p>
+          <h2 className="text-3xl font-bold text-brand-primary">Payment Management</h2>
+          <p className="text-on-surface-variant mt-1">Manage auction winner payments</p>
         </div>
       </div>
 
@@ -122,8 +122,8 @@ export default function PaymentManagement() {
             onClick={() => setFilter(status)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === status
-                ? 'bg-[#002819] text-white'
-                : 'bg-white text-[#404943] hover:bg-gray-50'
+                ? 'bg-brand-primary text-white'
+                : 'bg-white text-on-surface-variant hover:bg-gray-50'
             }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -133,12 +133,12 @@ export default function PaymentManagement() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
         </div>
       ) : auctions.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center">
           <MaterialSymbol icon="payments" size={64} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-[#404943] text-lg">No {filter} payments</p>
+          <p className="text-on-surface-variant text-lg">No {filter} payments</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -150,16 +150,16 @@ export default function PaymentManagement() {
                     <MaterialSymbol icon="pets" size={32} className="text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[#002819]">{auction.title}</h3>
-                    <p className="text-sm text-[#717973]">Auction #{auction.id}</p>
-                    <p className="text-sm text-[#717973]">
+                    <h3 className="font-bold text-lg text-brand-primary">{auction.title}</h3>
+                    <p className="text-sm text-on-surface-subtle">Auction #{auction.id}</p>
+                    <p className="text-sm text-on-surface-subtle">
                       Animal: {auction.animal?.animal_id || 'N/A'} - {auction.animal?.species}
                     </p>
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-[#002819]">{formatPrice(auction.current_price)}</p>
+                  <p className="text-2xl font-bold text-brand-primary">{formatPrice(auction.current_price)}</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold mt-2 ${statusColors[auction.payment_status]}`}>
                     {auction.payment_status?.toUpperCase() || 'PENDING'}
                   </span>
@@ -168,22 +168,22 @@ export default function PaymentManagement() {
 
               <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-[#717973] uppercase">Winner</p>
-                  <p className="font-medium text-[#002819]">{auction.winner?.name || 'Unknown'}</p>
+                  <p className="text-xs text-on-surface-subtle uppercase">Winner</p>
+                  <p className="font-medium text-brand-primary">{auction.winner?.name || 'Unknown'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#717973] uppercase">Owner</p>
-                  <p className="font-medium text-[#002819]">{auction.owner?.name || 'Unknown'}</p>
+                  <p className="text-xs text-on-surface-subtle uppercase">Owner</p>
+                  <p className="font-medium text-brand-primary">{auction.owner?.name || 'Unknown'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#717973] uppercase">Payment Deadline</p>
-                  <p className={`font-medium ${auction.payment_expires_at && new Date(auction.payment_expires_at) < new Date() ? 'text-red-600' : 'text-[#002819]'}`}>
+                  <p className="text-xs text-on-surface-subtle uppercase">Payment Deadline</p>
+                  <p className={`font-medium ${auction.payment_expires_at && new Date(auction.payment_expires_at) < new Date() ? 'text-red-600' : 'text-brand-primary'}`}>
                     {getTimeRemaining(auction.payment_expires_at)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#717973] uppercase">Bids</p>
-                  <p className="font-medium text-[#002819]">{auction.bid_count || 0}</p>
+                  <p className="text-xs text-on-surface-subtle uppercase">Bids</p>
+                  <p className="font-medium text-brand-primary">{auction.bid_count || 0}</p>
                 </div>
               </div>
 
@@ -229,7 +229,7 @@ export default function PaymentManagement() {
               <div className="mt-4 flex justify-end">
                 <Link
                   to={`/auctions/${auction.id}`}
-                  className="flex items-center gap-2 px-4 py-2 text-[#002819] hover:bg-gray-100 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   View Auction Details
                   <MaterialSymbol icon="arrow_forward" size={18} />
@@ -247,22 +247,22 @@ export default function PaymentManagement() {
               <div className={`p-2 rounded-full ${action === 'approved' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                 <MaterialSymbol icon={action === 'approved' ? 'check' : 'close'} size={24} />
               </div>
-              <h3 className="text-xl font-bold text-[#002819]">
+              <h3 className="text-xl font-bold text-brand-primary">
                 {action === 'approved' ? 'Approve' : 'Reject'} Payment
               </h3>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-[#717973]">Auction</p>
-              <p className="font-medium text-[#002819]">{selectedAuction.title}</p>
-              <p className="text-lg font-bold text-[#002819] mt-2">{formatPrice(selectedAuction.current_price)}</p>
-              <p className="text-sm text-[#717973] mt-1">
+              <p className="text-sm text-on-surface-subtle">Auction</p>
+              <p className="font-medium text-brand-primary">{selectedAuction.title}</p>
+              <p className="text-lg font-bold text-brand-primary mt-2">{formatPrice(selectedAuction.current_price)}</p>
+              <p className="text-sm text-on-surface-subtle mt-1">
                 Winner: {selectedAuction.winner?.name}
               </p>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#404943] mb-2">Notes (optional)</label>
+              <label className="block text-sm font-medium text-on-surface-variant mb-2">Notes (optional)</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -283,7 +283,7 @@ export default function PaymentManagement() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-3 bg-gray-100 text-[#404943] rounded-lg font-medium hover:bg-gray-200"
+                className="flex-1 py-3 bg-gray-100 text-on-surface-variant rounded-lg font-medium hover:bg-gray-200"
               >
                 Cancel
               </button>

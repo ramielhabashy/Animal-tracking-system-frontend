@@ -227,12 +227,12 @@ export default function MyPayments() {
         <nav className={`flex text-xs text-[#4f6357] mb-2 uppercase tracking-widest font-bold ${isRtl ? 'flex-row-reverse' : ''}`}>
           <span>Marketplace</span>
           <span className="mx-2">/</span>
-          <span className="text-[#002819]">My Payments</span>
+          <span className="text-brand-primary">My Payments</span>
         </nav>
-        <h2 className="text-4xl font-['Manrope'] font-extrabold text-[#002819] tracking-tight">
-          {isAdmin ? 'Auction Earnings' : 'Auction Payments'}
+        <h2 className="text-4xl font-['Manrope'] font-extrabold text-brand-primary tracking-tight">
+          {isAdmin ? 'Earnings' : 'My Payments'}
         </h2>
-        <p className="text-[#404943] mt-1">
+        <p className="text-on-surface-variant mt-1">
           {isAdmin ? 'View earnings from sold auctions' : 'Manage your auction winnings and payments'}
         </p>
       </div>
@@ -249,13 +249,13 @@ export default function MyPayments() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
         </div>
       ) : (
         <>
           {isAdmin && soldAuctions.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#002819] flex items-center gap-2">
+              <h3 className="text-xl font-bold text-brand-primary flex items-center gap-2">
                 <MaterialSymbol icon="account_balance_wallet" size={24} className="text-emerald-500" />
                 Sold Auctions - Earnings ({soldAuctions.length})
               </h3>
@@ -281,20 +281,20 @@ export default function MyPayments() {
                         <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
                           Auction #{auction.id}
                         </p>
-                        <h4 className="text-lg font-bold text-[#002819]">{auction.title}</h4>
+                        <h4 className="text-lg font-bold text-brand-primary">{auction.title}</h4>
                         <p className="text-sm text-[#4f6357]">
                           {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-[#f4f4ef] rounded-xl">
+                      <div className="flex items-center justify-between p-4 bg-surface-light rounded-xl">
                         <div>
                           <p className="text-xs font-bold text-[#4f6357] uppercase">Sold Price</p>
-                          <p className="text-2xl font-bold text-[#002819]">{formatPrice(auction.current_price)}</p>
+                          <p className="text-2xl font-bold text-brand-primary">{formatPrice(auction.current_price)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-bold text-[#4f6357] uppercase">Buyer</p>
-                          <p className="font-semibold text-[#002819]">{auction.winner?.name || 'N/A'}</p>
+                          <p className="font-semibold text-brand-primary">{auction.winner?.name || 'N/A'}</p>
                         </div>
                       </div>
 
@@ -302,7 +302,7 @@ export default function MyPayments() {
                         <div className="flex items-center gap-3">
                           <MaterialSymbol icon={auction.payment_status === 'verified' ? 'check_circle' : 'pending'} size={24} className={auction.payment_status === 'verified' ? 'text-emerald-500' : 'text-amber-500'} />
                           <div>
-                            <p className="font-bold text-[#002819]">
+                            <p className="font-bold text-brand-primary">
                               {auction.payment_status === 'verified' ? 'Payment Received' : 'Awaiting Payment'}
                             </p>
                             <p className="text-sm text-[#4f6357]">
@@ -320,7 +320,7 @@ export default function MyPayments() {
 
           {!isAdmin && pendingPayments.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#002819] flex items-center gap-2">
+              <h3 className="text-xl font-bold text-brand-primary flex items-center gap-2">
                 <MaterialSymbol icon="pending_actions" size={24} className="text-amber-500" />
                 Pending Payment ({pendingPayments.length})
               </h3>
@@ -345,25 +345,25 @@ export default function MyPayments() {
                         <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">
                           Auction #{auction.id}
                         </p>
-                        <h4 className="text-lg font-bold text-[#002819]">{auction.title}</h4>
+                        <h4 className="text-lg font-bold text-brand-primary">{auction.title}</h4>
                         <p className="text-sm text-[#4f6357]">
                           {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-[#f4f4ef] rounded-xl">
+                      <div className="flex items-center justify-between p-4 bg-surface-light rounded-xl">
                         <div>
                           <p className="text-xs font-bold text-[#4f6357] uppercase">Winning Bid</p>
-                          <p className="text-2xl font-bold text-[#002819]">{formatPrice(auction.current_price)}</p>
+                          <p className="text-2xl font-bold text-brand-primary">{formatPrice(auction.current_price)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-bold text-[#4f6357] uppercase">Seller</p>
-                          <p className="font-semibold text-[#002819]">{auction.owner?.name}</p>
+                          <p className="font-semibold text-brand-primary">{auction.owner?.name}</p>
                         </div>
                       </div>
 
                       <div className="space-y-3">
-                        <p className="text-sm font-bold text-[#002819]">Choose Payment Method:</p>
+                        <p className="text-sm font-bold text-brand-primary">Choose Payment Method:</p>
                         
                         <div className="grid grid-cols-2 gap-3">
                           <button
@@ -379,7 +379,7 @@ export default function MyPayments() {
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingProof === auction.id}
-                            className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-[#06402b] to-[#002819] text-white rounded-xl font-bold hover:from-[#002819] hover:to-[#001a11] transition-all disabled:opacity-50"
+                            className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-brand-secondary to-brand-primary text-white rounded-xl font-bold hover:from-brand-primary hover:to-[#001a11] transition-all disabled:opacity-50"
                           >
                             <MaterialSymbol icon="upload_file" size={32} />
                             <span className="text-sm">Bank Transfer</span>
@@ -404,7 +404,7 @@ export default function MyPayments() {
 
           {!isAdmin && submittedPayments.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#002819] flex items-center gap-2">
+              <h3 className="text-xl font-bold text-brand-primary flex items-center gap-2">
                 <MaterialSymbol icon="hourglass_top" size={24} className="text-blue-500" />
                 Awaiting Verification ({submittedPayments.length})
               </h3>
@@ -429,7 +429,7 @@ export default function MyPayments() {
                         <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">
                           Auction #{auction.id}
                         </p>
-                        <h4 className="text-lg font-bold text-[#002819]">{auction.title}</h4>
+                        <h4 className="text-lg font-bold text-brand-primary">{auction.title}</h4>
                         <p className="text-sm text-[#4f6357]">
                           {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`}
                         </p>
@@ -439,7 +439,7 @@ export default function MyPayments() {
                         <div className="flex items-center gap-3">
                           <MaterialSymbol icon="pending" size={24} className="text-blue-500" />
                           <div>
-                            <p className="font-bold text-[#002819]">Payment Proof Submitted</p>
+                            <p className="font-bold text-brand-primary">Payment Proof Submitted</p>
                             <p className="text-sm text-[#4f6357]">Waiting for admin verification</p>
                           </div>
                         </div>
@@ -464,7 +464,7 @@ export default function MyPayments() {
 
           {!isAdmin && verifiedPayments.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#002819] flex items-center gap-2">
+              <h3 className="text-xl font-bold text-brand-primary flex items-center gap-2">
                 <MaterialSymbol icon="check_circle" size={24} className="text-emerald-500" />
                 Completed ({verifiedPayments.length})
               </h3>
@@ -494,7 +494,7 @@ export default function MyPayments() {
                         <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
                           Auction #{auction.id}
                         </p>
-                        <h4 className="text-lg font-bold text-[#002819]">{auction.title}</h4>
+                        <h4 className="text-lg font-bold text-brand-primary">{auction.title}</h4>
                         <p className="text-sm text-[#4f6357]">
                           {auction.animal?.species} {auction.animal?.breed && `• ${auction.animal.breed}`}
                         </p>
@@ -505,7 +505,7 @@ export default function MyPayments() {
                         <span className="text-xl font-bold text-emerald-700">{formatPrice(auction.current_price)}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-[#06402b]">
+                      <div className="flex items-center gap-2 text-sm text-brand-secondary">
                         <MaterialSymbol icon="arrow_forward" size={16} />
                         Click to view your animal
                       </div>
@@ -518,16 +518,16 @@ export default function MyPayments() {
 
           {auctions.length === 0 && soldAuctions.length === 0 && (
             <div className="text-center py-16 bg-white rounded-[2rem] shadow-sm">
-              <MaterialSymbol icon="shopping_bag" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
-              <p className="text-[#404943] text-lg font-semibold">
+              <MaterialSymbol icon="shopping_bag" size={64} className="mx-auto text-outline mb-4" />
+              <p className="text-on-surface-variant text-lg font-semibold">
                 {isAdmin ? 'No sold auctions yet' : 'No auction winnings yet'}
               </p>
-              <p className="text-[#717973] text-sm mt-2">
+              <p className="text-on-surface-subtle text-sm mt-2">
                 {isAdmin ? 'Start selling animals at auction to see earnings here' : 'Win an auction to see your payments here'}
               </p>
               <Link
                 to="/auctions"
-                className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#002819] text-white rounded-xl font-bold text-sm hover:bg-[#06402b] transition-all"
+                className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-all"
               >
                 <MaterialSymbol icon="gavel" size={20} />
                 Browse Auctions
@@ -553,17 +553,17 @@ export default function MyPayments() {
             </div>
             
             <div className="p-6 space-y-6">
-              <div className="p-4 bg-[#f4f4ef] rounded-xl">
+              <div className="p-4 bg-surface-light rounded-xl">
                 <p className="text-xs font-bold text-[#4f6357] uppercase">Amount to Pay</p>
-                <p className="text-3xl font-bold text-[#002819]">{formatPrice(selectedAuction.current_price)}</p>
+                <p className="text-3xl font-bold text-brand-primary">{formatPrice(selectedAuction.current_price)}</p>
                 <p className="text-sm text-[#4f6357] mt-1">{selectedAuction.title}</p>
               </div>
 
               <div className="space-y-3">
-                <label className="block text-xs font-bold text-[#404943] uppercase tracking-widest">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest">
                   Card Details
                 </label>
-                <div ref={cardContainerRef} id="card-element" className="p-4 bg-white border-2 border-[#eeeee9] rounded-xl focus-within:border-[#D4AF37] transition-colors">
+                <div ref={cardContainerRef} id="card-element" className="p-4 bg-white border-2 border-[#eeeee9] rounded-xl focus-within:border-brand-accent transition-colors">
                 </div>
                 {cardError && (
                   <p className="text-sm text-red-600">{cardError}</p>
@@ -573,7 +573,7 @@ export default function MyPayments() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCardModal(false)}
-                  className="flex-1 py-3 bg-[#eeeee9] text-[#002819] rounded-xl font-bold text-sm hover:bg-[#e8e8e3]"
+                  className="flex-1 py-3 bg-surface-dim text-brand-primary rounded-xl font-bold text-sm hover:bg-surface-dim"
                 >
                   Cancel
                 </button>
@@ -596,7 +596,7 @@ export default function MyPayments() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-xs text-[#717973]">
+              <div className="flex items-center justify-center gap-2 text-xs text-on-surface-subtle">
                 <MaterialSymbol icon="security" size={16} />
                 Secured by Stripe
               </div>

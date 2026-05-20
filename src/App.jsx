@@ -14,7 +14,7 @@ function ProtectedLayout() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -26,10 +26,28 @@ function ProtectedLayout() {
   return <Outlet />;
 }
 
+function ProtectedMinimalLayout() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+}
+
 function SuspenseFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+      <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
     </div>
   );
 }
@@ -70,6 +88,17 @@ const VaccinationSchedulePage = lazy(() => import('./pages/VaccinationSchedulePa
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const LanguageSettingsPage = lazy(() => import('./pages/LanguageSettingsPage'));
 const RolesPage = lazy(() => import('./pages/RolesPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const EmbedAuctionList = lazy(() => import('./pages/EmbedAuctionList'));
+const EmbedAuctionCarousel = lazy(() => import('./pages/EmbedAuctionCarousel'));
+const EmbedAnimalList = lazy(() => import('./pages/EmbedAnimalList'));
+const EmbedAnimalCarousel = lazy(() => import('./pages/EmbedAnimalCarousel'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const ActivateDevicePage = lazy(() => import('./pages/ActivateDevicePage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const TicketDetail = lazy(() => import('./pages/TicketDetail'));
+const TransfersPage = lazy(() => import('./pages/TransfersPage'));
+const TransferDetail = lazy(() => import('./pages/TransferDetail'));
 
 const router = createBrowserRouter([
   {
@@ -83,6 +112,30 @@ const router = createBrowserRouter([
   {
     path: '/invitations/:token',
     element: <Suspense fallback={<SuspenseFallback />}><AcceptInvitation /></Suspense>,
+  },
+  {
+    path: 'checkout',
+    element: <Suspense fallback={<SuspenseFallback />}><CheckoutPage /></Suspense>,
+  },
+  {
+    path: 'checkout/confirm',
+    element: <Suspense fallback={<SuspenseFallback />}><CheckoutPage /></Suspense>,
+  },
+  {
+    path: 'embed/auctions',
+    element: <Suspense fallback={<SuspenseFallback />}><EmbedAuctionList /></Suspense>,
+  },
+  {
+    path: 'embed/auctions/carousel',
+    element: <Suspense fallback={<SuspenseFallback />}><EmbedAuctionCarousel /></Suspense>,
+  },
+  {
+    path: 'embed/animals',
+    element: <Suspense fallback={<SuspenseFallback />}><EmbedAnimalList /></Suspense>,
+  },
+  {
+    path: 'embed/animals/carousel',
+    element: <Suspense fallback={<SuspenseFallback />}><EmbedAnimalCarousel /></Suspense>,
   },
   {
     element: <ProtectedLayout />,
@@ -128,6 +181,13 @@ const router = createBrowserRouter([
           { path: 'task-logs-archive', element: <Suspense fallback={<SuspenseFallback />}><TaskLogsArchive /></Suspense> },
           { path: 'payments', element: <Suspense fallback={<SuspenseFallback />}><PaymentManagement /></Suspense> },
           { path: 'my-payments', element: <Suspense fallback={<SuspenseFallback />}><MyPayments /></Suspense> },
+          { path: 'orders', element: <Suspense fallback={<SuspenseFallback />}><OrdersPage /></Suspense> },
+          { path: 'activate-device', element: <Suspense fallback={<SuspenseFallback />}><ActivateDevicePage /></Suspense> },
+          { path: 'messages', element: <Suspense fallback={<SuspenseFallback />}><MessagesPage /></Suspense> },
+          { path: 'messages/:id', element: <Suspense fallback={<SuspenseFallback />}><MessagesPage /></Suspense> },
+          { path: 'tickets/:id', element: <Suspense fallback={<SuspenseFallback />}><TicketDetail /></Suspense> },
+          { path: 'transfers', element: <Suspense fallback={<SuspenseFallback />}><TransfersPage /></Suspense> },
+          { path: 'transfers/:id', element: <Suspense fallback={<SuspenseFallback />}><TransferDetail /></Suspense> },
         ],
       },
     ],

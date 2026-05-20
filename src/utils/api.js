@@ -1,4 +1,4 @@
-import { getAuthUser, getAuthToken, getLocale } from './cookies';
+import { getAuthUser, getAuthToken, getLocale, clearAuth } from './cookies';
 
 export const getStoredLocale = getLocale;
 export const setStoredLocale = (locale) => {
@@ -71,7 +71,13 @@ export const apiFetch = async (url, options = {}) => {
     delete fetchOptions.headers['Content-Type'];
   }
   
-  return fetch(fullUrl, fetchOptions);
+  return fetch(fullUrl, fetchOptions).then(res => {
+    if (res.status === 401 && !url.includes('/auth/login')) {
+      clearAuth();
+      window.location.href = '/react.oasis/login';
+    }
+    return res;
+  });
 };
 
 const api = {

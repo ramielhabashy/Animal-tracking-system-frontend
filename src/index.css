@@ -74,15 +74,15 @@ h1, h2, h3, .font-headline {
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-br from-[#002819] to-[#06402B] text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all duration-200 hover:opacity-90 active:scale-[0.98];
+    @apply bg-gradient-to-br from-brand-primary to-brand-secondary text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all duration-200 hover:opacity-90 active:scale-[0.98];
   }
 
   .btn-gold {
-    @apply bg-[#D4AF37] text-[#002819] font-bold py-4 px-8 rounded-2xl shadow-lg shadow-[#D4AF37]/20 transition-all duration-200 hover:opacity-90 active:scale-[0.98];
+    @apply bg-brand-accent text-brand-primary font-bold py-4 px-8 rounded-2xl shadow-lg shadow-brand-accent/20 transition-all duration-200 hover:opacity-90 active:scale-[0.98];
   }
 
   .btn-ghost {
-    @apply bg-transparent text-[#002819] font-medium py-4 px-8 rounded-2xl transition-all duration-200 hover:bg-[#F4F4EF];
+    @apply bg-transparent text-brand-primary font-medium py-4 px-8 rounded-2xl transition-all duration-200 hover:bg-surface-light;
   }
 
   .card {
@@ -90,15 +90,15 @@ h1, h2, h3, .font-headline {
   }
 
   .card-elevated {
-    @apply bg-[#F4F4EF] rounded-3xl overflow-hidden;
+    @apply bg-surface-light rounded-3xl overflow-hidden;
   }
 
   .input-field {
-    @apply w-full bg-[#F4F4EF] rounded-xl py-4 px-5 text-sm font-medium text-[#002819] placeholder:text-[#717973]/60 transition-all duration-200;
+    @apply w-full bg-surface-light rounded-xl py-4 px-5 text-sm font-medium text-brand-primary placeholder:text-on-surface-subtle/60 transition-all duration-200;
   }
 
   .input-field:focus {
-    @apply outline-none ring-2 ring-[#06402B]/20 bg-white;
+    @apply outline-none ring-2 ring-brand-secondary/20 bg-white;
     box-shadow: 0 0 0 4px rgba(6, 64, 43, 0.08);
   }
 
@@ -113,23 +113,23 @@ h1, h2, h3, .font-headline {
   }
 
   .chip-tonal {
-    @apply bg-[#F4F4EF] text-[#002819];
+    @apply bg-surface-light text-brand-primary;
   }
 
   .chip-success {
-    @apply bg-[#D4AF37]/20 text-[#735C00];
+    @apply bg-brand-accent/20 text-tertiary-container;
   }
 
   .chip-warning {
-    @apply bg-[#F59E0B]/20 text-[#735C00];
+    @apply bg-[#F59E0B]/20 text-tertiary-container;
   }
 
   .chip-danger {
-    @apply bg-[#BA1A1A]/10 text-[#BA1A1A];
+    @apply bg-danger/10 text-danger;
   }
 
   .section-title {
-    @apply text-2xl font-bold text-[#002819] mb-6;
+    @apply text-2xl font-bold text-brand-primary mb-6;
   }
 
   .stat-card {

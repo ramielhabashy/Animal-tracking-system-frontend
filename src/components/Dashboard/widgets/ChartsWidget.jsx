@@ -141,12 +141,12 @@ function getRoleBasedCharts(role, adminSubStats, stats, speciesData, healthData,
 
     charts.push({
       id: 'devices',
-      type: 'pie',
+      type: 'deviceProgress',
       titleKey: 'dashboard.chartDevices',
-      data: [
-        { name: 'Assigned', value: stats.activeDevices },
-        { name: 'Unassigned', value: Math.max(0, stats.totalAnimals - stats.activeDevices) },
-      ].filter(d => d.value > 0),
+      data: {
+        total: stats.totalAnimals,
+        active: stats.activeDevices,
+      },
     });
 
     if (healthData.length > 0) {
@@ -231,8 +231,8 @@ export default function ChartsWidget({ dashboardData }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload) return null;
     return (
-      <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-[#E3E3DE]">
-        <p className="text-sm font-bold text-[#002819] mb-1">{label}</p>
+      <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-surface-high">
+        <p className="text-sm font-bold text-brand-primary mb-1">{label}</p>
         {payload.map((entry, idx) => (
           <p key={idx} className="text-xs" style={{ color: entry.color }}>
             {entry.name}: {entry.value.toLocaleString()}
@@ -242,20 +242,53 @@ export default function ChartsWidget({ dashboardData }) {
     );
   };
 
+  const renderDeviceProgress = (chart) => {
+    const { total, active } = chart.data || {};
+    const pct = total ? Math.round((active / total) * 100) : 0;
+    return (
+      <div className="flex flex-col items-center justify-center h-[260px]">
+        <div className="text-4xl font-bold text-brand-primary mb-1">{active}</div>
+        <div className="text-sm text-on-surface-subtle mb-6">{t('common.of')} {total} {t('dashboard.animals')}</div>
+        <div className="w-full max-w-xs bg-surface-light rounded-full h-4 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-secondary transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex justify-between w-full max-w-xs mt-2 text-xs text-on-surface-subtle">
+          <span>{pct}% {t('dashboard.chartDevicesAssigned') || 'Assigned'}</span>
+          <span>{100 - pct}% {t('dashboard.chartDevicesUnassigned') || 'Unassigned'}</span>
+        </div>
+      </div>
+    );
+  };
+
   const renderChart = (chart) => {
+    if (chart.type === 'deviceProgress') {
+      return renderDeviceProgress(chart);
+    }
     if (chart.type === 'pie') {
       return (
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
             <Pie
               data={chart.data}
               cx="50%"
               cy="50%"
-              outerRadius={80}
-              innerRadius={45}
+              outerRadius={85}
+              innerRadius={48}
               paddingAngle={3}
               dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              labelLine={{ stroke: '#c0c9c1', strokeWidth: 1 }}
+              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                const RADIAN = Math.PI / 180;
+                const radius = outerRadius + 28;
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                if (percent < 0.04) return null;
+                return (
+                  <text x={x} y={y} fill="#404943" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11}>
+                    {`${name} ${(percent * 100).toFixed(0)}%`}
+                  </text>
+                );
+              }}
             >
               {chart.data.map((entry, idx) => (
                 <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
@@ -263,7 +296,7 @@ export default function ChartsWidget({ dashboardData }) {
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              formatter={(value) => <span className="text-xs text-[#404943]">{value}</span>}
+              formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -271,8 +304,8 @@ export default function ChartsWidget({ dashboardData }) {
     }
 
     return (
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={chart.data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={250}>
+        <BarChart data={chart.data} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#F4F4EF" />
           <XAxis
             dataKey="month"
@@ -287,7 +320,7 @@ export default function ChartsWidget({ dashboardData }) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            formatter={(value) => <span className="text-xs text-[#404943]">{value}</span>}
+            formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
           />
           {chart.bars.map((bar) => (
             <Bar
@@ -307,10 +340,10 @@ export default function ChartsWidget({ dashboardData }) {
     <div>
       {canViewReports && (
         <div className={`flex justify-between items-center mb-5 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <h4 className="font-bold text-[#002819]">{t('dashboard.analytics')}</h4>
+          <h4 className="font-bold text-brand-primary">{t('dashboard.analytics')}</h4>
           <Link
             to="/reports"
-            className="text-sm font-bold text-[#D4AF37] hover:underline flex items-center gap-1"
+            className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1"
           >
             {t('reports.reportCenter')}
             <MaterialSymbol icon={isRtl ? 'arrow_back' : 'arrow_forward'} size={16} />
@@ -320,7 +353,7 @@ export default function ChartsWidget({ dashboardData }) {
       <div className={`grid grid-cols-1 ${charts.length >= 2 ? 'lg:grid-cols-2' : ''} gap-6`}>
         {charts.map((chart) => (
           <div key={chart.id} className="card p-5">
-            <h5 className="font-bold text-sm text-[#002819] mb-4">{t(chart.titleKey)}</h5>
+            <h5 className="font-bold text-sm text-brand-primary mb-4">{t(chart.titleKey)}</h5>
             {renderChart(chart)}
           </div>
         ))}

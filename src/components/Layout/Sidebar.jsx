@@ -22,7 +22,9 @@ export default function Sidebar() {
     { icon: 'gavel', label: t('nav.auctions'), to: '/auctions' },
     { icon: 'notification_important', label: t('nav.alerts'), to: '/alerts' },
     { icon: 'task', label: t('nav.tasks'), to: '/tasks' },
+    ...(isAdminOrOwner ? [{ icon: 'swap_horiz', label: t('nav.transfers') || 'Transfers', to: '/transfers' }] : []),
     ...(isAdmin || user?.role === 'Owner' || user?.role === 'Manager' || user?.role === 'Doctor' ? [{ icon: 'assessment', label: t('nav.reports'), to: '/reports' }] : []),
+    ...(isAdmin ? [{ icon: 'receipt_long', label: 'Orders', to: '/orders' }] : []),
     ...(isAdmin ? [{ icon: 'settings', label: t('common.settings'), to: '/profile' }] : []),
     ...(isAdmin ? [{ icon: 'admin_panel_settings', label: t('nav.roles'), to: '/settings/roles' }] : []),
   ];
@@ -30,17 +32,17 @@ export default function Sidebar() {
   const isRtl = dir === 'rtl';
 
   return (
-    <aside className={`hidden md:flex flex-col h-screen w-64 fixed ${isRtl ? 'right-0' : 'left-0'} top-0 bg-[#FAF1F5] dark:bg-[#002819] py-8 ${isRtl ? 'shadow-[-12px_0_32px_rgba(6,64,43,0.06)]' : 'shadow-[12px_0_32px_rgba(6,64,43,0.06)]'} z-50`}>
+    <aside className={`hidden md:flex flex-col h-screen w-64 fixed ${isRtl ? 'right-0' : 'left-0'} top-0 bg-brand-light dark:bg-brand-primary py-8 ${isRtl ? 'shadow-[-12px_0_32px_rgba(6,64,43,0.06)]' : 'shadow-[12px_0_32px_rgba(6,64,43,0.06)]'} z-50`}>
       <div className="px-6 mb-8">
         <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <div className="w-10 h-10 bg-[#06402B] rounded-lg flex items-center justify-center">
-            <MaterialSymbol icon="pets" size={24} className="text-[#D4AF37]" fill />
+          <div className="w-10 h-10 bg-brand-secondary rounded-lg flex items-center justify-center">
+            <MaterialSymbol icon="pets" size={24} className="text-brand-accent" fill />
           </div>
           <div className={isRtl ? 'text-right' : ''}>
-            <h2 className="text-lg font-black text-[#06402B] dark:text-[#D4AF37] leading-tight">
+            <h2 className="text-lg font-black text-brand-secondary dark:text-brand-accent leading-tight">
               Oasis Tracking
             </h2>
-            <p className="text-[10px] uppercase tracking-widest text-[#06402B]/60 font-bold">
+            <p className="text-[10px] uppercase tracking-widest text-brand-secondary/60 font-bold">
               Digital Majlis Admin
             </p>
           </div>
@@ -55,8 +57,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center py-3 px-6 transition-all font-['Manrope'] text-sm font-medium ${
                 isActive
-                  ? `bg-gradient-to-r from-[#002819] to-[#06402B] text-white ${isRtl ? 'rounded-l-full ml-4 -translate-x-1' : 'rounded-r-full mr-4 translate-x-1'}`
-                  : 'text-[#06402B]/70 dark:text-[#FAF1F5]/60 hover:bg-[#F4F4EF] dark:hover:bg-[#06402B]/50'
+                  ? `bg-gradient-to-r from-brand-primary to-brand-secondary text-white ${isRtl ? 'rounded-l-full ml-4 -translate-x-1' : 'rounded-r-full mr-4 translate-x-1'}`
+                  : 'text-brand-secondary/70 dark:text-brand-light/60 hover:bg-surface-light dark:hover:bg-brand-secondary/50'
               }`
             }
           >

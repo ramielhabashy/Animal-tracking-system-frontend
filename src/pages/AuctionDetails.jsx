@@ -145,6 +145,42 @@ export default function AuctionDetails() {
     }
   };
 
+  const approveAuction = async () => {
+    try {
+      const response = await apiFetch(`/api/admin/auctions/${id}/approve`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Auction approved successfully!' });
+        fetchAuction();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to approve auction' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to approve auction' });
+    }
+  };
+
+  const rejectAuction = async () => {
+    try {
+      const response = await apiFetch(`/api/admin/auctions/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: verifyNotes }),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Auction rejected' });
+        fetchAuction();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Failed to reject auction' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to reject auction' });
+    }
+  };
+
   const disqualifyBidder = async (bidId) => {
     if (!confirm('Disqualify this bidder?')) return;
     
@@ -213,7 +249,7 @@ export default function AuctionDetails() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -221,9 +257,9 @@ export default function AuctionDetails() {
   if (!auction) {
     return (
       <div className="text-center py-16">
-        <MaterialSymbol icon="error" size={64} className="mx-auto text-[#c0c9c1] mb-4" />
-        <p className="text-[#404943] text-lg font-semibold">Auction not found</p>
-        <Link to="/auctions" className="text-[#002819] font-bold hover:underline mt-4 inline-block">
+        <MaterialSymbol icon="error" size={64} className="mx-auto text-outline mb-4" />
+        <p className="text-on-surface-variant text-lg font-semibold">Auction not found</p>
+        <Link to="/auctions" className="text-brand-primary font-bold hover:underline mt-4 inline-block">
           Back to Auctions
         </Link>
       </div>
@@ -235,7 +271,7 @@ export default function AuctionDetails() {
       {/* Breadcrumb */}
       <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
         <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          <Link to="/auctions" className={`p-2 hover:bg-[#eeeee9] rounded-full transition-colors ${isRtl ? 'order-last' : ''}`}>
+          <Link to="/auctions" className={`p-2 hover:bg-surface-dim rounded-full transition-colors ${isRtl ? 'order-last' : ''}`}>
             <MaterialSymbol icon="arrow_back" />
           </Link>
           <nav className={`flex text-xs text-[#4f6357] uppercase tracking-widest font-bold ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -248,7 +284,7 @@ export default function AuctionDetails() {
           {canManageAuction && (
             <Link
               to={`/auctions/${id}/edit`}
-              className={`px-4 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#06402b] transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
+              className={`px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-brand-secondary transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
             >
               <MaterialSymbol icon="edit" size={16} />
               Edit
@@ -277,6 +313,39 @@ export default function AuctionDetails() {
         </div>
       )}
 
+      {/* Pending Approval Section */}
+      {auction.status === 'draft' && (
+        <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200">
+          <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center">
+              <MaterialSymbol icon="hourglass" size={32} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-brand-primary">Pending Approval</h3>
+              <p className="text-on-surface-variant">This auction is awaiting admin approval to go live.</p>
+            </div>
+          </div>
+          {isAdmin && (
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={approveAuction}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700"
+              >
+                <MaterialSymbol icon="check" size={16} className="inline mr-1" />
+                Approve
+              </button>
+              <button
+                onClick={() => { setShowVerifyModal(true); setVerifyAction('rejected'); }}
+                className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700"
+              >
+                <MaterialSymbol icon="close" size={16} className="inline mr-1" />
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Winner Section */}
       {(auction.status === 'sold' || auction.status === 'ended') && auction.winner && (
         <div className={`p-6 rounded-2xl ${auction.status === 'sold' ? 'bg-emerald-50 border border-emerald-200' : 'bg-gray-50 border border-gray-200'}`}>
@@ -287,14 +356,14 @@ export default function AuctionDetails() {
                   <MaterialSymbol icon={auction.status === 'sold' ? 'emoji_events' : 'gavel'} size={32} className="text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-[#002819]">
+                  <h3 className="text-xl font-bold text-brand-primary">
                     {auction.status === 'sold' ? 'Winner!' : 'Auction Ended'}
                   </h3>
-                  <p className="text-lg text-[#404943]">
+                  <p className="text-lg text-on-surface-variant">
                     <span className="font-bold">{auction.winner.name}</span> won with {formatPrice(auction.current_price)}
                   </p>
                   {auction.status === 'sold' && auction.secondWinner && (
-                    <p className="text-sm text-[#717973]">
+                    <p className="text-sm text-on-surface-subtle">
                       Next in line: {auction.secondWinner.name}
                     </p>
                   )}
@@ -305,7 +374,7 @@ export default function AuctionDetails() {
           {auction.status === 'sold' && (
             <div className="mt-4 p-4 bg-white rounded-xl">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold text-[#002819]">Payment Status</h4>
+                <h4 className="font-bold text-brand-primary">Payment Status</h4>
                 <span className={`px-3 py-1 rounded-full text-sm font-bold ${
                   auction.payment_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
                   auction.payment_status === 'submitted' ? 'bg-blue-100 text-blue-700' :
@@ -318,7 +387,7 @@ export default function AuctionDetails() {
               
               {isWinner && auction.payment_status === 'pending' && (
                 <div className="space-y-3">
-                  <p className="text-sm text-[#717973]">
+                  <p className="text-sm text-on-surface-subtle">
                     Complete your payment to finalize the purchase. You can pay by credit card or upload bank transfer proof.
                   </p>
                   <p className="text-sm font-bold text-amber-600">
@@ -342,13 +411,13 @@ export default function AuctionDetails() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingProof}
-                    className={`px-4 py-2 bg-[#002819] text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#06402b] disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
+                    className={`px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-brand-secondary disabled:opacity-50 ${isRtl ? 'flex-row-reverse' : ''}`}
                   >
                     <MaterialSymbol icon="upload" size={16} />
                     {uploadingProof ? 'Uploading...' : 'Upload Transfer Proof'}
                   </button>
                 </div>
-                  <p className="text-xs text-[#717973]">
+                  <p className="text-xs text-on-surface-subtle">
                     Or{' '}
                     <Link to="/my-payments" className="text-blue-600 hover:underline font-medium">
                       view all your auction payments
@@ -359,7 +428,7 @@ export default function AuctionDetails() {
 
               {isWinner && auction.payment_status === 'submitted' && (
                 <div className="space-y-3">
-                  <p className="text-sm text-[#717973]">
+                  <p className="text-sm text-on-surface-subtle">
                     Your payment proof has been submitted. Waiting for admin verification.
                   </p>
                   {auction.payment_proof_url && (
@@ -446,7 +515,7 @@ export default function AuctionDetails() {
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-              <p className="text-[#D4AF37] text-sm font-bold uppercase tracking-widest mb-2">
+              <p className="text-brand-accent text-sm font-bold uppercase tracking-widest mb-2">
                 {auction.animal?.animal_id || 'No ID'}
               </p>
               <h1 className="text-4xl font-bold font-['Manrope'] mb-2">{auction.title} <TranslateButton text={auction.title} /></h1>
@@ -459,56 +528,56 @@ export default function AuctionDetails() {
 
           {/* Description */}
           <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-4">About This Animal</h3>
-            <p className="text-[#404943] leading-relaxed">
+            <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-4">About This Animal</h3>
+            <p className="text-on-surface-variant leading-relaxed">
               {auction.description || 'No description provided for this auction.'} <TranslateButton text={auction.description || 'No description provided for this auction.'} />
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-[#eeeee9]">
               <div>
-                <p className="text-xs font-bold text-[#404943] uppercase tracking-widest mb-1">Temperature</p>
-                <p className="text-lg font-bold text-[#002819]">{auction.animal?.baseline_temperature || '38.5'}°C</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Temperature</p>
+                <p className="text-lg font-bold text-brand-primary">{auction.animal?.baseline_temperature || '38.5'}°C</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-[#404943] uppercase tracking-widest mb-1">Heart Rate</p>
-                <p className="text-lg font-bold text-[#002819]">{auction.animal?.normal_heart_rate || '30-50'} BPM</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Heart Rate</p>
+                <p className="text-lg font-bold text-brand-primary">{auction.animal?.normal_heart_rate || '30-50'} BPM</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-[#404943] uppercase tracking-widest mb-1">Weight</p>
-                <p className="text-lg font-bold text-[#002819]">{auction.animal?.current_weight || 'N/A'} kg</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Weight</p>
+                <p className="text-lg font-bold text-brand-primary">{auction.animal?.current_weight || 'N/A'} kg</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-[#404943] uppercase tracking-widest mb-1">Color</p>
-                <p className="text-lg font-bold text-[#002819]">{auction.animal?.color_markings || 'N/A'}</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Color</p>
+                <p className="text-lg font-bold text-brand-primary">{auction.animal?.color_markings || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Bid History */}
           <div className="bg-white rounded-[2rem] p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-[#002819] font-['Manrope'] mb-6">
+            <h3 className="text-xl font-bold text-brand-primary font-['Manrope'] mb-6">
               Bid History ({auction.bids?.length || 0} bids)
             </h3>
             
             {auction.bids && auction.bids.length > 0 ? (
               <div className="space-y-4">
                 {auction.bids.slice(0, 10).map((bid, index) => (
-                  <div key={bid.id} className="flex items-center justify-between p-4 bg-[#f4f4ef] rounded-xl">
+                  <div key={bid.id} className="flex items-center justify-between p-4 bg-surface-light rounded-xl">
                     <div className="flex items-center gap-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        index === 0 ? 'bg-[#D4AF37] text-white' : 'bg-[#eeeee9] text-[#404943]'
+                        index === 0 ? 'bg-brand-accent text-white' : 'bg-surface-dim text-on-surface-variant'
                       }`}>
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-bold text-[#002819]">{bid.bidder_name || 'Anonymous'}</p>
-                        <p className="text-xs text-[#717973]">
+                        <p className="font-bold text-brand-primary">{bid.bidder_name || 'Anonymous'}</p>
+                        <p className="text-xs text-on-surface-subtle">
                           {new Date(bid.bid_at).toLocaleString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <p className="text-xl font-bold text-[#002819]">{formatPrice(bid.amount)}</p>
+                      <p className="text-xl font-bold text-brand-primary">{formatPrice(bid.amount)}</p>
                       {canManageAuction && auction.status === 'active' && (
                         <button
                           onClick={() => disqualifyBidder(bid.id)}
@@ -523,8 +592,8 @@ export default function AuctionDetails() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-[#717973]">
-                <MaterialSymbol icon="gavel" size={48} className="mx-auto mb-2 text-[#c0c9c1]" />
+              <div className="text-center py-8 text-on-surface-subtle">
+                <MaterialSymbol icon="gavel" size={48} className="mx-auto mb-2 text-outline" />
                 <p>No bids yet. Be the first to bid!</p>
               </div>
             )}
@@ -537,33 +606,33 @@ export default function AuctionDetails() {
           {auction.status === 'active' && (
             <div className="bg-white rounded-[2rem] p-6 shadow-lg sticky top-24">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-[#002819]">Place Your Bid</h3>
-                <div className="bg-[#D4AF37] text-white px-3 py-1 rounded-full flex items-center gap-1">
+                <h3 className="text-lg font-bold text-brand-primary">Place Your Bid</h3>
+                <div className="bg-brand-accent text-white px-3 py-1 rounded-full flex items-center gap-1">
                   <MaterialSymbol icon="schedule" size={16} />
                   <span className="text-sm font-bold">{getTimeRemaining()}</span>
                 </div>
               </div>
 
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between p-3 bg-[#f4f4ef] rounded-xl">
-                  <span className="text-[#404943]">Starting Price</span>
-                  <span className="font-bold text-[#1a1c19]">{formatPrice(auction.starting_price)}</span>
+                <div className="flex justify-between p-3 bg-surface-light rounded-xl">
+                  <span className="text-on-surface-variant">Starting Price</span>
+                  <span className="font-bold text-on-surface">{formatPrice(auction.starting_price)}</span>
                 </div>
                 <div className="flex justify-between p-3 bg-emerald-50 rounded-xl">
-                  <span className="text-[#404943]">Current Bid</span>
+                  <span className="text-on-surface-variant">Current Bid</span>
                   <span className="font-bold text-emerald-700 text-lg">{formatPrice(auction.current_price)}</span>
                 </div>
                 {auction.reserve_price && (
-                  <div className="flex justify-between p-3 bg-[#f4f4ef] rounded-xl">
-                    <span className="text-[#404943]">Reserve</span>
-                    <span className="font-bold text-[#1a1c19]">{formatPrice(auction.reserve_price)}</span>
+                  <div className="flex justify-between p-3 bg-surface-light rounded-xl">
+                    <span className="text-on-surface-variant">Reserve</span>
+                    <span className="font-bold text-on-surface">{formatPrice(auction.reserve_price)}</span>
                   </div>
                 )}
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#404943] uppercase tracking-widest mb-2">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
                     Your Bid (SAR)
                   </label>
                   <input
@@ -571,9 +640,9 @@ export default function AuctionDetails() {
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     min={minimumBid}
-                    className="w-full bg-[#f4f4ef] border-none rounded-xl px-4 py-4 text-xl font-bold text-[#002819] focus:ring-2 focus:ring-[#D4AF37]"
+                    className="w-full bg-surface-light border-none rounded-xl px-4 py-4 text-xl font-bold text-brand-primary focus:ring-2 focus:ring-brand-accent"
                   />
-                  <p className="text-xs text-[#717973] mt-1">
+                  <p className="text-xs text-on-surface-subtle mt-1">
                     Minimum bid: {formatPrice(minimumBid)}
                   </p>
                 </div>
@@ -581,7 +650,7 @@ export default function AuctionDetails() {
                 <button
                   onClick={placeBid}
                   disabled={placing}
-                  className="w-full py-4 bg-[#002819] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#06402b] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 bg-brand-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-brand-secondary active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {placing ? (
                     <>
@@ -600,7 +669,7 @@ export default function AuctionDetails() {
           )}
 
           {/* Owner Info */}
-          <div className="bg-[#06402b] rounded-[2rem] p-6 text-white">
+          <div className="bg-brand-secondary rounded-[2rem] p-6 text-white">
             <h4 className="text-sm font-bold text-emerald-300 uppercase tracking-widest mb-4">Seller</h4>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-emerald-800 flex items-center justify-center text-xl font-bold">
@@ -619,7 +688,7 @@ export default function AuctionDetails() {
       {showVerifyModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-[#002819] mb-4">
+            <h3 className="text-xl font-bold text-brand-primary mb-4">
               {verifyAction === 'approved' ? 'Approve Payment' : 'Reject Payment'}
             </h3>
             <div className="mb-4">

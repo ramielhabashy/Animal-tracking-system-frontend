@@ -17,17 +17,17 @@ export default function Pagination({
   return (
     <div className={`flex flex-wrap items-center justify-between gap-4 py-4 px-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
       <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-        <span className="text-sm text-[#717973]">Show</span>
+        <span className="text-sm text-on-surface-subtle">Show</span>
         <select
           value={perPage}
           onChange={(e) => onPerPageChange(Number(e.target.value))}
-          className="bg-[#f4f4ef] border-none rounded-lg px-3 py-2 text-sm font-medium text-[#002819]"
+          className="bg-surface-light border-none rounded-lg px-3 py-2 text-sm font-medium text-brand-primary"
         >
           {perPageOptions.map(opt => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
-        <span className="text-sm text-[#717973]">of {total} entries</span>
+        <span className="text-sm text-on-surface-subtle">of {total} entries</span>
       </div>
 
       {showNav && (
@@ -35,14 +35,14 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
-            className="p-2 rounded-lg hover:bg-[#f4f4ef] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MaterialSymbol icon={isRtl ? "last_page" : "first_page"} size={20} />
           </button>
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 rounded-lg hover:bg-[#f4f4ef] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MaterialSymbol icon={isRtl ? "chevron_right" : "chevron_left"} size={20} />
           </button>
@@ -65,8 +65,8 @@ export default function Pagination({
                   onClick={() => onPageChange(page)}
                   className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                     currentPage === page
-                      ? 'bg-[#002819] text-white'
-                      : 'hover:bg-[#f4f4ef] text-[#404943]'
+                      ? 'bg-brand-primary text-white'
+                      : 'hover:bg-surface-light text-on-surface-variant'
                   }`}
                 >
                   {page}
@@ -78,14 +78,14 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-lg hover:bg-[#f4f4ef] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MaterialSymbol icon={isRtl ? "chevron_left" : "chevron_right"} size={20} />
           </button>
           <button
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-lg hover:bg-[#f4f4ef] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MaterialSymbol icon={isRtl ? "first_page" : "last_page"} size={20} />
           </button>

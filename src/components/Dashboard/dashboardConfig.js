@@ -12,28 +12,31 @@ const ALL_WIDGETS = {
   medicalOverview: { id: 'medicalOverview', gridDesktop: 6, gridTablet: 6 },
   tasksWidget: { id: 'tasksWidget', gridDesktop: 6, gridTablet: 6 },
   auctionsWidget: { id: 'auctionsWidget', gridDesktop: 12, gridTablet: 12 },
+  activationWidget: { id: 'activationWidget', gridDesktop: 4, gridTablet: 6 },
+  announcements: { id: 'announcements', gridDesktop: 12, gridTablet: 12 },
+  aiAssistant: { id: 'aiAssistant', gridDesktop: 6, gridTablet: 12 },
 };
 
 const ROLE_LAYOUTS = {
   Admin: [
-    'statsCards', 'subscriptionOverview', 'auctionsWidget', 'map', 'alertsPanel',
-    'chartsWidget', 'tasksWidget', 'ownerOverview', 'tierDistribution', 'quickActions',
+    'announcements', 'statsCards', 'activationWidget', 'subscriptionOverview', 'auctionsWidget', 'map', 'alertsPanel',
+    'chartsWidget', 'tasksWidget', 'ownerOverview', 'tierDistribution', 'quickActions', 'aiAssistant',
   ],
   Owner: [
-    'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
-    'chartsWidget', 'tasksWidget', 'quickActions',
+    'announcements', 'statsCards', 'activationWidget', 'auctionsWidget', 'map', 'alertsPanel',
+    'chartsWidget', 'tasksWidget', 'quickActions', 'aiAssistant',
   ],
   Manager: [
-    'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
-    'chartsWidget', 'tasksWidget', 'quickActions',
+    'announcements', 'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
+    'chartsWidget', 'tasksWidget', 'quickActions', 'aiAssistant',
   ],
   Shepherd: [
     'statsCards', 'map', 'alertsPanel',
-    'tasksWidget', 'quickActions',
+    'tasksWidget', 'quickActions', 'aiAssistant',
   ],
   Doctor: [
     'statsCards', 'medicalOverview', 'alertsPanel',
-    'chartsWidget', 'tasksWidget', 'quickActions',
+    'chartsWidget', 'tasksWidget', 'quickActions', 'aiAssistant',
   ],
 };
 
@@ -101,16 +104,19 @@ function getWidgetTitle(id, t) {
     medicalOverview: t('nav.medicalRecords'),
     tasksWidget: t('nav.tasks'),
     auctionsWidget: t('nav.auctions'),
+    activationWidget: 'Device Activation',
+    announcements: t('nav.announcements') || 'Announcements',
+    aiAssistant: t('ai.title') || 'AI Assistant',
   };
   return titles[id] || id;
 }
 
 const ROLE_AVAILABLE = {
-  Admin: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget', 'auctionsWidget'],
-  Owner: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview', 'auctionsWidget'],
-  Manager: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'auctionsWidget'],
-  Shepherd: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'tasksWidget'],
-  Doctor: ['statsCards', 'medicalOverview', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget'],
+  Admin: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'activationWidget', 'aiAssistant'],
+  Owner: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview', 'auctionsWidget', 'activationWidget', 'aiAssistant'],
+  Manager: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'aiAssistant'],
+  Shepherd: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'tasksWidget', 'aiAssistant'],
+  Doctor: ['statsCards', 'medicalOverview', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'aiAssistant'],
 };
 
 export function getAvailableForRole(role, t) {

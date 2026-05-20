@@ -12,6 +12,11 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     totalAnimals: 0,
     activeDevices: 0,
+    totalDevicesReal: 0,
+    totalDevicesSimulated: 0,
+    healthyCountReal: 0,
+    healthyCountSimulated: 0,
+    realDataEnabled: false,
     alerts: 0,
     subscription: null,
   });
@@ -87,6 +92,11 @@ export default function Dashboard() {
       setStats({
         totalAnimals: totalAnimals,
         activeDevices: animalsWithDevicesCount,
+        totalDevicesReal: dashboardData.total_devices_real || 0,
+        totalDevicesSimulated: dashboardData.total_devices_simulated || 0,
+        healthyCountReal: dashboardData.healthy_count_real || 0,
+        healthyCountSimulated: dashboardData.healthy_count_simulated || 0,
+        realDataEnabled: dashboardData.real_data_enabled || false,
         alerts: offlineOrSignalDevices + animalsWithoutDevices + unacknowledgedAlerts,
         subscription: subscriptionData,
       });
@@ -127,11 +137,15 @@ export default function Dashboard() {
       if (geofenceAlerts && geofenceAlerts.length > 0) {
         geofenceAlerts.slice(0, 10).forEach(alert => {
           const severity = alert.type === 'exit' ? 'High' : alert.type === 'temperature' ? 'Medium' : 'Medium';
+          const isTemp = alert.type === 'temperature';
           dashboardAlerts.push({
             id: alert.id,
             severity,
+            type: alert.type,
             animal: alert.animal?.animal_id || alert.animal_id || 'Unknown',
-            message: alert.type === 'entry' ? `Entry: ${alert.geofence?.name || 'Geofence'}` : alert.type === 'exit' ? `Exit: ${alert.geofence?.name || 'Geofence'}` : alert.type,
+            message: isTemp
+              ? `Temperature: ${parseFloat(alert.temperature || alert.value || 0).toFixed(1)}°C`
+              : alert.type === 'entry' ? `Entry: ${alert.geofence?.name || 'Geofence'}` : alert.type === 'exit' ? `Exit: ${alert.geofence?.name || 'Geofence'}` : alert.type,
             time: alert.triggered_at ? new Date(alert.triggered_at).toLocaleTimeString() : 'Now',
             isAcknowledged: alert.is_acknowledged,
           });
@@ -198,7 +212,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-2 border-[#002819] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full" />
       </div>
     );
   }

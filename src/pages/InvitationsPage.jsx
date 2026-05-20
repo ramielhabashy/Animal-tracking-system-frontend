@@ -102,10 +102,10 @@ export default function InvitationsPage() {
   const statusBadge = (status) => {
     const styles = {
       pending: 'bg-[#fff3cd] text-[#856404]',
-      used: 'bg-[#cfe5d6] text-[#002819]',
+      used: 'bg-[#cfe5d6] text-brand-primary',
       expired: 'bg-[#ffdad6] text-[#93000a]',
     };
-    return styles[status] || 'bg-[#eeeee9] text-[#404943]';
+    return styles[status] || 'bg-surface-dim text-on-surface-variant';
   };
 
   const statusIcon = (status) => {
@@ -121,33 +121,33 @@ export default function InvitationsPage() {
     <div className="space-y-8">
       <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 ${isRtl ? 'text-right' : ''}`}>
         <div>
-          <h2 className="text-4xl font-black text-[#002819]">Invitations</h2>
-          <p className="text-[#404943] mt-2 font-medium">Manage pending, used, and expired invitations.</p>
+          <h2 className="text-4xl font-black text-brand-primary">Invitations</h2>
+          <p className="text-on-surface-variant mt-2 font-medium">Manage pending, used, and expired invitations.</p>
         </div>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-[#002819]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+        <div className={`p-4 rounded-xl ${message.type === 'success' ? 'bg-[#cfe5d6] text-brand-primary' : 'bg-[#ffdad6] text-[#93000a]'}`}>
           {message.text}
         </div>
       )}
 
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[240px] relative">
-          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-[#717973] ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
+          <MaterialSymbol icon="search" size={20} className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-4 left-auto' : 'left-4'}`} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by email or role..."
-            className={`w-full bg-white border-none rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
+            className={`w-full bg-white border-none rounded-xl py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 ${isRtl ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">Status — All</option>
           <option value="pending">Pending</option>
@@ -158,7 +158,7 @@ export default function InvitationsPage() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-[#06402b]/10 cursor-pointer"
+          className="bg-white rounded-xl px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-brand-secondary/10 cursor-pointer"
         >
           <option value="all">Role — All</option>
           {filterRoles.map(role => (
@@ -171,33 +171,33 @@ export default function InvitationsPage() {
         <div className="overflow-x-auto">
           <table className={`w-full ${isRtl ? 'text-right' : 'text-left'}`}>
             <thead>
-              <tr className="bg-[#F4F4EF]/50">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Email</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Role</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Sent</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943]">Expires</th>
-                <th className={`px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#404943] ${isRtl ? 'text-left' : 'text-right'}`}>Actions</th>
+              <tr className="bg-surface-light/50">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Email</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Role</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Status</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Sent</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Expires</th>
+                <th className={`px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ${isRtl ? 'text-left' : 'text-right'}`}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F4F4EF]">
               {invitations.map((inv) => (
-                <tr key={inv.id} className="hover:bg-[#F4F4EF]/30 transition-colors">
+                <tr key={inv.id} className="hover:bg-surface-light/30 transition-colors">
                   <td className="px-6 py-5">
                     <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#002819] to-[#06402B] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-sm shadow-md">
                         {inv.email?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                       <div>
-                        <p className="font-bold text-[#002819]">{inv.email}</p>
+                        <p className="font-bold text-brand-primary">{inv.email}</p>
                         {inv.creator && (
-                          <p className="text-xs text-[#717973]">by {inv.creator.name}</p>
+                          <p className="text-xs text-on-surface-subtle">by {inv.creator.name}</p>
                         )}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#eeeee9] text-[#404943]">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-dim text-on-surface-variant">
                       {inv.role}
                     </span>
                   </td>
@@ -207,10 +207,10 @@ export default function InvitationsPage() {
                       {inv.status}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-sm text-[#717973]">
+                  <td className="px-6 py-5 text-sm text-on-surface-subtle">
                     {inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '-'}
                   </td>
-                  <td className="px-6 py-5 text-sm text-[#717973]">
+                  <td className="px-6 py-5 text-sm text-on-surface-subtle">
                     {inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '-'}
                   </td>
                   <td className={`px-6 py-5 ${isRtl ? 'text-left' : 'text-right'}`}>
@@ -220,14 +220,14 @@ export default function InvitationsPage() {
                           <button
                             onClick={() => handleResend(inv.id)}
                             disabled={actingId === inv.id}
-                            className="p-3 text-[#717973] hover:text-[#002819] hover:bg-[#F4F4EF] rounded-xl transition-all disabled:opacity-50"
+                            className="p-3 text-on-surface-subtle hover:text-brand-primary hover:bg-surface-light rounded-xl transition-all disabled:opacity-50"
                             title="Resend"
                           >
                             <MaterialSymbol icon="refresh" size={20} />
                           </button>
                           <button
                             onClick={() => copyLink(inv.invitation_link)}
-                            className="p-3 text-[#717973] hover:text-[#002819] hover:bg-[#F4F4EF] rounded-xl transition-all"
+                            className="p-3 text-on-surface-subtle hover:text-brand-primary hover:bg-surface-light rounded-xl transition-all"
                             title="Copy link"
                           >
                             <MaterialSymbol icon="content_copy" size={20} />
@@ -235,7 +235,7 @@ export default function InvitationsPage() {
                           <button
                             onClick={() => handleCancel(inv.id)}
                             disabled={actingId === inv.id}
-                            className="p-3 text-[#717973] hover:text-[#BA1A1A] hover:bg-[#ffdad6]/50 rounded-xl transition-all disabled:opacity-50"
+                            className="p-3 text-on-surface-subtle hover:text-danger hover:bg-danger/50 rounded-xl transition-all disabled:opacity-50"
                             title="Cancel"
                           >
                             <MaterialSymbol icon="delete" size={20} />
@@ -243,13 +243,13 @@ export default function InvitationsPage() {
                         </>
                       )}
                       {inv.status === 'used' && (
-                        <span className="text-xs text-[#717973] italic">Completed</span>
+                        <span className="text-xs text-on-surface-subtle italic">Completed</span>
                       )}
                       {inv.status === 'expired' && (
                         <button
                           onClick={() => handleResend(inv.id)}
                           disabled={actingId === inv.id}
-                          className="p-3 text-[#717973] hover:text-[#002819] hover:bg-[#F4F4EF] rounded-xl transition-all disabled:opacity-50"
+                          className="p-3 text-on-surface-subtle hover:text-brand-primary hover:bg-surface-light rounded-xl transition-all disabled:opacity-50"
                           title="Resend (renew)"
                         >
                           <MaterialSymbol icon="refresh" size={20} />
@@ -263,14 +263,14 @@ export default function InvitationsPage() {
           </table>
         </div>
         {!loading && invitations.length === 0 && (
-          <div className="p-12 text-center text-[#717973]">
+          <div className="p-12 text-center text-on-surface-subtle">
             <MaterialSymbol icon="mail_off" size={48} className="mx-auto mb-4 opacity-50" />
             <p>No invitations found</p>
           </div>
         )}
         {loading && (
           <div className="p-12 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full mx-auto" />
+            <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full mx-auto" />
           </div>
         )}
         {invitations.length > 0 && (

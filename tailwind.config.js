@@ -22,6 +22,24 @@ export default {
         },
         danger: '#BA1A1A',
         success: '#059669',
+        surface: {
+          DEFAULT: '#fafaf5',
+          dim: '#eeeee9',
+          light: '#F4F4EF',
+          high: '#E3E3DE',
+        },
+        'on-surface': {
+          DEFAULT: '#002819',
+          variant: '#404943',
+          subtle: '#717973',
+        },
+        tertiary: {
+          container: '#735C00',
+          DEFAULT: '#D4AF37',
+        },
+        outline: {
+          DEFAULT: '#c0c9c1',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

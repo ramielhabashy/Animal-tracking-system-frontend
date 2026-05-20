@@ -118,21 +118,21 @@ export default function MapWidget({ dashboardData }) {
               onClick={() => setViewMode(mode)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 viewMode === mode
-                  ? 'bg-gradient-to-br from-[#002819] to-[#06402B] text-white shadow-lg shadow-[#002819]/20'
-                  : 'bg-[#F4F4EF] text-[#404943] hover:bg-[#E3E3DE]'
+                  ? 'bg-gradient-to-br from-brand-primary to-brand-secondary text-white shadow-lg shadow-brand-primary/20'
+                  : 'bg-surface-light text-on-surface-variant hover:bg-surface-high'
               }`}
             >
               <MaterialSymbol icon={icon} size={16} />
               {label}
             </button>
           ))}
-          <div className="w-px bg-[#E3E3DE]" />
+          <div className="w-px bg-surface-high" />
           <button
             onClick={() => setShowGeofences(!showGeofences)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
               showGeofences
-                ? 'bg-gradient-to-br from-[#735C00] to-[#D4AF37] text-white shadow-lg shadow-[#D4AF37]/20'
-                : 'bg-[#F4F4EF] text-[#404943] hover:bg-[#E3E3DE]'
+                ? 'bg-gradient-to-br from-[#735C00] to-[#D4AF37] text-white shadow-lg shadow-brand-accent/20'
+                : 'bg-surface-light text-on-surface-variant hover:bg-surface-high'
             }`}
           >
             <MaterialSymbol icon="layers" size={16} />
@@ -175,9 +175,9 @@ export default function MapWidget({ dashboardData }) {
                   <div className="p-2 min-w-[160px]">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: geofence.color || '#D4AF37' }} />
-                      <h3 className="font-bold text-[#002819]">{geofence.name}</h3>
+                      <h3 className="font-bold text-brand-primary">{geofence.name}</h3>
                     </div>
-                    <p className="text-xs text-[#717973]">{coords.length} boundary points</p>
+                    <p className="text-xs text-on-surface-subtle">{coords.length} boundary points</p>
                     {geofence.is_active === false && (
                       <p className="text-xs text-amber-600 font-semibold mt-1">Inactive</p>
                     )}
@@ -198,8 +198,8 @@ export default function MapWidget({ dashboardData }) {
               >
                 <Popup>
                   <div className="p-3 min-w-[200px]">
-                    <h3 className="font-bold text-[#002819] text-lg">{animal.name || animal.animal_id}</h3>
-                    <p className="text-sm text-[#404943] mt-1">{animal.species}</p>
+                    <h3 className="font-bold text-brand-primary text-lg">{animal.name || animal.animal_id}</h3>
+                    <p className="text-sm text-on-surface-variant mt-1">{animal.species}</p>
                     {['Admin', 'Owner', 'Manager'].includes(user?.role) && (
                       <div className="mt-2 space-y-1 text-xs">
                         {animal.device?.battery_level != null && (
@@ -209,12 +209,12 @@ export default function MapWidget({ dashboardData }) {
                           </p>
                         )}
                         {animal.owner?.name && <p>Owner: {animal.owner.name}</p>}
-                        {animal.baseline_temperature && <p>🌡️ {animal.baseline_temperature}°C</p>}
+                        {(animal.temperature ?? animal.baseline_temperature) && <p>🌡️ {animal.temperature ?? animal.baseline_temperature}°C</p>}
                       </div>
                     )}
                     {user?.role === 'Doctor' && (
                       <div className="mt-2 space-y-1 text-xs">
-                        {animal.baseline_temperature && <p>🌡️ {animal.baseline_temperature}°C</p>}
+                        {(animal.temperature ?? animal.baseline_temperature) && <p>🌡️ {animal.temperature ?? animal.baseline_temperature}°C</p>}
                         {animal.heart_rate && <p>💓 {animal.heart_rate} bpm</p>}
                         {animal.weight && <p>⚖️ {animal.weight} kg</p>}
                       </div>
@@ -258,19 +258,19 @@ export default function MapWidget({ dashboardData }) {
               >
                 <Popup>
                   <div className="p-3">
-                    <h3 className="font-bold text-[#002819]">{animal.name || animal.animal_id}</h3>
-                    <p className="text-xs text-[#404943]">{animal.path.length} tracking points</p>
+                    <h3 className="font-bold text-brand-primary">{animal.name || animal.animal_id}</h3>
+                    <p className="text-xs text-on-surface-variant">{animal.path.length} tracking points</p>
                   </div>
                 </Popup>
               </Marker>
             );
           })}
         </MapContainer>
-        <div className={`absolute bottom-6 z-[1000] bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg shadow-[#002819]/10 flex items-center gap-6 ${isRtl ? 'right-6' : 'left-6'}`}>
-          <span className="text-sm font-medium text-[#404943]">
+        <div className={`absolute bottom-6 z-[1000] bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg shadow-brand-primary/10 flex items-center gap-6 ${isRtl ? 'right-6' : 'left-6'}`}>
+          <span className="text-sm font-medium text-on-surface-variant">
             {animalsOnMap.length} animals tracked
           </span>
-          <Link to="/map" className="text-sm font-bold text-[#D4AF37] hover:underline flex items-center gap-1">
+          <Link to="/map" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
             {t('dashboard.fullTracker')}
             <MaterialSymbol icon="arrow_forward" size={16} />
           </Link>
