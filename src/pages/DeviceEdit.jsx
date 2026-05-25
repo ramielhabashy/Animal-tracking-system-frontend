@@ -235,11 +235,23 @@ export default function DeviceEdit() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
-                      Serial Number
+                      Device ID
                     </label>
                     <input
                       className="w-full bg-surface-high border-none rounded-xl px-4 py-3 text-on-surface-variant/50 cursor-not-allowed font-mono text-sm"
                       defaultValue={device.device_id}
+                      disabled
+                      type="text"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                      Serial Number
+                    </label>
+                    <input
+                      className="w-full bg-surface-high border-none rounded-xl px-4 py-3 text-on-surface-variant/50 cursor-not-allowed font-mono text-sm"
+                      defaultValue={device.serial_number || '-'}
                       disabled
                       type="text"
                     />
@@ -443,7 +455,7 @@ export default function DeviceEdit() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
-                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Serial Number</p>
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Device ID</p>
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-bold text-brand-primary mt-1 font-mono">{device.device_id}</p>
                       <span className={`mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
@@ -454,6 +466,10 @@ export default function DeviceEdit() {
                         {device.data_source === 'real' ? 'LIVE' : 'SIM'}
                       </span>
                     </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Serial Number</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1 font-mono">{device.serial_number || '-'}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wider">Device Name</p>

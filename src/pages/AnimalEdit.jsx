@@ -19,6 +19,7 @@ export default function AnimalEdit() {
 
   const [formData, setFormData] = useState({
     name: '',
+    animal_id: '',
     species: 'Camel',
     custom_species: '',
     breed: '',
@@ -162,6 +163,7 @@ export default function AnimalEdit() {
         
         setFormData({
           name: currentAnimal.name || '',
+          animal_id: currentAnimal.animal_id || '',
           species: isPredefinedSpecies ? species : 'Other',
           custom_species: isPredefinedSpecies ? '' : species,
           breed: isPredefinedBreed ? breed : 'Other',

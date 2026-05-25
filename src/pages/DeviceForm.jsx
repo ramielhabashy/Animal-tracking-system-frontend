@@ -36,6 +36,7 @@ export default function DeviceForm() {
     animal_id: '',
     data_source: 'simulated',
     driver: '',
+    serial_number: '',
   });
   const [unassignedAnimals, setUnassignedAnimals] = useState([]);
   const [allAnimals, setAllAnimals] = useState([]);
@@ -244,6 +245,20 @@ export default function DeviceForm() {
                 </select>
                 {errors.type && <p className="text-red-600 text-xs">{errors.type}</p>}
               </div>
+              {user?.role === 'Admin' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                    Serial Number
+                  </label>
+                  <input
+                    name="serial_number"
+                    value={formData.serial_number}
+                    onChange={handleChange}
+                    placeholder="e.g., SN-2407A-003"
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-secondary shadow-sm font-mono text-sm"
+                  />
+                </div>
+              )}
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Status
