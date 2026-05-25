@@ -20,27 +20,31 @@ import {
   TransferCommissionSettings,
   AuctionSettings,
   DeviceIntegrationSettings,
+  PageSettings,
+  SubscriptionSettings,
 } from '../components/Settings';
 
 const tabs = [
   { id: 'general', labelKey: 'settings.general', icon: 'settings' },
-  { id: 'species', label: 'Species', icon: 'pets' },
-  { id: 'languages', labelKey: 'settings.languages', label: 'Languages', icon: 'language' },
-  { id: 'roles', labelKey: 'settings.roles', label: 'Roles', icon: 'admin_panel_settings' },
-  { id: 'taskTypes', label: 'Task Types', icon: 'task' },
-  { id: 'medicalTypes', label: 'Medical Types', icon: 'vaccines' },
-  { id: 'simulator', label: 'Simulator', icon: 'moving' },
-  { id: 'translation', label: 'Translation', icon: 'translate' },
-  { id: 'email', label: 'Email', icon: 'mail' },
+  { id: 'species', labelKey: 'settings.species', icon: 'pets' },
+  { id: 'languages', labelKey: 'settings.languages', icon: 'language' },
+  { id: 'roles', labelKey: 'settings.roles', icon: 'admin_panel_settings' },
+  { id: 'taskTypes', labelKey: 'settings.taskTypes', icon: 'task' },
+  { id: 'medicalTypes', labelKey: 'settings.medicalTypes', icon: 'vaccines' },
+  { id: 'simulator', labelKey: 'settings.simulator', icon: 'moving' },
+  { id: 'translation', labelKey: 'settings.translation', icon: 'translate' },
+  { id: 'email', labelKey: 'settings.email', icon: 'mail' },
   { id: 'stripe', labelKey: 'settings.stripe', icon: 'credit_card' },
   { id: 'ai', labelKey: 'settings.ai', icon: 'psychology' },
-  { id: 'menu', label: 'Menu', icon: 'menu' },
-  { id: 'countries', label: 'Countries', icon: 'globe' },
-  { id: 'embedCodes', labelKey: 'settings.embedCodes', label: 'Embed Codes', icon: 'code' },
-  { id: 'announcements', labelKey: 'settings.announcements', label: 'Announcements', icon: 'campaign' },
-  { id: 'transferCommission', label: 'Transfer Commission', icon: 'swap_horiz' },
-  { id: 'auction', label: 'Auction', icon: 'gavel' },
-  { id: 'deviceIntegration', label: 'Device Integration', icon: 'settings_ethernet' },
+  { id: 'menu', labelKey: 'settings.menu', icon: 'menu' },
+  { id: 'countries', labelKey: 'settings.countries', icon: 'globe' },
+  { id: 'embedCodes', labelKey: 'settings.embedCodes', icon: 'code' },
+  { id: 'announcements', labelKey: 'settings.announcements', icon: 'campaign' },
+  { id: 'transferCommission', labelKey: 'settings.transferCommission', icon: 'swap_horiz' },
+  { id: 'subscription', labelKey: 'settings.subscription', icon: 'subscriptions' },
+  { id: 'auction', labelKey: 'settings.auction', icon: 'gavel' },
+  { id: 'deviceIntegration', labelKey: 'settings.deviceIntegration', icon: 'settings_ethernet' },
+  { id: 'pages', label: 'Pages', icon: 'description' },
 ];
 
 const SimulatorPage = React.lazy(() => import('./SimulatorPage'));
@@ -85,23 +89,19 @@ export default function SettingsPage() {
           </button>
         </div>
       )}
-
-      <div className="flex flex-wrap gap-2 bg-surface-light p-1 rounded-xl w-fit">
-        {tabs.map(tab => (
+      <div className="flex flex-wrap gap-2 bg-[#F4F4EF] p-1 rounded-xl w-fit">
+        {tabs.map(t => (
           <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setMessage(null);
-            }}
+            key={t.id}
+            onClick={() => { setActiveTab(t.id); setMessage(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              activeTab === tab.id
-                ? 'bg-white text-brand-primary shadow-sm'
-                : 'text-on-surface-variant hover:text-brand-primary'
+              activeTab === t.id
+                ? 'bg-white text-[#002819] shadow-sm'
+                : 'text-[#404943] hover:text-[#002819]'
             }`}
           >
-            <MaterialSymbol icon={tab.icon} size={18} />
-            {tabLabel(tab)}
+            <MaterialSymbol icon={t.icon} size={18} />
+            {tabLabel(t)}
           </button>
         ))}
       </div>
@@ -115,23 +115,30 @@ export default function SettingsPage() {
         {activeTab === 'medicalTypes' && <MedicalTypeSettings dir={dir} message={message} setMessage={setMessage} />}
         {activeTab === 'email' && <EmailSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'stripe' && <StripeSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
-        {activeTab === 'ai' && <AISettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'translation' && <TranslationApiSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'menu' && <MenuSettings dir={dir} message={message} setMessage={setMessage} />}
         {activeTab === 'countries' && <CountrySettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'embedCodes' && <EmbedCodesSettings dir={dir} />}
         {activeTab === 'announcements' && <BannerSettings dir={dir} message={message} setMessage={setMessage} />}
+        {activeTab === 'subscription' && <SubscriptionSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'auction' && <AuctionSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'transferCommission' && <TransferCommissionSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
+        {activeTab === 'ai' && <AISettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
         {activeTab === 'deviceIntegration' && <DeviceIntegrationSettings dir={dir} message={message} setMessage={setMessage} saving={saving} setSaving={setSaving} />}
+        {activeTab === 'pages' && <PageSettings dir={dir} message={message} setMessage={setMessage} />}
         {activeTab === 'simulator' && (
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full" />
+              <div className="animate-spin w-8 h-8 border-4 border-[#002819] border-t-transparent rounded-full" />
             </div>
           }>
             <SimulatorPage embedded />
           </React.Suspense>
+        )}
+        {loading && (
+          <div className="flex justify-center items-center min-h-[200px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#002819]"></div>
+          </div>
         )}
       </div>
     </div>

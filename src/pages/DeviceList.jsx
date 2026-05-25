@@ -41,6 +41,7 @@ export default function DeviceList() {
   const [batchAssign, setBatchAssign] = useState(false);
   const [batchLoading, setBatchLoading] = useState(false);
   const [batchMessage, setBatchMessage] = useState(null);
+  const [owners, setOwners] = useState([]);
 
   const isAdmin = user?.role === 'Admin';
   const isOwner = user?.role === 'Owner';
@@ -68,9 +69,10 @@ export default function DeviceList() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [devicesRes, animalsRes] = await Promise.all([
+      const [devicesRes, animalsRes, usersRes] = await Promise.all([
         apiFetch(`/api/devices?per_page=${perPage}&page=${currentPage}`),
         apiFetch('/api/animals?per_page=100'),
+        apiFetch('/api/users?per_page=500'),
       ]);
       if (devicesRes.ok && animalsRes.ok) {
         const devicesData = await devicesRes.json();
@@ -79,6 +81,11 @@ export default function DeviceList() {
         setDevices(devicesArray);
         setTotalDevices(devicesData.data?.meta?.total || devicesData.data?.total || devicesData.total || 0);
         setAnimals(animalsData.data || []);
+      }
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        const usersArray = usersData.data || [];
+        setOwners(usersArray.filter(u => u.role === 'Owner'));
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -122,10 +129,7 @@ export default function DeviceList() {
     return animals.find(a => (a.device?.device_id || a.device_id) === deviceId);
   };
 
-  const ownerOptions = [...new Map(
-    devices.filter(d => d.owner?.id && d.owner?.name)
-      .map(d => [d.owner.id, d.owner])
-  ).values()];
+  const ownerOptions = owners;
 
   const deviceTypeOptions = [...new Set(devices.map(d => d.type).filter(Boolean))];
 

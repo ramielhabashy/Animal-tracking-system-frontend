@@ -11,13 +11,19 @@ export default function DeviceForm() {
   const { t, dir } = useI18n();
   const { user } = useAuth();
   const isRtl = dir === 'rtl';
-  const canCreate = user?.role === 'Admin';
+  const canCreate = user?.role === 'Admin' || user?.role === 'Owner' || user?.role === 'Manager';
 
   useEffect(() => {
     if (!canCreate) {
       navigate('/devices', { replace: true });
     }
   }, [canCreate, navigate]);
+
+  useEffect(() => {
+    if (user?.role !== 'Admin' && user?.id) {
+      setFormData(prev => ({ ...prev, owner_id: user.id }));
+    }
+  }, [user]);
   const [formData, setFormData] = useState({
     name: '',
     type: 'collar',
@@ -28,6 +34,8 @@ export default function DeviceForm() {
     advanced_tracking: false,
     owner_id: '',
     animal_id: '',
+    data_source: 'simulated',
+    driver: '',
   });
   const [unassignedAnimals, setUnassignedAnimals] = useState([]);
   const [allAnimals, setAllAnimals] = useState([]);
@@ -104,6 +112,8 @@ export default function DeviceForm() {
             type: formData.type,
             owner_id: formData.owner_id || null,
             animal_id: formData.animal_id,
+            data_source: formData.data_source,
+            driver: formData.driver || null,
           }),
         });
         const data = await response.json();
@@ -125,6 +135,8 @@ export default function DeviceForm() {
           advanced_tracking: formData.advanced_tracking,
           owner_id: formData.owner_id || null,
           animal_id: formData.animal_id || null,
+          data_source: formData.data_source,
+          driver: formData.driver || null,
         };
 
         const response = await apiFetch('/api/devices', {
@@ -243,8 +255,10 @@ export default function DeviceForm() {
                   className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="online">Online</option>
+                  <option value="active">Active</option>
                   <option value="offline">Offline</option>
                   <option value="low_signal">Low Signal</option>
+                  <option value="maintenance">Maintenance</option>
                 </select>
               </div>
             </div>
@@ -328,6 +342,57 @@ export default function DeviceForm() {
             </div>
           </div>
 
+          {/* Data Source — Admin only */}
+          {user?.role === 'Admin' && (
+            <div className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
+              <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <span className="bg-white p-2 rounded-xl text-brand-primary">
+                  <MaterialSymbol icon="cloud" size={20} />
+                </span>
+                <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Data Source</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                    Source Type
+                  </label>
+                  <select
+                    name="data_source"
+                    value={formData.data_source}
+                    onChange={(e) => {
+                      const ds = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        data_source: ds,
+                        driver: ds === 'real' ? 'sani' : '',
+                      }));
+                    }}
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
+                  >
+                    <option value="simulated">Simulated (local)</option>
+                    <option value="real">Real (external provider)</option>
+                  </select>
+                </div>
+                {formData.data_source === 'real' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                      Driver
+                    </label>
+                    <select
+                      name="driver"
+                      value={formData.driver}
+                      onChange={handleChange}
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
+                    >
+                      <option value="sani">Sani (HTTP)</option>
+                      <option value="mqtt">MQTT</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Ownership & Assignment */}
           <div className="bg-surface-dim rounded-3xl p-8 transition-all hover:shadow-md">
             <div className={`flex items-center gap-3 mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -337,22 +402,33 @@ export default function DeviceForm() {
               <h3 className="text-xl font-bold font-['Manrope'] text-brand-primary">Ownership & Assignment</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
-                  Owner
-                </label>
-                <select
-                  name="owner_id"
-                  value={formData.owner_id}
-                  onChange={handleChange}
-                  className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
-                >
-                  <option value="">Select Owner</option>
-                  {owners.map(owner => (
-                    <option key={owner.id} value={owner.id}>{owner.name}</option>
-                  ))}
-                </select>
-              </div>
+              {user?.role === 'Admin' ? (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                    Owner
+                  </label>
+                  <select
+                    name="owner_id"
+                    value={formData.owner_id}
+                    onChange={handleChange}
+                    className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
+                  >
+                    <option value="">Select Owner</option>
+                    {owners.map(owner => (
+                      <option key={owner.id} value={owner.id}>{owner.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+                    Owner
+                  </label>
+                  <div className="w-full bg-white border-none rounded-xl px-4 py-3 shadow-sm text-on-surface-variant">
+                    {user?.name || 'Me'}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
                   Assign to Animal

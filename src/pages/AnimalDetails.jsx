@@ -60,7 +60,7 @@ const fetchAnimal = async () => {
       const [animalRes, historyRes, alertsRes] = await Promise.all([
         apiFetch(`/api/animals/${id}`),
         apiFetch(`/api/animals/${id}/location-history?hours=720`),
-        apiFetch(`/api/geofence-alerts?per_page=20`),
+        apiFetch(`/api/geofence-alerts?per_page=20&animal_id=${id}`),
       ]);
       if (animalRes.ok) {
         const animalData = await animalRes.json();
@@ -82,8 +82,7 @@ const fetchAnimal = async () => {
 
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json();
-          const animalAlerts = (alertsData.data || []).filter(a => a.animal_id === parseInt(id));
-          setActivityHistory(animalAlerts);
+          setActivityHistory(alertsData.data || []);
         }
       }
     } catch (error) {
@@ -442,19 +441,26 @@ const fetchAnimal = async () => {
               <p>No recent activity recorded</p>
             </div>
           ) : (
-            activityHistory.slice(0, 5).map((alert) => (
+            activityHistory.slice(0, 5).map((alert) => {
+              const isEntry = alert.type === 'entry';
+              const isExit = alert.type === 'exit';
+              const isTemp = alert.type === 'temperature';
+              const isOffline = alert.type === 'offline';
+              const icon = isEntry ? 'login' : isExit ? 'logout' : isTemp ? 'thermostat' : isOffline ? 'wifi_off' : 'notification_important';
+              const bgClass = isEntry ? 'bg-emerald-50 text-emerald-600' : isExit ? 'bg-red-50 text-red-600' : isTemp ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-600';
+              const label = isEntry ? 'Entered Geofence' : isExit ? 'Exited Geofence' : isTemp ? 'Temperature Alert' : isOffline ? 'Device Offline' : 'Alert';
+              const geofenceName = alert.geofence?.name || (isTemp ? 'Temperature' : isOffline ? 'Device' : 'Geofence');
+              return (
               <div key={alert.id} className="px-10 py-6 flex items-center gap-6 hover:bg-surface-light/50 transition-colors">
-                <div className={`p-3 rounded-xl ${alert.type === 'entry' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                  <MaterialSymbol icon={alert.type === 'entry' ? 'login' : 'logout'} />
+                <div className={`p-3 rounded-xl ${bgClass}`}>
+                  <MaterialSymbol icon={icon} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-on-surface">
-                    {alert.type === 'entry' ? 'Entered Geofence' : 'Exited Geofence'}
-                  </p>
-                  <p className="text-sm text-on-surface-variant/80">{alert.geofence?.name || 'Geofence'}</p>
+                  <p className="font-semibold text-on-surface">{label}</p>
+                  <p className="text-sm text-on-surface-variant/80">{geofenceName}</p>
                 </div>
                 <div className="text-right">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${alert.type === 'entry' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${bgClass}`}>
                     {alert.type.toUpperCase()}
                   </span>
                   <p className="text-[10px] text-on-surface-subtle mt-1">
@@ -462,7 +468,8 @@ const fetchAnimal = async () => {
                   </p>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
         {activityHistory.length > 0 && (

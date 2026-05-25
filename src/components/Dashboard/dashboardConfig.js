@@ -15,16 +15,18 @@ const ALL_WIDGETS = {
   activationWidget: { id: 'activationWidget', gridDesktop: 4, gridTablet: 6 },
   announcements: { id: 'announcements', gridDesktop: 12, gridTablet: 12 },
   aiAssistant: { id: 'aiAssistant', gridDesktop: 6, gridTablet: 12 },
+  messages: { id: 'messages', gridDesktop: 6, gridTablet: 12 },
 };
 
 const ROLE_LAYOUTS = {
   Admin: [
     'announcements', 'statsCards', 'activationWidget', 'subscriptionOverview', 'auctionsWidget', 'map', 'alertsPanel',
     'chartsWidget', 'tasksWidget', 'ownerOverview', 'tierDistribution', 'quickActions', 'aiAssistant',
+    'messages',
   ],
   Owner: [
     'announcements', 'statsCards', 'activationWidget', 'auctionsWidget', 'map', 'alertsPanel',
-    'chartsWidget', 'tasksWidget', 'quickActions', 'aiAssistant',
+    'chartsWidget', 'tasksWidget', 'quickActions', 'aiAssistant', 'messages',
   ],
   Manager: [
     'announcements', 'statsCards', 'auctionsWidget', 'map', 'alertsPanel',
@@ -107,16 +109,17 @@ function getWidgetTitle(id, t) {
     activationWidget: 'Device Activation',
     announcements: t('nav.announcements') || 'Announcements',
     aiAssistant: t('ai.title') || 'AI Assistant',
+    messages: t('nav.messages') || 'Messages',
   };
   return titles[id] || id;
 }
 
 const ROLE_AVAILABLE = {
-  Admin: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'activationWidget', 'aiAssistant'],
-  Owner: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview', 'auctionsWidget', 'activationWidget', 'aiAssistant'],
-  Manager: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'aiAssistant'],
-  Shepherd: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'tasksWidget', 'aiAssistant'],
-  Doctor: ['statsCards', 'medicalOverview', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'aiAssistant'],
+  Admin: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'subscriptionOverview', 'tierDistribution', 'ownerOverview', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'activationWidget', 'aiAssistant', 'messages'],
+  Owner: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'subscriptionOverview', 'auctionsWidget', 'activationWidget', 'aiAssistant', 'messages'],
+  Manager: ['announcements', 'statsCards', 'map', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'auctionsWidget', 'aiAssistant', 'messages'],
+  Shepherd: ['statsCards', 'map', 'alertsPanel', 'quickActions', 'tasksWidget', 'aiAssistant', 'messages'],
+  Doctor: ['statsCards', 'medicalOverview', 'alertsPanel', 'quickActions', 'chartsWidget', 'tasksWidget', 'aiAssistant', 'messages'],
 };
 
 export function getAvailableForRole(role, t) {

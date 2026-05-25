@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/api';
 import { useI18n } from '../../i18n';
 import { SettingsCard, InputField, ToggleSwitch, SaveButton } from './index';
@@ -12,6 +12,26 @@ export default function StripeSettings({ dir, message, setMessage, saving, setSa
     webhook_secret: '',
     enabled: false,
   });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/admin/settings/stripe');
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          setStripeSettings({
+            public_key: data.public_key || '',
+            secret_key: data.secret_key || '',
+            webhook_secret: data.webhook_secret || '',
+            enabled: !!data.enabled,
+          });
+        }
+      } catch (e) {
+        // silent — settings remain at defaults
+      }
+    })();
+  }, []);
 
   const handleSaveStripe = async () => {
     setSaving(true);

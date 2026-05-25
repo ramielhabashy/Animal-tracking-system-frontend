@@ -292,6 +292,7 @@ const visibleNavItems = navItems.filter(item => !item.roles || item.roles.includ
         <div className="flex-1 p-8 lg:p-10">
           <Outlet />
         </div>
+        <div className="h-24" />
         <Footer />
       </main>
       <AIAssistant />

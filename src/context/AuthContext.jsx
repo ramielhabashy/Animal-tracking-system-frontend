@@ -35,7 +35,6 @@ export function AuthProvider({ children }) {
       }
       
       const data = await response.json();
-      console.log('Login success:', data);
       
       if (data.user) {
         const userRole = data.user.role || 'Owner';

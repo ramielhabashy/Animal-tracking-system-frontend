@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { getPendingSubscription, setPendingSubscription } from '../utils/cookies';
 
 const TIER_COLORS = ['#002819', '#06402B', '#D4AF37', '#002819'];

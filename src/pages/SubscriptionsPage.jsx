@@ -162,6 +162,7 @@ export default function SubscriptionsPage() {
   const [orderUploadLoading, setOrderUploadLoading] = useState(false);
   const [bankTransferFile, setBankTransferFile] = useState(null);
   const [bankTransferLoading, setBankTransferLoading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [ownerPaymentMethod, setOwnerPaymentMethod] = useState('');
   const [ownerPaymentRef, setOwnerPaymentRef] = useState('');
 
@@ -178,6 +179,7 @@ export default function SubscriptionsPage() {
   useEffect(() => {
     fetchData();
     if (isAdmin) fetchOwners();
+    fetchPaymentMethods();
   }, []);
 
   useEffect(() => {
@@ -248,6 +250,22 @@ export default function SubscriptionsPage() {
       }
     } catch (error) {
       console.error('Failed to fetch owners:', error);
+    }
+  };
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const res = await apiFetch('/api/payment-methods');
+      if (res.ok) {
+        const data = await res.json();
+        setPaymentMethods(data.data || []);
+      }
+    } catch (e) {
+      // fallback to defaults
+      setPaymentMethods([
+        { handler: 'stripe', name: 'Credit Card (Stripe)', icon: 'credit_card' },
+        { handler: 'bank_transfer', name: 'Bank Transfer', icon: 'account_balance' },
+      ]);
     }
   };
 
@@ -1071,6 +1089,7 @@ export default function SubscriptionsPage() {
       case 'changed_by_admin': return 'bg-red-100 text-red-700';
       case 'pending_payment': return 'bg-amber-100 text-amber-700';
       case 'past_due': return 'bg-orange-100 text-orange-700';
+      case 'none': return 'bg-gray-200 text-gray-500';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -1097,6 +1116,15 @@ export default function SubscriptionsPage() {
     } catch {
       return '-';
     }
+  };
+
+  const isRenewalDue = (endsAt) => {
+    if (!endsAt) return false;
+    const now = new Date();
+    const expiry = new Date(endsAt);
+    const diffMs = expiry - now;
+    const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 30;
   };
 
   if (loading) {
@@ -1592,6 +1620,7 @@ export default function SubscriptionsPage() {
                   >
                     <option value="All">All</option>
                     <option value="active">Active</option>
+                    <option value="none">No Subscription</option>
                     <option value="paused">Paused</option>
                     <option value="cancelled">Cancelled</option>
                     <option value="pending_payment">Pending Payment</option>
@@ -1900,10 +1929,9 @@ export default function SubscriptionsPage() {
                   className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
                 >
                   <option value="All">All</option>
-                  <option value="card">Credit Card</option>
-                  <option value="stripe">Stripe</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="manual">Manual</option>
+                  {paymentMethods.map(pm => (
+                    <option key={pm.handler} value={pm.handler}>{pm.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex items-center gap-2">
@@ -2270,7 +2298,7 @@ export default function SubscriptionsPage() {
                     </div>
                   )}
                   <div className="pt-4 space-y-2">
-                    {currentSubscription.status === 'active' && (
+                    {currentSubscription.status === 'active' && isRenewalDue(currentSubscription.ends_at) && (
                       <button
                         onClick={handleRenew}
                         disabled={actionLoading === 'renew'}
@@ -2278,6 +2306,11 @@ export default function SubscriptionsPage() {
                       >
                         {actionLoading === 'renew' ? 'Renewing...' : 'Renew Subscription'}
                       </button>
+                    )}
+                    {currentSubscription.status === 'active' && !isRenewalDue(currentSubscription.ends_at) && currentSubscription.ends_at && (
+                      <p className="text-xs text-gray-500 text-center">
+                        Your plan renews on {formatDate(currentSubscription.ends_at)}. Renewal options will be available closer to that date.
+                      </p>
                     )}
                     {(currentSubscription.status === 'paused' || currentSubscription.status === 'cancelled') && (
                       <button
@@ -2328,37 +2361,22 @@ export default function SubscriptionsPage() {
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-bold text-brand-primary mb-4">Payment Method</h3>
               {currentSubscription ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs font-semibold text-gray-600 w-24">Method:</label>
-                    <select
-                      value={ownerPaymentMethod}
-                      onChange={(e) => setOwnerPaymentMethod(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
-                    >
-                      <option value="">Not set</option>
-                      <option value="card">Credit Card</option>
-                      <option value="stripe">Stripe</option>
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="manual">Manual</option>
-                    </select>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Method</span>
+                    <span className="text-sm font-medium text-brand-primary capitalize">
+                      {currentSubscription.payment_method
+                        ? (paymentMethods.find(pm => pm.handler === currentSubscription.payment_method)?.name
+                          || currentSubscription.payment_method.replace('_', ' '))
+                        : <span className="text-gray-400 italic">Not set</span>}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs font-semibold text-gray-600 w-24">Reference:</label>
-                    <input
-                      type="text"
-                      value={ownerPaymentRef}
-                      onChange={(e) => setOwnerPaymentRef(e.target.value)}
-                      placeholder="Transaction ID or receipt"
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
-                    />
-                  </div>
-                  <button
-                    onClick={handleOwnerUpdatePaymentInfo}
-                    className="px-4 py-2 bg-brand-primary text-white rounded-lg text-xs font-bold hover:bg-brand-secondary"
-                  >
-                    Save Payment Info
-                  </button>
+                  {currentSubscription.payment_reference && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">Reference</span>
+                      <span className="text-sm font-medium text-brand-primary">{currentSubscription.payment_reference}</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500 text-sm">No subscription to configure</div>
@@ -2366,29 +2384,35 @@ export default function SubscriptionsPage() {
             </div>
           </div>
 
-          {/* Bank Transfer Upload */}
-          {currentSubscription && currentSubscription.tier?.price_monthly > 0 && (
+          {/* Bank Transfer Upload — only show when renewal is due or payment is pending */}
+          {currentSubscription && currentSubscription.tier?.price_monthly > 0
+            && (currentSubscription.status === 'pending_payment' || isRenewalDue(currentSubscription.ends_at)) && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-brand-primary mb-4">Bank Transfer Payment</h3>
+              <h3 className="text-lg font-bold text-brand-primary mb-4">
+                {currentSubscription.status === 'pending_payment' ? 'Payment Pending Approval' : 'Bank Transfer Payment'}
+              </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Upload your bank transfer receipt (PDF) to complete payment for the current plan.
-                An admin will review and approve your payment.
+                {currentSubscription.status === 'pending_payment'
+                  ? 'Your payment proof has been submitted and is awaiting admin review.'
+                  : 'Upload your bank transfer receipt (PDF) to complete payment for renewal. An admin will review and approve your payment.'}
               </p>
-              <div className="flex items-center gap-4">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => setBankTransferFile(e.target.files[0] || null)}
-                  className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary"
-                />
-                <button
-                  onClick={handleBankTransferUpload}
-                  disabled={bankTransferLoading || !bankTransferFile}
-                  className="px-6 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50"
-                >
-                  {bankTransferLoading ? 'Uploading...' : 'Upload Proof'}
-                </button>
-              </div>
+              {currentSubscription.status !== 'pending_payment' && (
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setBankTransferFile(e.target.files[0] || null)}
+                    className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary"
+                  />
+                  <button
+                    onClick={handleBankTransferUpload}
+                    disabled={bankTransferLoading || !bankTransferFile}
+                    className="px-6 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  >
+                    {bankTransferLoading ? 'Uploading...' : 'Upload Proof'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -2930,10 +2954,9 @@ export default function SubscriptionsPage() {
                   className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#002819]/20"
                 >
                   <option value="">Not set</option>
-                  <option value="card">Credit Card</option>
-                  <option value="stripe">Stripe</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="manual">Manual</option>
+                  {paymentMethods.map(pm => (
+                    <option key={pm.handler} value={pm.handler}>{pm.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex items-center gap-3 mb-3">
@@ -2964,6 +2987,53 @@ export default function SubscriptionsPage() {
             <div className="border-t border-gray-200 pt-4 space-y-3">
               <h3 className="text-sm font-bold text-brand-primary">Quick Actions</h3>
 
+              {/* Activate Subscription (for users with no subscription) */}
+              {editingSubscriber.status === 'none' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MaterialSymbol icon="power_settings_new" size={20} className="text-amber-600" />
+                    <span className="text-sm font-bold text-amber-800">No Active Subscription</span>
+                  </div>
+                  <p className="text-xs text-amber-700 mb-3">Select a tier and activate this user's subscription.</p>
+                  <div className="flex items-center gap-3">
+                    <select
+                      className="flex-1 px-3 py-2 border border-amber-300 bg-white rounded-lg text-sm focus:ring-2 focus:ring-amber-400"
+                      value={pendingTierChanges[editingSubscriber.user_id] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseInt(e.target.value) : null;
+                        setPendingTierChanges(prev => {
+                          const next = { ...prev };
+                          if (val === null) {
+                            delete next[editingSubscriber.user_id];
+                          } else {
+                            next[editingSubscriber.user_id] = val;
+                          }
+                          return next;
+                        });
+                      }}
+                    >
+                      <option value="">Select a tier...</option>
+                      {tiers.map(tier => (
+                        <option key={tier.id} value={tier.id}>{tier.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        const tierId = pendingTierChanges[editingSubscriber.user_id];
+                        if (!tierId) return;
+                        handleAdminSetTier(editingSubscriber.user_id, tierId);
+                        setShowSubscriberModal(false);
+                      }}
+                      disabled={!pendingTierChanges[editingSubscriber.user_id]}
+                      className="px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      <MaterialSymbol icon="check" size={16} className="inline mr-1" />
+                      Activate
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Change Tier */}
               <div className="flex items-center gap-3">
                 <label className="text-xs font-semibold text-gray-600 w-20">Change Tier:</label>
@@ -2987,7 +3057,7 @@ export default function SubscriptionsPage() {
                     <option key={tier.id} value={tier.id}>{tier.name}</option>
                   ))}
                 </select>
-                {pendingTierChanges[editingSubscriber.user_id] && (
+                {pendingTierChanges[editingSubscriber.user_id] && editingSubscriber.status !== 'none' && (
                   <button
                     onClick={() => handleAdminSetTier(editingSubscriber.user_id, pendingTierChanges[editingSubscriber.user_id])}
                     className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import DashboardWidget from '../DashboardWidget';
 import { MaterialSymbol } from 'react-material-symbols';
-import { useI18n } from '../../i18n';
+import { useI18n } from '../../../i18n';
 
 export default function AiAssistantWidget({ widget }) {
   const { t } = useI18n();

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { usePlatform } from '../../context/PlatformContext';
 import { useI18n } from '../../i18n';
 
@@ -14,9 +15,9 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} {platformName}. {copyrightText}
         </p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-brand-primary transition-colors">Privacy</a>
-          <a href="#" className="hover:text-brand-primary transition-colors">Terms</a>
-          <a href="#" className="hover:text-brand-primary transition-colors">Contact</a>
+          <Link to="/privacy" className="hover:text-brand-primary transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-brand-primary transition-colors">Terms</Link>
+
         </div>
       </div>
     </footer>

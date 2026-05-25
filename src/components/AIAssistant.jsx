@@ -38,7 +38,7 @@ const PAGE_NAMES = {
 };
 
 export default function AIAssistant() {
-  const { t, dir, language } = useI18n();
+  const { t, dir, locale } = useI18n();
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,7 +70,7 @@ export default function AIAssistant() {
       fetchQuickActions();
       loadConversations();
     }
-  }, [isOpen]);
+  }, [isOpen, locale]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,7 +134,7 @@ export default function AIAssistant() {
 
   const fetchQuickActions = async () => {
     try {
-      const res = await apiFetch('/api/ai/quick-actions');
+      const res = await apiFetch(`/api/ai/quick-actions?lang=${locale}`);
       if (res?.ok) {
         const data = await res.json();
         setQuickActions(data.data || []);
@@ -253,6 +253,7 @@ export default function AIAssistant() {
           conversation: conversationForApi,
           page: location.pathname,
           pageName: currentPageName,
+          language: locale,
         }),
       });
 
@@ -320,7 +321,7 @@ export default function AIAssistant() {
   const formatTime = (ts) => {
     if (!ts) return '';
     const d = new Date(ts);
-    return d.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString(locale === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   const markdownComponents = {
@@ -352,12 +353,12 @@ export default function AIAssistant() {
       <div className="group relative">
         <button
           disabled
-          className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-50 w-16 h-16 bg-on-surface-subtle rounded-full shadow-lg flex items-center justify-center cursor-not-allowed`}
+          className={`fixed bottom-10 ${isRtl ? 'left-6' : 'right-6'} z-50 w-16 h-16 bg-on-surface-subtle rounded-full shadow-lg flex items-center justify-center cursor-not-allowed`}
           title="AI Assistant not configured — contact admin"
         >
           <MaterialSymbol icon="smart_toy" size={28} className="text-white/50" weight="fill" />
         </button>
-        <div className={`fixed bottom-24 ${isRtl ? 'left-6' : 'right-6'} z-50 hidden group-hover:block bg-brand-primary text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg`}>
+        <div className={`fixed bottom-28 ${isRtl ? 'left-6' : 'right-6'} z-50 hidden group-hover:block bg-brand-primary text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg`}>
           AI Assistant not configured — contact admin
         </div>
       </div>
@@ -368,7 +369,7 @@ export default function AIAssistant() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-50 w-16 h-16 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-full shadow-2xl shadow-brand-primary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all group`}
+        className={`fixed bottom-10 ${isRtl ? 'left-6' : 'right-6'} z-50 w-16 h-16 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-full shadow-2xl shadow-brand-primary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all group`}
       >
         {isOpen ? (
           <MaterialSymbol icon="close" size={28} className="text-white" />
@@ -378,7 +379,7 @@ export default function AIAssistant() {
       </button>
 
       {isOpen && (
-        <div className={`fixed bottom-24 ${isRtl ? 'left-6' : 'right-6'} z-50 w-[420px] max-w-[calc(100vw-3rem)] bg-surface rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[680px]`}>
+        <div className={`fixed bottom-28 ${isRtl ? 'left-6' : 'right-6'} z-50 w-[420px] max-w-[calc(100vw-3rem)] bg-surface rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[680px]`}>
           <div className="bg-gradient-to-r from-brand-primary to-brand-secondary p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-brand-accent/20 rounded-xl flex items-center justify-center">

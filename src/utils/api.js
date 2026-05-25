@@ -21,14 +21,6 @@ export const getAuthHeaders = () => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  if (user && user.id) {
-    headers['X-User-Id'] = String(user.id);
-  }
-
-  if (user && user.role) {
-    headers['X-User-Role'] = String(user.role);
-  }
-
   return headers;
 };
 

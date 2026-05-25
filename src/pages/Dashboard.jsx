@@ -144,7 +144,7 @@ export default function Dashboard() {
             type: alert.type,
             animal: alert.animal?.animal_id || alert.animal_id || 'Unknown',
             message: isTemp
-              ? `Temperature: ${parseFloat(alert.temperature || alert.value || 0).toFixed(1)}°C`
+              ? (alert.message || `Temperature alert`)
               : alert.type === 'entry' ? `Entry: ${alert.geofence?.name || 'Geofence'}` : alert.type === 'exit' ? `Exit: ${alert.geofence?.name || 'Geofence'}` : alert.type,
             time: alert.triggered_at ? new Date(alert.triggered_at).toLocaleTimeString() : 'Now',
             isAcknowledged: alert.is_acknowledged,

@@ -6,7 +6,6 @@ import { useAuth as useAuthContext } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { usePlatform } from '../context/PlatformContext';
-import { setAuthToken, setAuthUser, setUserRole, setPendingSubscription } from '../utils/cookies';
 import { storageUrl } from '../utils/api';
 
 export default function Login() {
@@ -14,12 +13,8 @@ export default function Login() {
   const { platformName, logoUrl, loginBackgroundUrl, copyrightText } = usePlatform();
   const isRtl = dir === 'rtl';
 
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,49 +27,16 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    if (isLogin) {
-      console.log('Attempting login with:', email);
-      const result = await login(email, password);
-      console.log('Login result:', result);
-      if (result === true) {
-        navigate(searchParams.get('redirect') || '/dashboard');
-      } else {
-        const errorCode = result?.error || 'unauthorized';
-        setError(t(`errors.${errorCode}`) || result?.message || t('errors.unauthorized'));
-      }
-    } else {
-      try {
-        const response = await apiFetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            password_confirmation: passwordConfirmation,
-            phone,
-          }),
-        });
 
-        if (response.ok) {
-          const data = await response.json();
-          const userRole = data.user?.role || 'Shepherd';
-          setAuthToken(data.token);
-          setAuthUser({ ...data.user, role: userRole });
-          setUserRole(userRole);
-          setPendingSubscription(true);
-          navigate(searchParams.get('redirect') || '/subscription/select');
-        } else {
-          const data = await response.json();
-          setError(t(`errors.${data.error}`) || data.message || data.errors?.email?.[0] || t('errors.serverError'));
-        }
-      } catch (err) {
-        setError(t('errors.networkError'));
+    try {
+      const result = await login(email, password);
+      if (result === true) {
+        navigate(searchParams.get('redirect') || '/subscription/select');
+      } else {
+        setError(result?.message || t('errors.serverError'));
       }
+    } catch (err) {
+      setError(t('errors.networkError'));
     }
     setLoading(false);
   };
@@ -106,7 +68,7 @@ const handleSubmit = async (e) => {
               </div>
             )}
             <h1 className="text-4xl font-black text-brand-primary font-['Manrope'] tracking-tight mb-2">
-              {isLogin ? t('auth.login') : t('auth.register')}
+              {t('auth.login')}
             </h1>
             <p className="text-on-surface-variant font-medium">{platformName}</p>
           </div>
@@ -122,31 +84,6 @@ const handleSubmit = async (e) => {
           )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {!isLogin && (
-              <div className="space-y-3">
-                <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
-                  {t('users.name')}
-                </label>
-                <div className="relative">
-                  <MaterialSymbol
-                    icon="person"
-                    size={20}
-                    className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
-                  />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t('users.name')}
-                    required={!isLogin}
-                    className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
-                      isRtl ? 'pr-14 pl-5 text-right' : 'pl-14 pr-5 text-left'
-                    }`}
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="space-y-3">
               <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
                 {t('auth.email')}
@@ -170,41 +107,15 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {!isLogin && (
-              <div className="space-y-3">
-                <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
-                  {t('users.phone')}
-                </label>
-                <div className="relative">
-                  <MaterialSymbol
-                    icon="phone"
-                    size={20}
-                    className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
-                  />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder={t('users.phone')}
-                    className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
-                      isRtl ? 'pr-14 pl-5 text-right' : 'pl-14 pr-5 text-left'
-                    }`}
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="space-y-3">
               <div className={`flex justify-between items-center px-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <label className="text-sm font-bold text-brand-primary">{t('auth.password')}</label>
-                {isLogin && (
-                  <Link
+                <Link
                     to="/forgot-password"
                     className="text-xs font-semibold text-brand-accent hover:underline"
                   >
                     {t('auth.forgotPassword')}
                   </Link>
-                )}
               </div>
               <div className="relative">
                 <MaterialSymbol
@@ -236,52 +147,24 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {!isLogin && (
-              <div className="space-y-3">
-                <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
-                  {t('auth.confirmPassword')}
-                </label>
-                <div className="relative">
-                  <MaterialSymbol
-                    icon="lock"
-                    size={20}
-                    className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
-                  />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={passwordConfirmation}
-                    onChange={(e) => setPasswordConfirmation(e.target.value)}
-                    placeholder="••••••••"
-                    required={!isLogin}
-                    minLength={8}
-                    className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
-                      isRtl ? 'pr-14 pl-5' : 'pl-14 pr-14'
-                    }`}
-                  />
-                </div>
-              </div>
-            )}
-
             {error && (
               <div className="p-4 bg-danger/10 text-danger rounded-xl text-sm font-medium">
                 {error}
               </div>
             )}
 
-            {isLogin && (
-              <div className={`flex items-center gap-3 px-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-5 h-5 rounded-lg border-2 border-surface-high text-brand-primary focus:ring-2 focus:ring-brand-secondary/20 cursor-pointer"
-                />
-                <label htmlFor="remember" className="text-sm text-on-surface-variant font-medium cursor-pointer">
-                  {t('auth.rememberMe')}
-                </label>
-              </div>
-            )}
+            <div className={`flex items-center gap-3 px-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
+              <input
+                type="checkbox"
+                id="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-5 h-5 rounded-lg border-2 border-surface-high text-brand-primary focus:ring-2 focus:ring-brand-secondary/20 cursor-pointer"
+              />
+              <label htmlFor="remember" className="text-sm text-on-surface-variant font-medium cursor-pointer">
+                {t('auth.rememberMe')}
+              </label>
+            </div>
 
             <button
               type="submit"
@@ -290,30 +173,15 @@ const handleSubmit = async (e) => {
                 isRtl ? 'flex-row-reverse' : ''
               }`}
             >
-              <span className="font-bold">{loading ? t('common.loading') : (isLogin ? t('auth.login') : t('auth.register'))}</span>
+              <span className="font-bold">{loading ? t('common.loading') : t('auth.login')}</span>
               {loading ? (
                 <div className="w-5 h-5 border-2 border-brand-accent border-t-transparent rounded-full animate-spin" />
               ) : (
-                <MaterialSymbol icon={isLogin ? "login" : "person_add"} size={20} weight="fill" />
+                <MaterialSymbol icon="login" size={20} weight="fill" />
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-surface-high text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-              className="text-sm text-on-surface-variant"
-            >
-              {isLogin ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
-              <span className="text-brand-primary font-bold hover:text-brand-accent transition-colors">
-                {isLogin ? t('auth.register') : t('auth.login')}
-              </span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

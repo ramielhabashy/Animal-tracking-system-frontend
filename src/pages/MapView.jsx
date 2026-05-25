@@ -208,10 +208,10 @@ export default function MapView() {
   }, []);
 
   useEffect(() => {
-    if (!loading && animals.length > 0) {
+    if (animals.length > 0) {
       fetchBaseData();
     }
-  }, [timeFilter, fetchBaseData, loading]);
+  }, [timeFilter, fetchBaseData]);
 
   useEffect(() => {
     setSelectedOwner('all');

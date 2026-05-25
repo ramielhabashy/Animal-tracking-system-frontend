@@ -82,6 +82,7 @@ export default function MapWidget({ dashboardData }) {
   const { animals, geofences } = dashboardData;
   const [viewMode, setViewMode] = useState('markers');
   const [showGeofences, setShowGeofences] = useState(true);
+  const [selectedGeofence, setSelectedGeofence] = useState('all');
 
   const allPositions = [];
   (animals || []).forEach(animal => {
@@ -102,8 +103,13 @@ export default function MapWidget({ dashboardData }) {
       ? [allPositions[0], allPositions[0]]
       : [[24.7136, 46.6753], [24.7136, 46.6753]];
 
-  const animalsWithPaths = (animals || []).filter(a => a.path && a.path.length > 0);
-  const animalsOnMap = (animals || []).filter(a => a.lat && a.lng);
+  const filteredAnimals = (animals || []).filter(animal => {
+    if (selectedGeofence === 'all') return true;
+    return animal.geofences?.some(g => g.id === parseInt(selectedGeofence));
+  });
+
+  const animalsWithPaths = (filteredAnimals || []).filter(a => a.path && a.path.length > 0);
+  const animalsOnMap = (filteredAnimals || []).filter(a => a.lat && a.lng);
 
   return (
     <div>
@@ -138,6 +144,16 @@ export default function MapWidget({ dashboardData }) {
             <MaterialSymbol icon="layers" size={16} />
             {t('nav.geofences')}
           </button>
+          <select
+            value={selectedGeofence}
+            onChange={(e) => setSelectedGeofence(e.target.value)}
+            className="px-3 py-2.5 rounded-xl text-sm font-medium bg-surface-light text-on-surface-variant border-0 focus:ring-2 focus:ring-brand-accent cursor-pointer"
+          >
+            <option value="all">{t('mapPage.allFences') || 'All Areas'}</option>
+            {(geofences || []).map(geofence => (
+              <option key={geofence.id} value={geofence.id}>{geofence.name}</option>
+            ))}
+          </select>
         </div>
       </div>
       <div className="h-[450px] relative rounded-3xl overflow-hidden">
@@ -268,7 +284,7 @@ export default function MapWidget({ dashboardData }) {
         </MapContainer>
         <div className={`absolute bottom-6 z-[1000] bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg shadow-brand-primary/10 flex items-center gap-6 ${isRtl ? 'right-6' : 'left-6'}`}>
           <span className="text-sm font-medium text-on-surface-variant">
-            {animalsOnMap.length} animals tracked
+            {filteredAnimals.length} animals tracked
           </span>
           <Link to="/map" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
             {t('dashboard.fullTracker')}

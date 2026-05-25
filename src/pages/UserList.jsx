@@ -57,7 +57,6 @@ const fetchData = async () => {
         const usersData = await usersRes.json();
         // API returns {value: [...]} format
         const usersArray = usersData.data || usersData.value || usersData || [];
-        console.log('Users array:', usersArray);
         setUsers(usersArray);
         setTotalUsers(usersData.meta?.total || usersData.Count || usersArray.length || 0);
       }

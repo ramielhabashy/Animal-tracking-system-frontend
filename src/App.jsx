@@ -5,7 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import Layout from './components/Layout/Layout';
 import { PlatformProvider } from './context/PlatformContext';
 import { AuthProvider } from './context/AuthContext';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './context/AuthContext';
 import NotFound from './pages/NotFound';
 
 function ProtectedLayout() {
@@ -99,7 +99,8 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const TicketDetail = lazy(() => import('./pages/TicketDetail'));
 const TransfersPage = lazy(() => import('./pages/TransfersPage'));
 const TransferDetail = lazy(() => import('./pages/TransferDetail'));
-
+const PrivacyPage = lazy(() => import('./pages/static/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/static/TermsPage'));
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -188,6 +189,8 @@ const router = createBrowserRouter([
           { path: 'tickets/:id', element: <Suspense fallback={<SuspenseFallback />}><TicketDetail /></Suspense> },
           { path: 'transfers', element: <Suspense fallback={<SuspenseFallback />}><TransfersPage /></Suspense> },
           { path: 'transfers/:id', element: <Suspense fallback={<SuspenseFallback />}><TransferDetail /></Suspense> },
+          { path: 'privacy', element: <Suspense fallback={<SuspenseFallback />}><PrivacyPage /></Suspense> },
+          { path: 'terms', element: <Suspense fallback={<SuspenseFallback />}><TermsPage /></Suspense> },
         ],
       },
     ],

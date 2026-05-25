@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MaterialSymbol } from 'react-material-symbols';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -44,6 +44,31 @@ export default function Header() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showNotifications]);
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  const shownNotifIds = useRef(new Set());
+
+  useEffect(() => {
+    if (
+      notifications.length > 0 &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      const lastNotif = notifications[0];
+      if (lastNotif && !lastNotif.read_at && !shownNotifIds.current.has(lastNotif.id)) {
+        shownNotifIds.current.add(lastNotif.id);
+        new Notification(lastNotif.title, {
+          body: lastNotif.body || '',
+          icon: '/favicon.ico',
+        });
+      }
+    }
+  }, [notifications]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {

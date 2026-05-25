@@ -21,21 +21,10 @@
   --outline-variant: rgba(0, 40, 25, 0.15);
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--surface);
-  color: var(--on-surface);
-}
-
 [dir="rtl"] body {
   font-family: 'Tajawal', 'Inter', sans-serif;
 }
 
-/* Fix main content margin for RTL sidebar */
-[dir="rtl"] main {
-  margin-right: 0;
-  margin-left: auto;
-}
 [lang="ur"] body, [dir="rtl"][lang="ur"] body {
   font-family: 'Noto Sans Urdu', 'Tajawal', 'Inter', sans-serif;
 }

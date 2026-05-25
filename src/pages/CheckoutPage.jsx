@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useI18n } from '../i18n';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { usePlatform } from '../context/PlatformContext';
 import { getAuthUser, setAuthToken, setAuthUser, setUserRole } from '../utils/cookies';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
@@ -109,9 +109,9 @@ function SelectPlanStep({ tiers, onSelect }) {
                 >
                   {isFree ? (t('subscription.activateFree') || 'Activate Free Plan') : (t('subscription.selectPlan') || 'Select Plan')}
                 </button>
-              </div>
-            </div>
-          );
+          </div>
+        </div>
+      );
         })}
       </div>
     </div>
@@ -144,14 +144,15 @@ function PlanSummaryStep({ tier, billingCycle, onCycleChange, onContinue, onBack
           <div className="flex gap-2 mb-6">
             <button onClick={() => onCycleChange('monthly')}
               className={`flex-1 py-3 rounded-xl font-medium transition ${billingCycle === 'monthly' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-on-surface-variant'}`}>
-              {t('subscription.monthly')} {tier.price_monthly !== '0.00' && <>{formatPrice(tier.price_monthly, t)}<span className="text-sm font-normal">/{t('subscription.perMonthAbbr') || 'mo'}</span></>}
+              {t('subscription.monthly')} {tier.price_monthly !== '0.00' && `$${parseFloat(tier.price_monthly).toFixed(0)}/mo`}
             </button>
             <button onClick={() => onCycleChange('yearly')}
               className={`flex-1 py-3 rounded-xl font-medium transition ${billingCycle === 'yearly' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-on-surface-variant'}`}>
-              {t('subscription.yearly')} {tier.price_yearly !== '0.00' && <>{formatPrice(tier.price_yearly, t)}<span className="text-sm font-normal">/{t('subscription.perYearAbbr') || 'yr'}</span></>}
+              {t('subscription.yearly')} {tier.price_yearly !== '0.00' && `$${parseFloat(tier.price_yearly).toFixed(0)}/yr`}
             </button>
           </div>
         )}
+
         {isYearlyOnly && (
           <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-xl p-3 mb-4 text-center">
             <span className="text-sm font-semibold text-brand-primary">{t('subscription.yearly')} {tier.price_yearly !== '0.00' && <>{'—'} {formatPrice(tier.price_yearly, t)}<span className="text-sm font-normal">/{t('subscription.perYearAbbr') || 'yr'}</span></>}</span>
@@ -280,7 +281,7 @@ function ShippingStep({ address, onChange, onBack, onContinue }) {
   );
 }
 
-function PaymentStep({ tier, billingCycle, orderId, stripeEnabled, onBack, onComplete, onError }) {
+function PaymentStep({ tier, billingCycle, orderId, stripeEnabled, paymentMethods = [], onBack, onComplete, onError }) {
   const { t, dir } = useI18n();
   const isRtl = dir === 'rtl';
   const [paymentMethod, setPaymentMethod] = useState(stripeEnabled ? 'stripe' : 'bank');
@@ -351,22 +352,18 @@ function PaymentStep({ tier, billingCycle, orderId, stripeEnabled, onBack, onCom
       </div>
 
       <div className="flex gap-2 mb-6">
-        {stripeEnabled && (
-          <button onClick={() => setPaymentMethod('stripe')}
+        {(paymentMethods.length > 0
+          ? paymentMethods.filter(pm => pm.handler === 'stripe' ? stripeEnabled : true)
+          : [{ handler: 'stripe', name: 'Credit Card', icon: 'credit_card' }, { handler: 'bank_transfer', name: 'Bank Transfer', icon: 'account_balance' }]
+        ).map(pm => (
+          <button key={pm.handler} onClick={() => setPaymentMethod(pm.handler)}
             className={`flex-1 py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 ${
-              paymentMethod === 'stripe' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-on-surface-variant'
+              paymentMethod === pm.handler ? 'bg-brand-primary text-white' : 'bg-gray-100 text-on-surface-variant'
             }`}>
-            <MaterialSymbol icon="credit_card" size={18} />
-            {t('subscription.creditCard') || 'Credit Card'}
+            <MaterialSymbol icon={pm.icon || 'payments'} size={18} />
+            {pm.name}
           </button>
-        )}
-        <button onClick={() => setPaymentMethod('bank')}
-          className={`flex-1 py-3 rounded-xl font-medium transition flex items-center justify-center gap-2 ${
-            paymentMethod === 'bank' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-on-surface-variant'
-          }`}>
-          <MaterialSymbol icon="account_balance" size={18} />
-          {t('subscription.bankTransfer') || 'Bank Transfer'}
-        </button>
+        ))}
       </div>
 
       {paymentMethod === 'stripe' ? (
@@ -388,7 +385,7 @@ function PaymentStep({ tier, billingCycle, orderId, stripeEnabled, onBack, onCom
             )}
           </button>
         </div>
-      ) : (
+      ) : paymentMethod === 'bank_transfer' ? (
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <h4 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-2">
@@ -410,7 +407,7 @@ function PaymentStep({ tier, billingCycle, orderId, stripeEnabled, onBack, onCom
               className="w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-brand-primary file:text-white hover:file:bg-brand-secondary transition file:cursor-pointer cursor-pointer" />
           </div>
         </div>
-      )}
+      ) : null}
 
       <button onClick={onBack}
         className="w-full py-3 bg-gray-100 text-on-surface-variant rounded-xl font-medium hover:bg-gray-200 transition">
@@ -608,6 +605,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState(null);
   const [isBankTransfer, setIsBankTransfer] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(true);
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   const embedMode = searchParams.get('embed') === '1';
   const tierId = searchParams.get('tier_id');
@@ -624,6 +622,9 @@ export default function CheckoutPage() {
   useEffect(() => {
     apiFetch('/api/settings/stripe-status').then(r => r.ok && r.json()).then(d => {
       if (d?.data) setStripeEnabled(d.data.enabled !== false);
+    }).catch(() => {});
+    apiFetch('/api/payment-methods').then(r => r.ok && r.json()).then(d => {
+      if (d?.data) setPaymentMethods(d.data);
     }).catch(() => {});
   }, []);
 
@@ -875,6 +876,7 @@ export default function CheckoutPage() {
               billingCycle={billingCycle}
               orderId={orderId}
               stripeEnabled={stripeEnabled}
+              paymentMethods={paymentMethods}
               onBack={() => setStep(3)}
               onComplete={handlePaymentComplete}
               onError={handlePaymentError}
