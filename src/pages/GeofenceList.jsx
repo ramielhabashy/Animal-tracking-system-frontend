@@ -110,7 +110,7 @@ function GeofenceDrawer({ coordinates, onCoordinatesChange, animals, devices, ge
                 align-items:center;
                 justify-content:center;
                 font-size:16px;
-              ">🐪</div>`,
+              ">${(() => { const m = { Camel: '🐪', Goat: '🐐', Sheep: '🐑', Cow: '🐄', Horse: '🐴', Dog: '🐕' }; return m[animal.species] || '🐪'; })()}</div>`,
               iconSize: [32, 32],
               iconAnchor: [16, 16],
             })}

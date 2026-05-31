@@ -26,7 +26,7 @@ const getSeverityBg = (severity) => {
   switch (severity) {
     case 'High': return 'bg-danger/10';
     case 'Medium': return 'bg-brand-accent/15';
-    default: return 'bg-[#10b981]/15';
+    default: return 'bg-success/15';
   }
 };
 
@@ -85,7 +85,7 @@ export default function AlertsPanelWidget({ dashboardData }) {
                     <MaterialSymbol
                       icon={getSeverityIcon(alert)}
                       size={18}
-                      className={alert.severity === 'High' ? 'text-danger' : alert.severity === 'Medium' ? 'text-tertiary-container' : 'text-[#10b981]'}
+                      className={alert.severity === 'High' ? 'text-danger' : alert.severity === 'Medium' ? 'text-tertiary-container' : 'text-success'}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

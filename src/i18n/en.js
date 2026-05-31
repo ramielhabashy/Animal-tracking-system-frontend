@@ -87,6 +87,7 @@ export default {
     setDefault: 'Set Default',
     update: 'Update',
     preview: 'Preview',
+    viewAll: 'View All',
   },
   nav: {
     dashboard: 'Dashboard',

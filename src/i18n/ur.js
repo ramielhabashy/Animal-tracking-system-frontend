@@ -78,6 +78,7 @@ export default {
     setDefault: 'پہلے سے طے شدہ',
     update: 'اپڈیٹ',
     preview: 'پیش منظر',
+    viewAll: 'سب دیکھیں',
   },
   nav: {
     dashboard: 'ڈیش بورڈ',

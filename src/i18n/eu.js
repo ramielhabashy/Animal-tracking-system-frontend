@@ -78,6 +78,7 @@ export default {
     setDefault: 'Lehenetsitakoa',
     update: 'Eguneratu',
     preview: 'Aurrebista',
+    viewAll: 'Ikusi guztiak',
   },
   nav: {
     dashboard: 'Azpiegitik',

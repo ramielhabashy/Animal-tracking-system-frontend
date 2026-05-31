@@ -2,8 +2,11 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { MaterialSymbol } from 'react-material-symbols';
+import { useI18n } from '../../i18n';
 
 export default function DashboardWidget({ id, title, children, dragHandleProps }) {
+  const { dir } = useI18n();
+  const isRtl = dir === 'rtl';
   const {
     attributes,
     listeners,
@@ -29,12 +32,12 @@ export default function DashboardWidget({ id, title, children, dragHandleProps }
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-3 p-5 pb-0 cursor-grab active:cursor-grabbing select-none"
+        className={`flex items-center gap-3 p-5 pb-0 cursor-grab active:cursor-grabbing select-none ${isRtl ? 'flex-row-reverse' : ''}`}
       >
         <div className="flex items-center gap-2 text-on-surface-subtle opacity-0 group-hover:opacity-100 transition-opacity">
           <MaterialSymbol icon="drag_indicator" size={18} />
         </div>
-        <h4 className="font-black text-lg text-brand-primary flex-1">{title}</h4>
+        <h4 className="font-bold text-lg text-brand-primary flex-1">{title}</h4>
         {dragHandleProps}
       </div>
       <div className="p-5">

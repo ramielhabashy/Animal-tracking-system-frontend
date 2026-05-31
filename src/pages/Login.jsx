@@ -31,7 +31,7 @@ const handleSubmit = async (e) => {
     try {
       const result = await login(email, password);
       if (result === true) {
-        navigate(searchParams.get('redirect') || '/subscription/select');
+        navigate(searchParams.get('redirect') || '/dashboard');
       } else {
         setError(result?.message || t('errors.serverError'));
       }

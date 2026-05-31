@@ -83,9 +83,14 @@ function GeofenceDrawer({ isDrawing, drawMode, onComplete, drawingRectStart, onR
   return null;
 }
 
-const createAnimalIcon = (color, isSelected = false) => {
+const getSpeciesEmoji = (species) => {
+  const map = { Camel: '🐪', Goat: '🐐', Sheep: '🐑', Cow: '🐄', Horse: '🐴', Dog: '🐕' };
+  return map[species] || '🐪';
+};
+
+const createAnimalIcon = (color, species, isSelected = false) => {
   const size = isSelected ? 40 : 32;
-  const emoji = isSelected ? '🐪' : '🐪';
+  const emoji = getSpeciesEmoji(species);
   
   return L.divIcon({
     className: 'custom-marker',
@@ -890,7 +895,7 @@ export default function MapView() {
               <Marker
                 key={animal.id}
                 position={position}
-                icon={createAnimalIcon(groupColor, isSelected)}
+                icon={createAnimalIcon(groupColor, animal.species, isSelected)}
                 eventHandlers={{ click: () => { setSelectedAnimal(animal); setZoomPosition(position); } }}
               >
                   <Popup>

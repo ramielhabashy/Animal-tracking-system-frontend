@@ -5,7 +5,8 @@ import { apiFetch } from '../../../utils/api';
 import { useI18n } from '../../../i18n';
 
 export default function MessagesWidget({ dashboardData }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
+  const isRtl = dir === 'rtl';
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +49,7 @@ export default function MessagesWidget({ dashboardData }) {
         <div className="space-y-1">
           {conversations.slice(0, 5).map(conv => (
             <Link key={conv.id} to={`/messages/${conv.id}`}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-light transition-colors"
+              className={`flex items-center gap-3 p-3 rounded-xl hover:bg-surface-light transition-colors ${isRtl ? 'flex-row-reverse' : ''}`}
             >
               <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center flex-shrink-0">
                 <MaterialSymbol icon="person" size={20} className="text-brand-primary" />
@@ -60,7 +61,7 @@ export default function MessagesWidget({ dashboardData }) {
                 )}
               </div>
               {conv.unread_count > 0 && (
-                <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center flex-shrink-0">
+                <span className="w-5 h-5 rounded-full bg-danger text-white text-xs flex items-center justify-center flex-shrink-0">
                   {conv.unread_count}
                 </span>
               )}

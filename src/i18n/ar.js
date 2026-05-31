@@ -79,6 +79,7 @@ export default {
     setDefault: 'تعيين افتراضي',
     update: 'تحديث',
     preview: 'معاينة',
+    viewAll: 'عرض الكل',
   },
   nav: {
     dashboard: 'لوحة التحكم',

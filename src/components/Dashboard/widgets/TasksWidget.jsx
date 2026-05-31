@@ -103,12 +103,12 @@ export default function TasksWidget({ dashboardData }) {
   return (
     <div className="space-y-4">
       <div className={`grid gap-3 ${showVaccinations ? 'grid-cols-4' : 'grid-cols-3'}`}>
-        <div className="bg-[#F59E0B]/10 p-3 rounded-xl text-center">
-          <p className="text-2xl font-black text-tertiary-container">{pending}</p>
+        <div className="bg-amber-500/10 p-3 rounded-xl text-center">
+          <p className="text-2xl font-black text-amber-700">{pending}</p>
           <p className="text-[10px] font-bold text-on-surface-subtle uppercase">{t('tasks.pending')}</p>
         </div>
-        <div className="bg-[#3B82F6]/10 p-3 rounded-xl text-center">
-          <p className="text-2xl font-black text-[#2563EB]">{inProgress}</p>
+        <div className="bg-blue-500/10 p-3 rounded-xl text-center">
+          <p className="text-2xl font-black text-blue-700">{inProgress}</p>
           <p className="text-[10px] font-bold text-on-surface-subtle uppercase">{t('tasks.inProgress')}</p>
         </div>
         <div className={`${overdue > 0 ? 'bg-danger/10' : 'bg-surface-light'} p-3 rounded-xl text-center`}>

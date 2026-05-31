@@ -5,7 +5,8 @@ import { useI18n } from '../../../i18n';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function QuickActionsWidget({ dashboardData }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
+  const isRtl = dir === 'rtl';
   const { user } = useAuth();
   const userRole = user?.role;
   const isAdmin = userRole === 'Admin';

@@ -11,7 +11,8 @@ const COLOR_STYLES = {
 };
 
 export default function AnnouncementsWidget({ dashboardData }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
+  const isRtl = dir === 'rtl';
   const { banners, loading } = useBanners('announcement,promotion');
 
   const activeBanners = useMemo(() => {
@@ -32,7 +33,7 @@ export default function AnnouncementsWidget({ dashboardData }) {
           const colorClass = COLOR_STYLES[scheme] || COLOR_STYLES.default;
           return (
             <div key={banner.id || idx} className={`rounded-xl p-3 ${colorClass}`}>
-              <div className="flex items-start gap-2">
+              <div className={`flex items-start gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 {banner.icon && (
                   <MaterialSymbol icon={banner.icon} size={20} className="mt-0.5 shrink-0" />
                 )}

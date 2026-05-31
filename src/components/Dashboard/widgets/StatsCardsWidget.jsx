@@ -14,9 +14,9 @@ function getSeverityLabel(alerts) {
 }
 
 export default function StatsCardsWidget({ dashboardData }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
   const { user } = useAuth();
-  const isRtl = dashboardData.dir === 'rtl';
+  const isRtl = dir === 'rtl';
   const userRole = user?.role;
   const isAdmin = userRole === 'Admin';
   const isOwner = userRole === 'Owner';
@@ -28,7 +28,7 @@ export default function StatsCardsWidget({ dashboardData }) {
   const sev = getSeverityLabel(alerts);
 
   const temps = (animals || [])
-    .map(a => parseFloat(a.baseline_temperature))
+    .map(a => parseFloat(a.device?.temperature ?? a.baseline_temperature))
     .filter(t => !isNaN(t));
   const avgTemp = temps.length > 0 ? (temps.reduce((s, t) => s + t, 0) / temps.length).toFixed(1) : '--';
   const highTempCount = temps.filter(t => t > 39.5).length;
@@ -54,7 +54,7 @@ export default function StatsCardsWidget({ dashboardData }) {
             <MaterialSymbol icon="sensors" size={24} className="text-brand-accent" weight="fill" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#10b981] rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
             <span className="chip chip-success">{t('dashboard.live')}</span>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function StatsCardsWidget({ dashboardData }) {
           <h3 className="text-4xl font-black text-brand-primary">{stats.activeDevices}</h3>
           {stats.realDataEnabled && (
             <div className="flex items-center gap-3 mt-1 text-xs">
-              <span className="text-[#10B981] font-semibold">LIVE {stats.healthyCountReal || 0}</span>
+              <span className="text-success font-semibold">LIVE {stats.healthyCountReal || 0}</span>
               <span className="text-on-surface-subtle">/</span>
               <span className="text-brand-accent font-semibold">SIM {stats.healthyCountSimulated || 0}</span>
             </div>

@@ -29,7 +29,6 @@ import TasksWidget from './widgets/TasksWidget';
 import AuctionsWidget from './widgets/AuctionsWidget';
 import ActivationWidget from './widgets/ActivationWidget';
 import AnnouncementsWidget from './widgets/AnnouncementsWidget';
-import AiAssistantWidget from './widgets/AiAssistantWidget';
 import MessagesWidget from './widgets/MessagesWidget';
 
 const widgetComponents = {
@@ -46,7 +45,6 @@ const widgetComponents = {
   auctionsWidget: AuctionsWidget,
   activationWidget: ActivationWidget,
   announcements: AnnouncementsWidget,
-  aiAssistant: AiAssistantWidget,
   messages: MessagesWidget,
 };
 
@@ -69,8 +67,9 @@ function getTabletColsClass(gridTablet) {
 }
 
 export default function DashboardGrid({ dashboardData }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
   const { user } = useAuth();
+  const isRtl = dir === 'rtl';
   const role = user?.role || 'Owner';
 
   const [widgets, setWidgets] = useState(() => getWidgetsForRole(role, t));
@@ -139,7 +138,7 @@ export default function DashboardGrid({ dashboardData }) {
           </p>
           <button
             onClick={handleReset}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white rounded-2xl font-bold hover:bg-brand-secondary transition-all"
           >
             <MaterialSymbol icon="refresh" size={18} />
             Reset to Defaults
@@ -167,7 +166,7 @@ export default function DashboardGrid({ dashboardData }) {
             </button>
 
             {showCustomize && (
-              <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 min-w-[220px]">
+              <div className={`absolute ${isRtl ? 'left-0' : 'right-0'} top-full mt-2 z-50 bg-white rounded-2xl shadow-xl border border-outline/30 p-4 min-w-[220px]`}>
                 <h4 className="text-sm font-bold text-brand-primary mb-3">Show Widgets</h4>
                 <div className="space-y-2">
                   {availableWidgets.map(aw => {
@@ -188,7 +187,7 @@ export default function DashboardGrid({ dashboardData }) {
                     );
                   })}
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-outline/30">
                   <button
                     onClick={handleReset}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-on-surface-subtle hover:text-brand-primary hover:bg-surface-light transition-all"

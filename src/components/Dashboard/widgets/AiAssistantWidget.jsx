@@ -4,7 +4,8 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { useI18n } from '../../../i18n';
 
 export default function AiAssistantWidget({ widget }) {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
+  const isRtl = dir === 'rtl';
   const [input, setInput] = useState('');
 
   const openAssistant = (prompt) => {
@@ -34,7 +35,7 @@ export default function AiAssistantWidget({ widget }) {
   return (
     <DashboardWidget widget={widget}>
       <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-between mb-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-brand-secondary rounded-lg flex items-center justify-center">
               <MaterialSymbol icon="smart_toy" size={18} className="text-brand-accent" weight="fill" />
@@ -54,7 +55,7 @@ export default function AiAssistantWidget({ widget }) {
             <button
               key={i}
               onClick={() => openAssistant(p.prompt)}
-              className="flex items-center gap-2 px-3 py-2 bg-surface-dim rounded-xl text-xs text-brand-primary hover:bg-surface-dim transition-all"
+              className={`flex items-center gap-2 px-3 py-2 bg-surface-dim rounded-xl text-xs text-brand-primary hover:bg-surface-dim transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
             >
               <span className="material-symbols-rounded text-sm">{p.icon}</span>
               <span>{p.label}</span>
@@ -62,13 +63,13 @@ export default function AiAssistantWidget({ widget }) {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className={`flex flex-row gap-2`}>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t('ai.typeMessage', 'Ask AI...')}
-            className="flex-1 px-3 py-2 bg-surface-dim text-on-surface border-none rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#002819]/20"
+            className="flex-1 px-3 py-2 bg-surface-dim text-on-surface border-none rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
           />
           <button
             type="submit"

@@ -31,7 +31,7 @@ export default {
         'on-surface': {
           DEFAULT: '#002819',
           variant: '#404943',
-          subtle: '#717973',
+          subtle: '#6E7670',
         },
         tertiary: {
           container: '#735C00',

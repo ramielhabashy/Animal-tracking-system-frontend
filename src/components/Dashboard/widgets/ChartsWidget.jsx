@@ -7,7 +7,7 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { useI18n } from '../../../i18n';
 import { useAuth } from '../../../context/AuthContext';
 
-const COLORS = ['#002819', '#06402B', '#D4AF37', '#735C00', '#10b981', '#BA1A1A', '#8b5cf6', '#06b6d4'];
+const COLORS = ['#002819', '#06402B', '#D4AF37', '#735C00', '#059669', '#BA1A1A', '#8b5cf6', '#06b6d4'];
 
 function computeSpeciesData(animals) {
   const map = {};
@@ -73,7 +73,7 @@ function getRoleBasedCharts(role, adminSubStats, stats, speciesData, healthData,
           Cancelled: g.cancelled || 0,
         })),
         bars: [
-          { dataKey: 'New', color: '#10b981' },
+          { dataKey: 'New', color: '#059669' },
           { dataKey: 'Cancelled', color: '#BA1A1A' },
         ],
       });
