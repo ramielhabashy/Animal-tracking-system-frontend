@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
+import { getSpeciesMaterialIcon } from '../utils/speciesIcons';
 import { useI18n } from '../i18n';
 
 export default function EmbedAnimalList() {
@@ -41,11 +42,6 @@ export default function EmbedAnimalList() {
     const yrs = Math.floor(months / 12);
     const rem = months % 12;
     return rem ? `${yrs}y ${rem}mo` : `${yrs}y`;
-  };
-
-  const getSpeciesIcon = (species) => {
-    const map = { Camel: 'camel', Goat: 'goat', Sheep: 'sheep' };
-    return map[species] || 'pets';
   };
 
   return (
@@ -96,7 +92,7 @@ export default function EmbedAnimalList() {
                       <img src={imageUrl} alt={animal.animal_id} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <MaterialSymbol icon={getSpeciesIcon(animal.species)} size={48} className="text-brand-accent/30" />
+                        <MaterialSymbol icon={getSpeciesMaterialIcon(animal.species)} size={48} className="text-brand-accent/30" />
                       </div>
                     )}
                     <div className="absolute top-2 left-2">

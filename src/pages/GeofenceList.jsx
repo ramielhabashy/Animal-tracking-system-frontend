@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch } from '../utils/api';
 import { exportData } from '../utils/export';
+import { getSpeciesEmoji } from '../utils/speciesIcons';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import TranslateButton from '../components/TranslateButton';
@@ -110,7 +111,7 @@ function GeofenceDrawer({ coordinates, onCoordinatesChange, animals, devices, ge
                 align-items:center;
                 justify-content:center;
                 font-size:16px;
-              ">🐪</div>`,
+              ">${getSpeciesEmoji(animal.species)}</div>`,
               iconSize: [32, 32],
               iconAnchor: [16, 16],
             })}

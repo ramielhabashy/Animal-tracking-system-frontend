@@ -1,0 +1,1 @@
+function a(e){return{Camel:"🐪",Goat:"🐐",Sheep:"🐑",Cow:"🐄",Dog:"🐕",Horse:"🐴",Donkey:"🫏",Chicken:"🐔",Duck:"🦆",Rabbit:"🐇"}[e]||"🐪"}function t(e){return{Camel:"camel",Goat:"goat",Sheep:"sheep",Cow:"cow",Dog:"dog",Horse:"horse",Donkey:"donkey",Chicken:"chicken",Duck:"duck",Rabbit:"rabbit"}[e]||"pets"}export{t as a,a as g};

@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { getSpeciesEmoji } from '../utils/speciesIcons';
 
 function MapUpdater({ bounds, zoomPosition, center }) {
   const map = useMap();
@@ -83,9 +84,9 @@ function GeofenceDrawer({ isDrawing, drawMode, onComplete, drawingRectStart, onR
   return null;
 }
 
-const createAnimalIcon = (color, isSelected = false) => {
+const createAnimalIcon = (color, species, isSelected = false) => {
   const size = isSelected ? 40 : 32;
-  const emoji = isSelected ? '🐪' : '🐪';
+  const emoji = getSpeciesEmoji(species);
   
   return L.divIcon({
     className: 'custom-marker',
@@ -890,7 +891,7 @@ export default function MapView() {
               <Marker
                 key={animal.id}
                 position={position}
-                icon={createAnimalIcon(groupColor, isSelected)}
+                icon={createAnimalIcon(groupColor, animal.species, isSelected)}
                 eventHandlers={{ click: () => { setSelectedAnimal(animal); setZoomPosition(position); } }}
               >
                   <Popup>

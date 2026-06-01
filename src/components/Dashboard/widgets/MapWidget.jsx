@@ -6,9 +6,10 @@ import 'leaflet/dist/leaflet.css';
 import { MaterialSymbol } from 'react-material-symbols';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../../i18n';
+import { getSpeciesEmoji } from '../../../utils/speciesIcons';
 import { useAuth } from '../../../context/AuthContext';
 
-const createAnimalIcon = (color) => {
+const createAnimalIcon = (color, species = 'Camel') => {
   return L.divIcon({
     className: 'custom-marker',
     html: `
@@ -24,7 +25,7 @@ const createAnimalIcon = (color) => {
         justify-content: center;
         color: white;
         font-size: 16px;
-      ">🐪</div>
+      ">${getSpeciesEmoji(species)}</div>
     `,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -210,7 +211,7 @@ export default function MapWidget({ dashboardData }) {
               <Marker
                 key={animal.id}
                 position={[animal.lat, animal.lng]}
-                icon={createAnimalIcon(groupColor)}
+                icon={createAnimalIcon(groupColor, animal.species)}
               >
                 <Popup>
                   <div className="p-3 min-w-[200px]">
@@ -270,7 +271,7 @@ export default function MapWidget({ dashboardData }) {
               <Marker
                 key={`marker-${animal.id}`}
                 position={lastPos}
-                icon={createAnimalIcon(groupColor)}
+                icon={createAnimalIcon(groupColor, animal.species)}
               >
                 <Popup>
                   <div className="p-3">

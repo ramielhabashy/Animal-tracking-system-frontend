@@ -29,7 +29,6 @@ import TasksWidget from './widgets/TasksWidget';
 import AuctionsWidget from './widgets/AuctionsWidget';
 import ActivationWidget from './widgets/ActivationWidget';
 import AnnouncementsWidget from './widgets/AnnouncementsWidget';
-import AiAssistantWidget from './widgets/AiAssistantWidget';
 import MessagesWidget from './widgets/MessagesWidget';
 
 const widgetComponents = {
@@ -46,7 +45,6 @@ const widgetComponents = {
   auctionsWidget: AuctionsWidget,
   activationWidget: ActivationWidget,
   announcements: AnnouncementsWidget,
-  aiAssistant: AiAssistantWidget,
   messages: MessagesWidget,
 };
 

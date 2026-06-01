@@ -8,14 +8,15 @@ import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { getSpeciesEmoji } from '../utils/speciesIcons';
 import TransferCreateModal from '../components/Transfers/TransferCreateModal';
 
-const createMarkerIcon = (status) => {
+const createMarkerIcon = (status, species = 'Camel') => {
   const colors = { healthy: '#10b981', warning: '#f59e0b', critical: '#ef4444' };
   const color = colors[status] || '#10b981';
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="width:40px;height:40px;background:${color};border-radius:50%;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">🐪</div>`,
+    html: `<div style="width:40px;height:40px;background:${color};border-radius:50%;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">${getSpeciesEmoji(species)}</div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
     popupAnchor: [0, -20],
@@ -400,7 +401,7 @@ const fetchAnimal = async () => {
               )}
               
               {currentPosition && (
-                <Marker position={currentPosition} icon={createMarkerIcon(status)}>
+                <Marker position={currentPosition} icon={createMarkerIcon(status, animal.species)}>
                   <Popup>
                     <div className="p-2">
                       <p className="font-bold text-brand-primary">{animal.animal_id}</p>

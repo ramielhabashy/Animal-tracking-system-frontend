@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
+import { getSpeciesMaterialIcon } from '../utils/speciesIcons';
 import { useI18n } from '../i18n';
 
 export default function EmbedAnimalCarousel() {
@@ -53,11 +54,6 @@ export default function EmbedAnimalCarousel() {
     if (!scrollRef.current) return;
     const amount = 320;
     scrollRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
-  };
-
-  const getSpeciesIcon = (species) => {
-    const map = { Camel: 'camel', Goat: 'goat', Sheep: 'sheep' };
-    return map[species] || 'pets';
   };
 
   const getAge = (dateOfBirth) => {
@@ -139,7 +135,7 @@ export default function EmbedAnimalCarousel() {
                     <img src={imageUrl} alt={animal.animal_id} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <MaterialSymbol icon={getSpeciesIcon(animal.species)} size={32} className="text-brand-accent/30" />
+                      <MaterialSymbol icon={getSpeciesMaterialIcon(animal.species)} size={32} className="text-brand-accent/30" />
                     </div>
                   )}
                   <div className="absolute top-2 left-2">

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { apiFetch, storageUrl } from '../utils/api';
 import { exportData } from '../utils/export';
+import { getSpeciesEmoji } from '../utils/speciesIcons';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import Pagination from '../components/Pagination';
@@ -411,7 +412,7 @@ export default function AnimalList() {
                           animalStatus === 'critical' ? 'bg-danger/10' :
                           animalStatus === 'warning' ? 'bg-brand-accent/10' : 'bg-brand-primary/5'
                         }`}>
-                          {animal.species === 'Camel' ? '🐪' : animal.species === 'Goat' ? '🐐' : '🐪'}
+                          {getSpeciesEmoji(animal.species)}
                         </div>
                         <div>
                           <p className="font-semibold text-brand-primary">{animal.animal_id}</p>
@@ -508,7 +509,7 @@ return (
                             <img src={storageUrl(animal.identification_photo)} alt={animal.animal_id} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-2xl">
-                              {animal.species === 'Camel' ? '🐪' : animal.species === 'Goat' ? '🐐' : animal.species === 'Sheep' ? '🐑' : animal.species === 'Cow' ? '🐄' : animal.species === 'Dog' ? '🐕' : '🐪'}
+                              {getSpeciesEmoji(animal.species)}
                             </span>
                           )}
                         </div>
