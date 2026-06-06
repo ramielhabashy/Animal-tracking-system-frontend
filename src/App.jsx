@@ -54,6 +54,7 @@ function SuspenseFallback() {
 
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const OtpVerificationPage = lazy(() => import('./pages/OtpVerificationPage'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AnimalList = lazy(() => import('./pages/AnimalList'));
@@ -109,6 +110,10 @@ const router = createBrowserRouter([
   {
     path: '/forgot-password',
     element: <Suspense fallback={<SuspenseFallback />}><ForgotPassword /></Suspense>,
+  },
+  {
+    path: '/verify-otp',
+    element: <Suspense fallback={<SuspenseFallback />}><OtpVerificationPage /></Suspense>,
   },
   {
     path: '/invitations/:token',

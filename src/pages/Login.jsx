@@ -32,6 +32,8 @@ const handleSubmit = async (e) => {
       const result = await login(email, password);
       if (result === true) {
         navigate(searchParams.get('redirect') || '/subscription/select');
+      } else if (result?.requires_otp) {
+        navigate('/verify-otp?temp_token=' + encodeURIComponent(result.temp_token));
       } else {
         setError(result?.message || t('errors.serverError'));
       }
