@@ -40,14 +40,15 @@ export default function UserList() {
   const isOwner = user?.role === 'Owner';
 
    useEffect(() => {
-     fetchData();
-   }, [currentPage, perPage, debouncedSearch]);
+      fetchData();
+    }, [currentPage, perPage, debouncedSearch, roleFilter]);
 
 const fetchData = async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams({ per_page: perPage, page: currentPage });
       if (debouncedSearch) queryParams.set('search', debouncedSearch);
+      if (roleFilter !== 'all') queryParams.set('role', roleFilter);
       const [usersRes, tiersRes] = await Promise.all([
         apiFetch(`/api/users?${queryParams}`),
         apiFetch('/api/subscription/tiers'),
@@ -72,11 +73,10 @@ const fetchData = async () => {
     }
   };
 
-   const allRoles = [...new Set(users.map(u => u.role).filter(Boolean))];
+   const allRoles = ['Admin', 'Owner', 'Manager', 'Doctor', 'Shepherd', 'Support', 'Accountant', 'Customer Service'];
 
    const filteredUsers = users.filter((u) => {
      if (isOwner && u.role === 'Admin') return false;
-     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
      if (statusFilter === 'active' && u.is_active === false) return false;
      if (statusFilter === 'inactive' && u.is_active !== false) return false;
      if (debouncedSearch) {

@@ -31,7 +31,13 @@ export function AuthProvider({ children }) {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Login failed response:', response.status, errorData);
-        return { error: errorData.error || 'unauthorized', message: errorData.message || 'Login failed' };
+        const retryAfter = response.headers.get('Retry-After');
+        return {
+          error: errorData.error || 'unauthorized',
+          message: errorData.message || 'Login failed',
+          status: response.status,
+          retryAfter: retryAfter ? parseInt(retryAfter) : undefined,
+        };
       }
       
       const data = await response.json();

@@ -18,7 +18,7 @@ export default function TierDistributionWidget({ dashboardData }) {
           const pct = total > 0 ? ((tier.subscriber_count / total) * 100).toFixed(0) : 0;
           return (
             <div key={tier.id} className="card p-5 text-center">
-              <p className="text-3xl font-black text-brand-primary">{tier.subscriber_count}</p>
+              <p className="text-3xl font-black text-brand-primary">{(tier.subscriber_count || 0).toLocaleString()}</p>
               <p className="text-sm font-semibold text-on-surface-variant mt-1">{tier.name}</p>
               <div className="mt-3 h-2 bg-surface-light rounded-full overflow-hidden">
                 <div
@@ -28,7 +28,7 @@ export default function TierDistributionWidget({ dashboardData }) {
               </div>
               <p className="text-xs text-on-surface-subtle mt-1">{pct}%</p>
               {tier.price_monthly > 0 && (
-                <p className="text-xs text-brand-accent font-semibold mt-1">${tier.price_monthly}/mo</p>
+                <p className="text-xs text-brand-accent font-semibold mt-1">${(tier.price_monthly || 0).toLocaleString()}/mo</p>
               )}
             </div>
           );

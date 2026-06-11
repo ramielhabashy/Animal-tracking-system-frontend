@@ -558,19 +558,38 @@ export default function MessagesPage() {
                             </div>
                             {msg.attachments && msg.attachments.length > 0 && (
                               <div className={`mt-1.5 space-y-1 ${isRtl ? 'text-end' : ''}`}>
-                                {msg.attachments.map(att => (
-                                  <a
-                                    key={att.id}
-                                    href={storageUrl(att.file_path || att.path)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-light text-xs text-on-surface-variant/70 hover:text-brand-primary transition-colors"
-                                  >
-                                    <MaterialSymbol icon="attach_file" size={14} />
-                                    <span className="truncate max-w-[150px]">{att.original_name || att.name || 'File'}</span>
-                                    <span className="text-on-surface-variant/40">({formatFileSize(att.file_size || att.size)})</span>
-                                  </a>
-                                ))}
+                                {msg.attachments.map(att => {
+                                  const isImage = att.mime_type?.startsWith('image/');
+                                  const fileUrl = storageUrl(att.file_path || att.path);
+                                  return isImage ? (
+                                    <a
+                                      key={att.id}
+                                      href={fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block rounded-xl overflow-hidden border border-surface-high hover:opacity-90 transition-opacity"
+                                    >
+                                      <img
+                                        src={fileUrl}
+                                        alt={att.original_name || att.name || 'Image'}
+                                        className="max-w-[300px] max-h-[300px] w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      key={att.id}
+                                      href={fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-light text-xs text-on-surface-variant/70 hover:text-brand-primary transition-colors"
+                                    >
+                                      <MaterialSymbol icon="attach_file" size={14} />
+                                      <span className="truncate max-w-[150px]">{att.original_name || att.name || 'File'}</span>
+                                      <span className="text-on-surface-variant/40">({formatFileSize(att.file_size || att.size)})</span>
+                                    </a>
+                                  );
+                                })}
                               </div>
                             )}
                             <div className={`flex gap-2 mt-1 ${isOwn ? 'justify-end' : 'justify-start'} ${isRtl ? 'flex-row-reverse' : ''}`}>

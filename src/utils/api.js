@@ -32,6 +32,10 @@ export function storageUrl(path) {
   if (!path || typeof path !== 'string') return path;
   if (path.startsWith('http://') || path.startsWith('https://') ||
       path.startsWith('data:') || path.startsWith('blob:')) return path;
+  // Convert 'public/...' paths to '/storage/...' (Laravel storage symlink)
+  if (path.startsWith('public/')) {
+    path = '/storage/' + path.slice(7);
+  }
   const base = API_BASE || '';
   return `${base}${path.startsWith('/') ? path : '/' + path}`;
 }

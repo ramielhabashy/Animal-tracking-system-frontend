@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { MaterialSymbol } from 'react-material-symbols';
 import { useAuth as useAuthContext } from '../context/AuthContext';
@@ -8,10 +8,13 @@ import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { usePlatform } from '../context/PlatformContext';
 import { storageUrl } from '../utils/api';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Login() {
   const { t, dir } = useI18n();
   const { platformName, logoUrl, loginBackgroundUrl, copyrightText } = usePlatform();
   const isRtl = dir === 'rtl';
+  const emailRef = useRef(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,26 +22,119 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-const navigate = useNavigate();
+  const [errorType, setErrorType] = useState('');
+  const [touched, setTouched] = useState({ email: false, password: false });
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuthContext();
 
-const handleSubmit = async (e) => {
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (rateLimitCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setRateLimitCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [rateLimitCountdown]);
+
+  const validateField = (name, value) => {
+    let msg = '';
+    if (name === 'email') {
+      if (!value.trim()) {
+        msg = t('auth.emailRequired') || 'Email is required';
+      } else if (!EMAIL_REGEX.test(value)) {
+        msg = t('auth.emailInvalid') || 'Enter a valid email address';
+      }
+    }
+    if (name === 'password') {
+      if (!value) {
+        msg = t('auth.passwordRequired') || 'Password is required';
+      } else if (value.length < 8) {
+        msg = t('auth.passwordMinLength') || 'Password must be at least 8 characters';
+      }
+    }
+    return msg;
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    setFieldErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (touched.email) {
+      setFieldErrors(prev => ({ ...prev, email: validateField('email', val) }));
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const val = e.target.value;
+    setPassword(val);
+    if (touched.password) {
+      setFieldErrors(prev => ({ ...prev, password: validateField('password', val) }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrorType('');
+    setTouched({ email: true, password: true });
+
+    const emailErr = validateField('email', email);
+    const passwordErr = validateField('password', password);
+    setFieldErrors({ email: emailErr, password: passwordErr });
+
+    if (emailErr || passwordErr) {
+      setLoading(false);
+      return;
+    }
+
+    const redirect = searchParams.get('redirect');
 
     try {
       const result = await login(email, password);
       if (result === true) {
-        navigate(searchParams.get('redirect') || '/subscription/select');
+        navigate(redirect || '/subscription/select');
       } else if (result?.requires_otp) {
+        if (redirect) {
+          sessionStorage.setItem('login_redirect', redirect);
+        }
         navigate('/verify-otp?temp_token=' + encodeURIComponent(result.temp_token));
       } else {
-        setError(result?.message || t('errors.serverError'));
+        const status = result?.status || 0;
+        if (status === 429) {
+          const retryAfter = result?.retryAfter || 60;
+          setRateLimitCountdown(retryAfter);
+          setErrorType('rate_limit');
+          setError(result?.message || t('errors.tooManyAttempts') || 'Too many attempts. Please wait.');
+        } else if (status === 403) {
+          setErrorType('inactive');
+          setError(result?.message || t('errors.accountInactive') || 'Account is inactive.');
+        } else {
+          setErrorType('credentials');
+          setError(result?.message || t('errors.invalidCredentials') || 'Invalid email or password.');
+        }
       }
     } catch (err) {
-      setError(t('errors.networkError'));
+      setErrorType('network');
+      setError(t('errors.networkError') || 'Network error. Check your connection.');
     }
     setLoading(false);
   };
@@ -85,7 +181,7 @@ const handleSubmit = async (e) => {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
             <div className="space-y-3">
               <label className={`block text-sm font-bold text-brand-primary px-1 ${isRtl ? 'text-right' : 'text-left'}`}>
                 {t('auth.email')}
@@ -97,16 +193,26 @@ const handleSubmit = async (e) => {
                   className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
                 />
                 <input
+                  ref={emailRef}
+                  name="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
+                  onBlur={handleBlur}
                   placeholder="example@oasis.com"
                   required
-                  className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
+                  className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 transition-all font-medium text-on-surface placeholder:text-outline ${
                     isRtl ? 'pr-14 pl-5 text-right' : 'pl-14 pr-5 text-left'
+                  } ${
+                    touched.email && fieldErrors.email
+                      ? 'focus:ring-red-400 ring-2 ring-red-300'
+                      : 'focus:ring-brand-secondary/20'
                   }`}
                 />
               </div>
+              {touched.email && fieldErrors.email && (
+                <p className="text-red-600 text-xs px-1 font-medium">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -126,14 +232,20 @@ const handleSubmit = async (e) => {
                   className={`absolute top-1/2 -translate-y-1/2 text-on-surface-subtle ${isRtl ? 'right-5 left-auto' : 'left-5'}`}
                 />
                 <input
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
+                  onBlur={handleBlur}
                   placeholder="••••••••"
                   required
                   minLength={8}
-                  className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/20 transition-all font-medium text-on-surface placeholder:text-outline ${
+                  className={`w-full bg-surface-light rounded-xl py-4 text-sm focus:outline-none focus:ring-2 transition-all font-medium text-on-surface placeholder:text-outline ${
                     isRtl ? 'pr-14 pl-5' : 'pl-14 pr-14'
+                  } ${
+                    touched.password && fieldErrors.password
+                      ? 'focus:ring-red-400 ring-2 ring-red-300'
+                      : 'focus:ring-brand-secondary/20'
                   }`}
                 />
                 <button
@@ -147,11 +259,34 @@ const handleSubmit = async (e) => {
                   />
                 </button>
               </div>
+              {touched.password && fieldErrors.password && (
+                <p className="text-red-600 text-xs px-1 font-medium">{fieldErrors.password}</p>
+              )}
             </div>
 
             {error && (
-              <div className="p-4 bg-danger/10 text-danger rounded-xl text-sm font-medium">
-                {error}
+              <div className={`p-4 rounded-xl text-sm font-medium flex items-start gap-3 ${
+                errorType === 'rate_limit' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                errorType === 'inactive' ? 'bg-orange-50 text-orange-800 border border-orange-200' :
+                'bg-danger/10 text-danger'
+              }`}>
+                <MaterialSymbol
+                  icon={
+                    errorType === 'rate_limit' ? 'timer' :
+                    errorType === 'inactive' ? 'block' :
+                    errorType === 'network' ? 'wifi_off' :
+                    'error'
+                  }
+                  size={18}
+                  className={`mt-0.5 shrink-0 ${
+                    errorType === 'rate_limit' ? 'text-amber-600' :
+                    errorType === 'inactive' ? 'text-orange-600' : ''
+                  }`}
+                />
+                <span className="flex-1">{error}</span>
+                {rateLimitCountdown > 0 && (
+                  <span className="font-bold text-amber-700 shrink-0">{rateLimitCountdown}s</span>
+                )}
               </div>
             )}
 
@@ -198,5 +333,3 @@ const handleSubmit = async (e) => {
     </div>
   );
 }
-
-

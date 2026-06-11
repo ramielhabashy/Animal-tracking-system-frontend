@@ -124,6 +124,9 @@ export default function AnimalEdit() {
         } else if (isManager) {
           const currentUserInList = users.find(u => u.id === user?.id);
           assignedOwnerId = String(currentUserInList?.managed_by || '');
+        } else if (isShepherd) {
+          const currentUserInList = users.find(u => u.id === user?.id);
+          assignedOwnerId = String(currentUserInList?.managed_by || '');
         }
         if (assignedOwnerId) {
           setFormData(prev => ({ ...prev, owner_id: assignedOwnerId }));
@@ -139,14 +142,10 @@ export default function AnimalEdit() {
         setCurrentDevice(currentDeviceObj);
       }
 
-      const assignedDeviceIds = animals
-        .filter(a => a.device?.device_id && a.id !== parseInt(id || 0))
-        .map(a => a.device?.device_id);
-
-      const available = devices.filter(d => 
-        !assignedDeviceIds.includes(d.device_id)
-      );
+      // Filter to only unassigned devices (animal_id === null)
+      const available = devices.filter(d => d.animal_id === null);
       
+      // If editing, include the device currently assigned to this animal
       if (currentDeviceObj && !available.find(d => d.device_id === currentDeviceId)) {
         available.unshift(currentDeviceObj);
       }

@@ -20,7 +20,7 @@ export default function SubscriptionOverviewWidget({ dashboardData }) {
           </div>
         </div>
         <p className="text-sm text-white/60">{t('dashboard.totalOwners')}</p>
-        <p className="text-3xl font-black text-white">{dashboardData.ownerStatsData?.total_owners || 0}</p>
+        <p className="text-3xl font-black text-white">{(dashboardData.ownerStatsData?.total_owners || 0).toLocaleString()}</p>
       </div>
       <div className="stat-card bg-gradient-to-br from-brand-secondary to-brand-primary text-white">
         <div className="flex items-center gap-3 mb-3">
@@ -29,7 +29,7 @@ export default function SubscriptionOverviewWidget({ dashboardData }) {
           </div>
         </div>
         <p className="text-sm text-white/60">{t('subscription.active')}</p>
-        <p className="text-3xl font-black text-emerald-400">{adminSubStats.active_subscribers || 0}</p>
+        <p className="text-3xl font-black text-emerald-400">{(adminSubStats.active_subscribers || 0).toLocaleString()}</p>
       </div>
       <div className="stat-card bg-gradient-to-br from-[#735C00] to-[#D4AF37] text-white">
         <div className="flex items-center gap-3 mb-3">
@@ -47,7 +47,7 @@ export default function SubscriptionOverviewWidget({ dashboardData }) {
           </div>
         </div>
         <p className="text-sm text-white/60">{t('payments.pendingPayments')}</p>
-        <p className="text-3xl font-black text-white">{adminSubStats.pending_payments || 0}</p>
+        <p className="text-3xl font-black text-white">{(adminSubStats.pending_payments || 0).toLocaleString()}</p>
       </div>
       <div className="stat-card bg-white border border-surface-high">
         <div className="flex items-center gap-3 mb-3">
@@ -58,12 +58,12 @@ export default function SubscriptionOverviewWidget({ dashboardData }) {
         <div className="flex items-center gap-4">
           <div>
             <p className="text-xs text-on-surface-subtle">{t('subscription.newThisMonth')}</p>
-            <p className="text-xl font-black text-[#10b981]">+{adminSubStats.new_this_month || 0}</p>
+            <p className="text-xl font-black text-[#10b981]">+{(adminSubStats.new_this_month || 0).toLocaleString()}</p>
           </div>
           <div className="w-px h-8 bg-surface-high" />
           <div>
             <p className="text-xs text-on-surface-subtle">{t('subscription.churnedThisMonth')}</p>
-            <p className="text-xl font-black text-danger">{adminSubStats.churned_this_month || 0}</p>
+            <p className="text-xl font-black text-danger">{(adminSubStats.churned_this_month || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>

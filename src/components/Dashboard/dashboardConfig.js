@@ -105,7 +105,7 @@ function getWidgetTitle(id, t) {
     medicalOverview: t('nav.medicalRecords'),
     tasksWidget: t('nav.tasks'),
     auctionsWidget: t('nav.auctions'),
-    activationWidget: 'Device Activation',
+    activationWidget: t('nav.activateDevice'),
     announcements: t('nav.announcements') || 'Announcements',
     messages: t('nav.messages') || 'Messages',
   };

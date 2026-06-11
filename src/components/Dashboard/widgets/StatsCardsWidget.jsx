@@ -114,8 +114,8 @@ export default function StatsCardsWidget({ dashboardData }) {
           <div>
             <p className="text-sm font-medium text-white/60 mb-1">{t('subscription.title')}</p>
             <div className="space-y-1">
-              <p className="text-2xl font-black text-brand-accent">{stats.subscription.active_subscriptions || 0} {t('subscription.active')}</p>
-              <p className="text-sm text-white/60">{stats.subscription.pending_payments || 0} {t('payments.pendingPayments')}</p>
+              <p className="text-2xl font-black text-brand-accent">{(stats.subscription.active_subscriptions || 0).toLocaleString()} {t('subscription.active')}</p>
+              <p className="text-sm text-white/60">{(stats.subscription.pending_payments || 0).toLocaleString()} {t('payments.pendingPayments')}</p>
             </div>
           </div>
         </Link>
