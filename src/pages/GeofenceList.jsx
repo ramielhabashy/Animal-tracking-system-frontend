@@ -91,7 +91,7 @@ function GeofenceDrawer({ coordinates, onCoordinatesChange, animals, devices, ge
         if (!pos) return null;
         const deviceId = animal.device?.device_id || animal.device_id;
         const device = devices.find(d => d.device_id === deviceId);
-        const isOnline = device?.status === 'online' || device?.status === 'active';
+        const isOnline = device?.status === 'online';
         const isInside = points.length >= 3 && isPointInPolygon(pos, points);
         
         return (

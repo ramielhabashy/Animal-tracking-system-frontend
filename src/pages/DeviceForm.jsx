@@ -270,10 +270,8 @@ export default function DeviceForm() {
                   className="w-full bg-white border-none rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-brand-secondary shadow-sm"
                 >
                   <option value="online">Online</option>
-                  <option value="active">Active</option>
                   <option value="offline">Offline</option>
                   <option value="low_signal">Low Signal</option>
-                  <option value="maintenance">Maintenance</option>
                 </select>
               </div>
             </div>

@@ -32,12 +32,17 @@ export function storageUrl(path) {
   if (!path || typeof path !== 'string') return path;
   if (path.startsWith('http://') || path.startsWith('https://') ||
       path.startsWith('data:') || path.startsWith('blob:')) return path;
-  // Convert 'public/...' paths to '/storage/...' (Laravel storage symlink)
-  if (path.startsWith('public/')) {
-    path = '/storage/' + path.slice(7);
-  }
   const base = API_BASE || '';
-  return `${base}${path.startsWith('/') ? path : '/' + path}`;
+  if (path.startsWith('public/')) {
+    path = path.slice(7);
+  } else if (path.startsWith('/storage/')) {
+    path = path.slice(9);
+  } else if (path.startsWith('storage/')) {
+    path = path.slice(8);
+  }
+  path = path.replace(/\\/g, '/');
+  const segments = path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  return `${base}/files/${segments}`;
 }
 
 const buildUrl = (url, options = {}) => {

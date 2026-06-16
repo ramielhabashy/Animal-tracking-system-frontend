@@ -48,7 +48,6 @@ const TermsPage = lazy(() => import('../pages/static/TermsPage'));
 export const routeConfig = {
   public: [
     { path: '/login', component: Login },
-    { path: '/verify-otp', label: 'Verify OTP' },
     { path: '/forgot-password', label: 'Forgot Password' },
   ],
   protected: [

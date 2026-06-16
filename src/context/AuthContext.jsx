@@ -42,14 +42,6 @@ export function AuthProvider({ children }) {
       
       const data = await response.json();
 
-      // Handle OTP/2FA flow
-      if (data.requires_otp) {
-        sessionStorage.setItem('login_temp_token', data.temp_token);
-        sessionStorage.setItem('login_email', email);
-        sessionStorage.setItem('login_password', password);
-        return { requires_otp: true, temp_token: data.temp_token };
-      }
-
       if (data.user) {
         const userRole = data.user.role || 'Owner';
         const userWithRole = { ...data.user, role: userRole };
@@ -74,19 +66,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  /**
-   * Refresh auth state by re-reading cookies.
-   * Used by OtpVerificationPage after successful OTP verification
-   * to sync AuthContext with the newly set cookies.
-   */
-  const refreshAuth = () => {
-    const storedUser = getAuthUser();
-    if (storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
-    }
-  };
-
   const logout = async () => {
     try {
       await apiFetch('/api/auth/logout', { method: 'POST' });
@@ -99,7 +78,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, refreshAuth }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

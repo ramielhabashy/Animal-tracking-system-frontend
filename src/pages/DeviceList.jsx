@@ -35,7 +35,7 @@ export default function DeviceList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [totalDevices, setTotalDevices] = useState(0);
-  const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0, maintenance: 0 });
+  const [stats, setStats] = useState({ online: 0, offline: 0, lowBattery: 0 });
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchCount, setBatchCount] = useState(10);
   const [batchAssign, setBatchAssign] = useState(false);
@@ -113,10 +113,9 @@ export default function DeviceList() {
         const uniqueAssigned = new Set(assignedDeviceIds).size;
         
         setStats({
-          online: allDevices.filter(d => d.status === 'online' || d.status === 'active').length,
+          online: allDevices.filter(d => d.status === 'online').length,
           offline: allDevices.filter(d => d.status === 'offline' || d.status === 'low_signal').length,
           lowBattery: allDevices.filter(d => (d.battery_level || 0) < 20).length,
-          maintenance: allDevices.filter(d => d.status === 'maintenance').length,
           assigned: uniqueAssigned,
         });
       }
@@ -166,7 +165,6 @@ export default function DeviceList() {
   const onlineCount = stats.online;
   const offlineCount = stats.offline;
   const lowBatteryCount = stats.lowBattery;
-  const maintenanceCount = stats.maintenance;
 
   const handleBatchCreate = async () => {
     setBatchLoading(true);
@@ -284,12 +282,6 @@ export default function DeviceList() {
           <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devicesPage.lowBatteryAlerts')}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-black text-tertiary-container">{lowBatteryCount}</span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <span className="text-on-surface-subtle text-xs font-bold uppercase">{t('devicesPage.maintenanceDue')}</span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-black text-[#4f6357]">{maintenanceCount}</span>
           </div>
         </div>
       </div>

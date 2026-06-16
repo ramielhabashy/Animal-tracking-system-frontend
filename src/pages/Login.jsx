@@ -112,11 +112,6 @@ export default function Login() {
       const result = await login(email, password);
       if (result === true) {
         navigate(redirect || '/subscription/select');
-      } else if (result?.requires_otp) {
-        if (redirect) {
-          sessionStorage.setItem('login_redirect', redirect);
-        }
-        navigate('/verify-otp?temp_token=' + encodeURIComponent(result.temp_token));
       } else {
         const status = result?.status || 0;
         if (status === 429) {
